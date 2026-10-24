@@ -13,7 +13,8 @@
     "test": "npm test --workspace server",
     "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
     "seed:demo": "npm run seed:demo --workspace server",
-    "demo": "npm run build && npm run demo --workspace server"
+    "demo": "npm run build && npm run demo --workspace server",
+    "demo:reset": "npm run build && npm run demo:reset --workspace server"
   },
   "overrides": {
     "uuid": "^11.1.1"

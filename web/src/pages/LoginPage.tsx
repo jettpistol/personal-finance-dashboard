@@ -56,7 +56,7 @@ export function LoginPage({ setup }: { setup: boolean }) {
               </Alert>
             )}
             <TextInput label="Usuario" value={username} onChange={(e) => setUsername(e.currentTarget.value)} autoComplete="username" required autoFocus />
-            {setup && <TextInput label="Nombre para mostrar" value={displayName} onChange={(e) => setDisplayName(e.currentTarget.value)} placeholder="Ej: Ana" />}
+            {setup && <TextInput label="Nombre para mostrar" value={displayName} onChange={(e) => setDisplayName(e.currentTarget.value)} placeholder="Ej: Iván" />}
             <PasswordInput
               label="Contraseña"
               value={password}

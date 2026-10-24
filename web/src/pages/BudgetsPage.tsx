@@ -333,9 +333,6 @@ export function BudgetsPage() {
       {unbudgeted.length > 0 && (
         <Card>
           <Title order={4}>Gastos sin presupuesto este mes</Title>
-          <Text size="xs" c="dimmed" mb="sm">
-            Categorías con gastos que no tienen límite definido.
-          </Text>
           <Table verticalSpacing={6}>
             <Table.Tbody>
               {unbudgeted.map((c) => (

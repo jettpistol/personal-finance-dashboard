@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ActionIcon,
   AppShell,
@@ -9,6 +9,7 @@ import {
   Indicator,
   Menu,
   NavLink,
+  NumberInput,
   Popover,
   ScrollArea,
   Select,
@@ -21,6 +22,9 @@ import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import {
   IconArrowsExchange,
   IconBell,
+  IconCalendar,
+  IconChevronDown,
+  IconChevronUp,
   IconBuildingBank,
   IconCalendarCheck,
   IconChartPie,
@@ -282,13 +286,11 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 /** Simple page title row with optional actions on the right. */
-export function PageHeader({ title, description, actions, badge }: { title: string; description?: ReactNode; actions?: ReactNode; badge?: string }) {
+// Page descriptions are intentionally not shown: the app should read without explanatory subtitles.
+export function PageHeader({ title, actions, badge }: { title: string; description?: ReactNode; actions?: ReactNode; badge?: string }) {
   return (
     <nav className="pfd-crumbs" aria-label="Ubicación">
       <div className="pfd-crumbs-path">
-        <Link to="/" className="pfd-crumbs-home" aria-label="Inicio">
-          <IconHome size={16} stroke={1.8} />
-        </Link>
         <div className="pfd-crumbs-title">
           <Group gap="xs" wrap="nowrap">
             <Text component="h1" fz={19} fw={700} m={0} lh={1.25}>
@@ -296,11 +298,6 @@ export function PageHeader({ title, description, actions, badge }: { title: stri
             </Text>
             {badge && <span className="pfd-tag">{badge}</span>}
           </Group>
-          {description && (
-            <Text c="var(--pfd-ink-2)" size="xs" mt={1}>
-              {description}
-            </Text>
-          )}
         </div>
       </div>
       {actions && <div className="pfd-crumbs-actions">{actions}</div>}
@@ -321,15 +318,50 @@ function AppFooter() {
   );
 }
 
-/** Month selector used across pages (previous / next / pick). */
-export function MonthSelect({ value, onChange, months = 24 }: { value: string; onChange: (m: string) => void; months?: number }) {
-  const now = new Date();
-  const data: { value: string; label: string }[] = [];
-  for (let i = -3; i < months; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const label = d.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
-    data.push({ value: v, label: label.charAt(0).toUpperCase() + label.slice(1) });
-  }
-  return <Select size="xs" w={170} data={data} value={value} onChange={(v) => v && onChange(v)} allowDeselect={false} aria-label="Mes" />;
+const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+/** Month selector: up moves forward in time, down moves back; the field opens a month + year picker. */
+export function MonthSelect({ value, onChange }: { value: string; onChange: (m: string) => void; months?: number }) {
+  const [open, setOpen] = useState(false);
+  const [y, m] = value.split('-').map(Number);
+  const go = (year: number, month: number) => onChange(`${year}-${String(month).padStart(2, '0')}`);
+  return (
+    <Group gap={4} wrap="nowrap" className="pfd-month">
+      <Popover opened={open} onChange={setOpen} position="bottom-end" withArrow trapFocus>
+        <Popover.Target>
+          <Button variant="default" size="xs" w={156} justify="space-between" rightSection={<IconCalendar size={14} />} onClick={() => setOpen((o) => !o)} aria-label="Elegir mes">
+            {MONTHS[m - 1]} {y}
+          </Button>
+        </Popover.Target>
+        <Popover.Dropdown>
+          <Group gap="xs" wrap="nowrap" align="flex-end">
+            <Select
+              label="Mes"
+              w={140}
+              data={MONTHS.map((name, i) => ({ value: String(i + 1), label: name }))}
+              value={String(m)}
+              onChange={(v) => v && go(y, Number(v))}
+              allowDeselect={false}
+              comboboxProps={{ withinPortal: false }}
+            />
+            <NumberInput label="Año" w={92} min={2000} max={2100} value={y} onChange={(v) => typeof v === 'number' && v >= 2000 && v <= 2100 && go(v, m)} />
+          </Group>
+        </Popover.Dropdown>
+      </Popover>
+      <div className="pfd-month-arrows">
+        <UnstyledButton aria-label="Mes siguiente" onClick={() => onChange(shiftMonth(value, 1))}>
+          <IconChevronUp size={13} stroke={2.2} />
+        </UnstyledButton>
+        <UnstyledButton aria-label="Mes anterior" onClick={() => onChange(shiftMonth(value, -1))}>
+          <IconChevronDown size={13} stroke={2.2} />
+        </UnstyledButton>
+      </div>
+    </Group>
+  );
+}
+
+function shiftMonth(month: string, n: number): string {
+  const [y, m] = month.split('-').map(Number);
+  const t = y * 12 + (m - 1) + n;
+  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
 }

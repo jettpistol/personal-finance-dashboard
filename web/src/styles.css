@@ -368,6 +368,9 @@ a {
   --pfd-btn-top: #ffffff;
   --pfd-btn-bottom: #eaeef3;
   --pfd-btn-edge: #aeb9c8;
+  --pfd-tint-top: #eef4fb;
+  --pfd-tint-bottom: #dbe7f5;
+  --pfd-tint-edge: #b9cbe3;
 }
 
 [data-mantine-color-scheme='dark'] {
@@ -382,6 +385,9 @@ a {
   --pfd-btn-top: #2a3444;
   --pfd-btn-bottom: #1f2733;
   --pfd-btn-edge: #3d4a5e;
+  --pfd-tint-top: #1f3048;
+  --pfd-tint-bottom: #192739;
+  --pfd-tint-edge: #2c4262;
 }
 
 /* Dark top bar with divided, pressed-in tabs. */
@@ -500,25 +506,10 @@ a {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-.mantine-Card-root[data-bar='blue'] {
-  border-color: var(--pfd-blue-edge);
-}
-
 .mantine-Card-root[data-bar='blue'] > .mantine-Title-root:first-child,
 .mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child {
-  background: linear-gradient(var(--pfd-blue-top), var(--pfd-blue-bottom));
-  border-bottom-color: var(--pfd-blue-edge);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  color: #fff;
-}
-
-.mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Title-root,
-.mantine-Card-root[data-bar='blue'] > .mantine-Title-root:first-child {
-  color: #fff;
-}
-
-.mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Text-root {
-  color: #dbe6f4;
+  background: linear-gradient(var(--pfd-tint-top), var(--pfd-tint-bottom));
+  border-bottom-color: var(--pfd-tint-edge);
 }
 
 /* Small "ver / más" buttons inside a title bar. */
@@ -680,18 +671,6 @@ a {
   color: var(--pfd-ink-2);
 }
 
-/* Buttons inside a blue bar keep dark ink on their light face; other bar text is light. */
-.mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Text-root:not(.mantine-Anchor-root) {
-  color: #dbe6f4 !important;
-}
-
-[data-mantine-color-scheme='light'] .mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Anchor-root {
-  color: var(--mantine-color-navy-9) !important;
-}
-
-[data-mantine-color-scheme='dark'] .mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Anchor-root {
-  color: #e6edf6 !important;
-}
 
 /* On a phone the compact list keeps descriptions readable: only "Pendiente" stays tagged. */
 @media (max-width: 48em) {
@@ -727,4 +706,129 @@ a {
   margin-left: 1px;
   color: var(--pfd-real);
   font-weight: 700;
+}
+
+/* Highlighted button in the sidebar's color (both color modes). */
+.pfd-rail-btn {
+  --button-bg: var(--pfd-rail);
+  --button-hover: var(--pfd-rail-2);
+  --button-color: #fff;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0)) !important;
+  border: 1px solid rgba(0, 0, 0, 0.35) !important;
+  color: #fff !important;
+}
+
+[data-mantine-color-scheme='dark'] .pfd-rail-btn {
+  border-color: var(--pfd-rail-ink-2) !important;
+}
+
+/* Month picker arrows: up = next month, down = previous month. */
+.pfd-month-arrows {
+  display: flex;
+  flex-direction: column;
+  height: 30px;
+  border: 1px solid var(--pfd-btn-edge);
+}
+
+.pfd-month-arrows > button {
+  flex: 1;
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pfd-ink-2);
+  background-image: linear-gradient(var(--pfd-btn-top), var(--pfd-btn-bottom));
+}
+
+.pfd-month-arrows > button + button {
+  border-top: 1px solid var(--pfd-btn-edge);
+}
+
+.pfd-month-arrows > button:hover {
+  color: var(--mantine-color-navy-8);
+}
+
+.pfd-month-arrows > button:active {
+  background-image: none;
+  box-shadow: inset 0 1px 3px rgba(15, 42, 74, 0.25);
+}
+
+/* Field help lives behind an (i) next to the label, shown on hover, so descriptions never
+   push fields out of line. Screen readers still get it through aria-describedby. */
+.mantine-InputWrapper-root {
+  position: relative;
+}
+
+.mantine-InputWrapper-root:has(> .mantine-InputWrapper-description) > .mantine-InputWrapper-label::after,
+.mantine-Switch-labelWrapper:has(.mantine-Switch-description) .mantine-Switch-label::after,
+.mantine-Checkbox-labelWrapper:has(.mantine-Checkbox-description) .mantine-Checkbox-label::after {
+  content: 'i';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  margin-left: 6px;
+  border: 1px solid var(--pfd-ink-2);
+  border-radius: 50%;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 700;
+  font-style: normal;
+  color: var(--pfd-ink-2);
+  vertical-align: middle;
+  margin-top: -2px;
+  cursor: help;
+}
+
+.mantine-InputWrapper-root > .mantine-InputWrapper-description,
+.mantine-Switch-description,
+.mantine-Checkbox-description {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  top: 100%;
+  margin-top: 4px;
+  max-width: 300px;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #fff;
+  background: #1b2434;
+  box-shadow: var(--mantine-shadow-sm);
+  pointer-events: none;
+  display: none;
+}
+
+.mantine-InputWrapper-root > .mantine-InputWrapper-description {
+  top: 22px;
+}
+
+.mantine-Switch-labelWrapper,
+.mantine-Checkbox-labelWrapper {
+  position: relative;
+}
+
+.mantine-InputWrapper-root:has(> .mantine-InputWrapper-label:hover) > .mantine-InputWrapper-description,
+.mantine-Switch-labelWrapper:has(.mantine-Switch-label:hover) .mantine-Switch-description,
+.mantine-Checkbox-labelWrapper:has(.mantine-Checkbox-label:hover) .mantine-Checkbox-description {
+  display: block;
+}
+
+/* Switch: pointer cursor, and clicks only count on the control and its label. */
+.mantine-Switch-track,
+.mantine-Switch-label,
+.mantine-Checkbox-input,
+.mantine-Checkbox-label {
+  cursor: pointer;
+}
+
+.mantine-Switch-root,
+.mantine-Switch-body {
+  width: fit-content;
+}
+
+/* Mantine offsets a field that has a description; with the help moved to the (i), keep it in line. */
+.mantine-InputWrapper-root > .mantine-InputWrapper-description + * {
+  margin-top: 0 !important;
 }

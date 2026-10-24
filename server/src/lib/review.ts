@@ -234,7 +234,7 @@ export async function buildReviewDocx(month: string, scope: Scope, viewer: numbe
     const lines = bal.flatMap((b) =>
       b.settlements.map((st) => `${users.find((u) => u.id === st.from)?.display_name} le debe ${formatMoney(st.amount, b.currency)} a ${users.find((u) => u.id === st.to)?.display_name}`),
     );
-    children.push(heading('Saldos entre ustedes'));
+    children.push(heading('Saldo compartido'));
     children.push(new Paragraph({ children: [new TextRun({ text: lines.length ? lines.join(' · ') : 'Están a mano. 🎉', size: 22 })] }));
   }
 

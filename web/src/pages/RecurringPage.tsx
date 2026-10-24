@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActionIcon,
-  Alert,
   Badge,
   Button,
   Card,
   Collapse,
   Group,
+  Input,
   Modal,
   NumberInput,
   SegmentedControl,
@@ -23,7 +23,7 @@ import {
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
-import { IconCheck, IconEdit, IconInfoCircle, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
+import { IconCheck, IconEdit, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { api, qs } from '../lib/api';
 import { useApp } from '../lib/app-state';
@@ -32,6 +32,7 @@ import { categoryLabel, notifyError, notifyOk, useAccounts, useCategories, useRe
 import type { Recurring, SplitMethod, TxList } from '../lib/types';
 import { PageHeader } from '../components/Layout';
 import { AccountSelect, CategorySelect, MoneyInput } from '../components/inputs';
+import { SplitEditor, splitProblem } from '../components/SplitEditor';
 
 const FREQ: Record<Recurring['frequency'], [string, string]> = {
   weekly: ['Semanal', 'semanas'],
@@ -56,9 +57,6 @@ export function RecurringPage() {
           </Button>
         }
       />
-      <Alert color="blue" variant="light" icon={<IconInfoCircle size={16} />} mb="md">
-        Cada vez que vence se crea un movimiento pendiente que tenés que confirmar con el monto real. Los pendientes no cuentan en los totales hasta que los confirmás.
-      </Alert>
       <Stack>
         <PendingSection />
         <TemplatesSection onEdit={setEditing} />
@@ -360,16 +358,14 @@ function RecurringModal({ recurring, onClose }: { recurring: Recurring | null; o
     if (a) setForm((f) => ({ ...f, account_id: a.id }));
   }, [accounts.data, recurring, form.account_id, me.id]);
 
-  const defaultSplitLabel = useMemo(() => {
-    const cfg = settings.data?.default_split ?? {};
-    const hasCfg = Object.values(cfg).some((v) => v > 0);
-    return users.map((u) => `${u.display_name} ${hasCfg ? (cfg[u.id] ?? 0) : Math.round(100 / users.length)}%`).join(' / ');
-  }, [settings.data, users]);
 
-  const splitSum = users.reduce((a, u) => a + Number(form.split_values[u.id] ?? 0), 0);
 
   const save = async () => {
+    if (!form.description.trim()) return notifyError(new Error('Escribí una descripción (por ejemplo «Alquiler»).'));
     if (!form.account_id) return notifyError(new Error('Elegí una cuenta.'));
+    if (!(toCents(form.amount) > 0)) return notifyError(new Error('Ingresá el monto estimado.'));
+    const splitIssue = form.type === 'expense' && form.is_shared ? splitProblem(form.split_method, form.split_values, users, toCents(form.amount), account?.currency) : null;
+    if (splitIssue) return notifyError(new Error(splitIssue));
     setSaving(true);
     const shared = form.type === 'expense' && form.is_shared;
     const split = !shared
@@ -429,19 +425,24 @@ function RecurringModal({ recurring, onClose }: { recurring: Recurring | null; o
           <AccountSelect label="Cuenta" value={form.account_id} onChange={(v) => set('account_id', v)} writableOnly required />
         </SimpleGrid>
         <CategorySelect label="Categoría" kind={form.type} value={form.category_id} onChange={(v) => set('category_id', v)} />
-        <SimpleGrid cols={{ base: 2, xs: 4 }}>
-          <Select
-            label="Frecuencia"
-            value={form.frequency}
-            onChange={(v) => set('frequency', (v ?? 'monthly') as Form['frequency'])}
-            allowDeselect={false}
-            data={[
-              { value: 'weekly', label: 'Semanal' },
-              { value: 'monthly', label: 'Mensual' },
-              { value: 'yearly', label: 'Anual' },
-            ]}
-          />
-          <NumberInput label="Cada" min={1} max={24} value={form.interval} onChange={(v) => set('interval', v)} suffix={` ${FREQ[form.frequency][1]}`} />
+        <SimpleGrid cols={{ base: 1, xs: 3 }}>
+          <Input.Wrapper label="Frecuencia">
+            <Group gap={6} wrap="nowrap">
+              <NumberInput aria-label="Cada cuántos" min={1} max={24} w={72} value={form.interval} onChange={(v) => set('interval', v)} />
+              <Select
+                aria-label="Unidad"
+                style={{ flex: 1 }}
+                value={form.frequency}
+                onChange={(v) => set('frequency', (v ?? 'monthly') as Form['frequency'])}
+                allowDeselect={false}
+                data={[
+                  { value: 'weekly', label: Number(form.interval) === 1 ? 'semana' : 'semanas' },
+                  { value: 'monthly', label: Number(form.interval) === 1 ? 'mes' : 'meses' },
+                  { value: 'yearly', label: Number(form.interval) === 1 ? 'año' : 'años' },
+                ]}
+              />
+            </Group>
+          </Input.Wrapper>
           <DateInput label="Próximo vencimiento" valueFormat="DD/MM/YYYY" value={form.next_date} onChange={(v) => v && set('next_date', v)} required />
           <DateInput label="Hasta (opcional)" valueFormat="DD/MM/YYYY" value={form.end_date} onChange={(v) => set('end_date', v)} clearable />
         </SimpleGrid>
@@ -450,38 +451,15 @@ function RecurringModal({ recurring, onClose }: { recurring: Recurring | null; o
           <Stack gap={6}>
             <Switch label="Gasto compartido" checked={form.is_shared} onChange={(e) => set('is_shared', e.currentTarget.checked)} />
             <Collapse in={form.is_shared}>
-              <Stack gap="xs" pl="md">
-                <Select
-                  label="División"
-                  value={form.split_method}
-                  onChange={(v) => set('split_method', (v ?? 'default') as SplitMethod)}
-                  allowDeselect={false}
-                  data={[
-                    { value: 'default', label: `Por defecto (${defaultSplitLabel})` },
-                    { value: 'equal', label: 'Partes iguales' },
-                    { value: 'percent', label: 'Porcentajes' },
-                    { value: 'exact', label: 'Montos exactos' },
-                  ]}
-                />
-                {(form.split_method === 'percent' || form.split_method === 'exact') && (
-                  <>
-                    <SimpleGrid cols={users.length}>
-                      {users.map((u) =>
-                        form.split_method === 'percent' ? (
-                          <NumberInput key={u.id} label={u.display_name} suffix="%" min={0} max={100} decimalSeparator="," value={form.split_values[u.id] ?? ''} onChange={(v) => set('split_values', { ...form.split_values, [u.id]: v })} />
-                        ) : (
-                          <MoneyInput key={u.id} label={u.display_name} currency={account?.currency} value={form.split_values[u.id] ?? ''} onChange={(v) => set('split_values', { ...form.split_values, [u.id]: v })} />
-                        ),
-                      )}
-                    </SimpleGrid>
-                    <Text size="xs" c="dimmed">
-                      {form.split_method === 'percent'
-                        ? `Suma: ${splitSum}% (debe ser 100%)`
-                        : `Suma: ${money(toCents(splitSum), account?.currency)}. Si el monto real cambia al confirmar, se reparte en la misma proporción.`}
-                    </Text>
-                  </>
-                )}
-              </Stack>
+              <SplitEditor
+                method={form.split_method}
+                values={form.split_values}
+                onChange={(m, v) => setForm((f) => ({ ...f, split_method: m, split_values: v }))}
+                users={users}
+                total={toCents(form.amount)}
+                currency={account?.currency}
+                defaultSplit={settings.data?.default_split}
+              />
             </Collapse>
           </Stack>
         )}

@@ -114,9 +114,6 @@ export function TrendTab({ p }: { p: ReportParams }) {
         <Title order={5} mb={4}>
           Gastos por categoría
         </Title>
-        <Text size="xs" c="dimmed" mb="md">
-          Categorías principales; las más chicas se agrupan en «Otros».
-        </Text>
         <BarChart h={320} data={folded.data} dataKey="month" type="stacked" series={folded.series} valueFormatter={fmt} withLegend legendProps={{ verticalAlign: 'bottom' }} gridAxis="y" maxBarWidth={44} />
       </Card>
       <Card>
@@ -243,9 +240,6 @@ export function YearTab({ p }: { p: ReportParams }) {
               <Title order={5} mb={4}>
                 Gastos por mes y categoría
               </Title>
-              <Text size="xs" c="dimmed" mb="md">
-                Cuanto más intenso el fondo, mayor el gasto.
-              </Text>
               <Table.ScrollContainer minWidth={900}>
                 <Table verticalSpacing={4} fz="xs" withColumnBorders>
                   <Table.Thead>
@@ -342,9 +336,6 @@ export function SavingsTab({ p }: { p: ReportParams }) {
         <Title order={5} mb={4}>
           Tasa de ahorro por mes
         </Title>
-        <Text size="xs" c="dimmed" mb="md">
-          Porcentaje de los ingresos que no se gastó. Debajo de 0 = se gastó más de lo que entró.
-        </Text>
         <BarChart
           h={260}
           data={rateData}
@@ -413,9 +404,6 @@ export function NetWorthTab({ p }: { p: ReportParams }) {
         <Title order={5} mb={4}>
           Evolución del patrimonio
         </Title>
-        <Text size="xs" c="dimmed" mb="md">
-          {p.scope === 'household' ? 'Todas las cuentas que podés ver (comunes y personales no privadas).' : 'Cuentas de esta persona.'} Saldo a fin de cada mes, convertido al dólar BNA de ese día.
-        </Text>
         <AreaChart h={260} data={totalData} dataKey="month" series={[{ name: 'Patrimonio', color: 'blue.6' }]} valueFormatter={fmt} curveType="monotone" gridAxis="y" withDots={false} />
       </Card>
       <SimpleGrid cols={{ base: 1, md: 2 }}>
@@ -502,9 +490,6 @@ export function PeopleTab({ currency }: { currency: Currency }) {
             <Title order={5} mb={4}>
               Gastos compartidos: parte de cada uno vs. lo que pagó
             </Title>
-            <Text size="xs" c="dimmed" mb="md">
-              Si alguien pagó más que su parte, el otro le debe la diferencia (ver Gastos compartidos).
-            </Text>
             <BarChart
               h={240}
               data={people.map((u) => ({ name: u.name, 'Su parte': units(u.shared_share), 'Pagó': units(u.paid_for_shared) }))}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Anchor,
@@ -11,7 +11,6 @@ import {
   Modal,
   NumberInput,
   SegmentedControl,
-  Select,
   SimpleGrid,
   Stack,
   Switch,
@@ -31,6 +30,7 @@ import { compressImage } from '../lib/image';
 import { notifyError, notifyOk, useAccounts, useRefreshData, useSettings, useTags } from '../lib/queries';
 import type { SplitMethod, Tx, TxType } from '../lib/types';
 import { AccountSelect, CategorySelect, MoneyInput } from './inputs';
+import { SplitEditor, splitProblem } from './SplitEditor';
 
 type Form = {
   type: TxType;
@@ -135,11 +135,6 @@ export function TxFormModal() {
   const tx = existing.data;
   const readOnly = !!tx && !tx.can_edit;
 
-  const defaultSplitLabel = useMemo(() => {
-    const cfg = settings.data?.default_split ?? {};
-    const hasCfg = Object.values(cfg).some((v) => v > 0);
-    return users.map((u) => `${u.display_name} ${hasCfg ? (cfg[u.id] ?? 0) : Math.round(100 / users.length)}%`).join(' / ');
-  }, [settings.data, users]);
 
   const suggest = async () => {
     if (editId || !form.description.trim() || (form.type !== 'expense' && form.type !== 'income')) return;
@@ -176,6 +171,8 @@ export function TxFormModal() {
 
   const save = async () => {
     if (!form.account_id) return notifyError(new Error('Elegí una cuenta.'));
+    const splitIssue = form.type === 'expense' && form.is_shared ? splitProblem(form.split_method, form.split_values, users, toCents(form.amount), account?.currency) : null;
+    if (splitIssue) return notifyError(new Error(splitIssue));
     setSaving(true);
     try {
       const base = {
@@ -262,7 +259,6 @@ export function TxFormModal() {
     }
   };
 
-  const splitSum = users.reduce((a, u) => a + Number(form.split_values[u.id] ?? 0), 0);
 
   return (
     <Modal opened onClose={closeTx} title={<Text fw={700}>{editId ? 'Editar movimiento' : 'Nuevo movimiento'}</Text>} size="lg" fullScreen={window.innerWidth < 600}>
@@ -370,35 +366,16 @@ export function TxFormModal() {
                 onChange={(e) => set('is_shared', e.currentTarget.checked)}
               />
               <Collapse in={form.is_shared}>
-                <Stack gap="xs" pl="md">
-                  <Select
-                    label="División"
-                    value={form.split_method}
-                    onChange={(v) => set('split_method', (v ?? 'default') as SplitMethod)}
-                    data={[
-                      { value: 'default', label: `Por defecto (${defaultSplitLabel})` },
-                      { value: 'equal', label: 'Partes iguales' },
-                      { value: 'percent', label: 'Porcentajes' },
-                      { value: 'exact', label: 'Montos exactos' },
-                    ]}
-                    allowDeselect={false}
+                <Stack gap="xs">
+                  <SplitEditor
+                    method={form.split_method}
+                    values={form.split_values}
+                    onChange={(m, v) => setForm((f) => ({ ...f, split_method: m, split_values: v }))}
+                    users={users}
+                    total={toCents(form.amount)}
+                    currency={account?.currency}
+                    defaultSplit={settings.data?.default_split}
                   />
-                  {(form.split_method === 'percent' || form.split_method === 'exact') && (
-                    <>
-                      <SimpleGrid cols={users.length}>
-                        {users.map((u) =>
-                          form.split_method === 'percent' ? (
-                            <NumberInput key={u.id} label={u.display_name} suffix="%" min={0} max={100} decimalSeparator="," value={form.split_values[u.id] ?? ''} onChange={(v) => set('split_values', { ...form.split_values, [u.id]: v })} />
-                          ) : (
-                            <MoneyInput key={u.id} label={u.display_name} currency={account?.currency} value={form.split_values[u.id] ?? ''} onChange={(v) => set('split_values', { ...form.split_values, [u.id]: v })} />
-                          ),
-                        )}
-                      </SimpleGrid>
-                      <Text size="xs" c={form.split_method === 'percent' ? (Math.abs(splitSum - 100) < 0.01 ? 'teal' : 'red') : Math.abs(splitSum - Number(form.amount || 0)) < 0.005 ? 'teal' : 'red'}>
-                        {form.split_method === 'percent' ? `Suma: ${splitSum}% (debe ser 100%)` : `Suma: ${money(toCents(splitSum), account?.currency)} de ${money(toCents(form.amount), account?.currency)}`}
-                      </Text>
-                    </>
-                  )}
                   {account?.owner_id === null && <Text size="xs" c="dimmed">Pagado con una cuenta común: se reparte en los totales personales pero no genera deuda.</Text>}
                 </Stack>
               </Collapse>

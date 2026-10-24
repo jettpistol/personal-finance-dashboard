@@ -24,8 +24,8 @@ const between = (a: number, b: number) => Math.round(a + rnd() * (b - a));
 
 const PASSWORD = 'demo-finanzas';
 const insertUser = db().prepare('INSERT INTO users (username, display_name, password_hash, color) VALUES (?, ?, ?, ?)');
-const ana = Number(insertUser.run('ana', 'Ana', await hashPassword(PASSWORD), 'pink').lastInsertRowid);
-const beto = Number(insertUser.run('beto', 'Beto', await hashPassword(PASSWORD), 'blue').lastInsertRowid);
+const ivan = Number(insertUser.run('ivan', 'Iván', await hashPassword(PASSWORD), 'pink').lastInsertRowid);
+const milagros = Number(insertUser.run('milagros', 'Milagros', await hashPassword(PASSWORD), 'blue').lastInsertRowid);
 
 const cat = Object.fromEntries((db().prepare('SELECT id, name FROM categories').all() as { id: number; name: string }[]).map((c) => [c.name, c.id]));
 const acc = (name: string, type: string, currency: string, owner: number | null, opening: number, priv = 0) =>
@@ -36,14 +36,14 @@ const acc = (name: string, type: string, currency: string, owner: number | null,
 
 const joint = acc('Cuenta común Galicia', 'bank', 'ARS', null, 350_000);
 const jointCash = acc('Efectivo casa', 'cash', 'ARS', null, 40_000);
-const anaBank = acc('Santander Ana', 'bank', 'ARS', ana, 600_000);
-const anaMp = acc('Mercado Pago Ana', 'wallet', 'ARS', ana, 80_000);
-const anaCard = acc('Visa Ana', 'credit_card', 'ARS', ana, 0);
-const anaUsd = acc('Dólares Ana', 'savings', 'USD', ana, 1_500);
-const anaPrivate = acc('Ahorro personal Ana', 'savings', 'ARS', ana, 250_000, 1);
-const betoBank = acc('BBVA Beto', 'bank', 'ARS', beto, 420_000);
-const betoMp = acc('Mercado Pago Beto', 'wallet', 'ARS', beto, 60_000);
-const betoInv = acc('Inversiones Beto (FCI)', 'investment', 'ARS', beto, 900_000);
+const ivanBank = acc('Santander Iván', 'bank', 'ARS', ivan, 600_000);
+const ivanMp = acc('Mercado Pago Iván', 'wallet', 'ARS', ivan, 80_000);
+const ivanCard = acc('Visa Iván', 'credit_card', 'ARS', ivan, 0);
+const ivanUsd = acc('Dólares Iván', 'savings', 'USD', ivan, 1_500);
+const ivanPrivate = acc('Ahorro personal Iván', 'savings', 'ARS', ivan, 250_000, 1);
+const milagrosBank = acc('BBVA Milagros', 'bank', 'ARS', milagros, 420_000);
+const milagrosMp = acc('Mercado Pago Milagros', 'wallet', 'ARS', milagros, 60_000);
+const milagrosInv = acc('Inversiones Milagros (FCI)', 'investment', 'ARS', milagros, 900_000);
 const jointUsd = acc('Dólares viaje', 'savings', 'USD', null, 800);
 
 const start = addMonthsToMonth(currentMonth(), -5);
@@ -71,49 +71,49 @@ for (let m = start; m <= currentMonth(); m = addMonthsToMonth(m, 1)) {
   const d = (day: number) => `${m}-${String(Math.min(day, Number(monthEnd(m).slice(8)))).padStart(2, '0')}`;
   const inflation = 1 + 0.02 * (Number(m.slice(5)) % 12);
 
-  tx(ana, { type: 'income', date: d(1), amount: $(1_450_000 * inflation), account_id: anaBank, category_id: cat['Sueldo'], description: 'Sueldo Ana' });
-  tx(beto, { type: 'income', date: d(2), amount: $(1_100_000 * inflation), account_id: betoBank, category_id: cat['Sueldo'], description: 'Sueldo Beto' });
-  if (rnd() > 0.4) tx(beto, { type: 'income', date: d(18), amount: $(between(150_000, 400_000)), account_id: betoMp, category_id: cat['Freelance'], description: 'Proyecto freelance' });
+  tx(ivan, { type: 'income', date: d(1), amount: $(1_450_000 * inflation), account_id: ivanBank, category_id: cat['Sueldo'], description: 'Sueldo Iván' });
+  tx(milagros, { type: 'income', date: d(2), amount: $(1_100_000 * inflation), account_id: milagrosBank, category_id: cat['Sueldo'], description: 'Sueldo Milagros' });
+  if (rnd() > 0.4) tx(milagros, { type: 'income', date: d(18), amount: $(between(150_000, 400_000)), account_id: milagrosMp, category_id: cat['Freelance'], description: 'Proyecto freelance' });
 
   // Contributions to the joint pot.
-  tx(ana, { type: 'transfer', date: d(3), amount: $(700_000 * inflation), account_id: anaBank, to_account_id: joint, description: 'Aporte a la cuenta común' });
-  tx(beto, { type: 'transfer', date: d(3), amount: $(550_000 * inflation), account_id: betoBank, to_account_id: joint, description: 'Aporte a la cuenta común' });
+  tx(ivan, { type: 'transfer', date: d(3), amount: $(700_000 * inflation), account_id: ivanBank, to_account_id: joint, description: 'Aporte a la cuenta común' });
+  tx(milagros, { type: 'transfer', date: d(3), amount: $(550_000 * inflation), account_id: milagrosBank, to_account_id: joint, description: 'Aporte a la cuenta común' });
 
-  tx(ana, { type: 'expense', date: d(5), amount: $(620_000 * inflation), account_id: joint, category_id: cat['Alquiler'], description: 'Alquiler depto' });
-  tx(ana, { type: 'expense', date: d(8), amount: $(95_000 * inflation), account_id: joint, category_id: cat['Expensas'], description: 'Expensas' });
-  tx(beto, { type: 'expense', date: d(12), amount: $(between(28_000, 42_000)), account_id: joint, category_id: cat['Luz'], description: 'Edenor' });
-  tx(beto, { type: 'expense', date: d(14), amount: $(between(18_000, 30_000)), account_id: joint, category_id: cat['Gas'], description: 'Metrogas' });
-  tx(ana, { type: 'expense', date: d(10), amount: $(32_000), account_id: joint, category_id: cat['Internet'], description: 'Fibertel' });
-  tx(ana, { type: 'expense', date: d(4), amount: $(12_999), account_id: anaCard, category_id: cat['Streaming'], description: 'Netflix', is_shared: true });
-  tx(beto, { type: 'expense', date: d(6), amount: $(8_500), account_id: betoMp, category_id: cat['Streaming'], description: 'Spotify familiar', is_shared: true });
-  tx(ana, { type: 'expense', date: d(9), amount: $(45_000), account_id: anaBank, category_id: cat['Gimnasio'], description: 'Gimnasio' });
+  tx(ivan, { type: 'expense', date: d(5), amount: $(620_000 * inflation), account_id: joint, category_id: cat['Alquiler'], description: 'Alquiler depto' });
+  tx(ivan, { type: 'expense', date: d(8), amount: $(95_000 * inflation), account_id: joint, category_id: cat['Expensas'], description: 'Expensas' });
+  tx(milagros, { type: 'expense', date: d(12), amount: $(between(28_000, 42_000)), account_id: joint, category_id: cat['Luz'], description: 'Edenor' });
+  tx(milagros, { type: 'expense', date: d(14), amount: $(between(18_000, 30_000)), account_id: joint, category_id: cat['Gas'], description: 'Metrogas' });
+  tx(ivan, { type: 'expense', date: d(10), amount: $(32_000), account_id: joint, category_id: cat['Internet'], description: 'Fibertel' });
+  tx(ivan, { type: 'expense', date: d(4), amount: $(12_999), account_id: ivanCard, category_id: cat['Streaming'], description: 'Netflix', is_shared: true });
+  tx(milagros, { type: 'expense', date: d(6), amount: $(8_500), account_id: milagrosMp, category_id: cat['Streaming'], description: 'Spotify familiar', is_shared: true });
+  tx(ivan, { type: 'expense', date: d(9), amount: $(45_000), account_id: ivanBank, category_id: cat['Gimnasio'], description: 'Gimnasio' });
 
-  tx(ana, { type: 'transfer', date: d(4), amount: $(70_000), account_id: joint, to_account_id: jointCash, description: 'Extracción cajero' });
+  tx(ivan, { type: 'transfer', date: d(4), amount: $(70_000), account_id: joint, to_account_id: jointCash, description: 'Extracción cajero' });
   for (let w = 0; w < 4; w++) {
-    tx(w % 2 ? beto : ana, { type: 'expense', date: d(3 + w * 7), amount: $(between(55_000, 95_000)), account_id: joint, category_id: cat['Almacén'], description: ['Coto', 'Carrefour', 'Día', 'Jumbo'][w], merchant: ['Coto', 'Carrefour', 'Día', 'Jumbo'][w] });
-    tx(w % 2 ? ana : beto, { type: 'expense', date: d(5 + w * 7), amount: $(between(9_000, 18_000)), account_id: jointCash, category_id: cat['Verdulería'], description: 'Verdulería del barrio' });
-    tx(ana, { type: 'expense', date: d(6 + w * 7), amount: $(between(3_000, 9_000)), account_id: anaMp, category_id: cat['Transporte público'], description: 'Carga SUBE' });
+    tx(w % 2 ? milagros : ivan, { type: 'expense', date: d(3 + w * 7), amount: $(between(55_000, 95_000)), account_id: joint, category_id: cat['Almacén'], description: ['Coto', 'Carrefour', 'Día', 'Jumbo'][w], merchant: ['Coto', 'Carrefour', 'Día', 'Jumbo'][w] });
+    tx(w % 2 ? ivan : milagros, { type: 'expense', date: d(5 + w * 7), amount: $(between(9_000, 18_000)), account_id: jointCash, category_id: cat['Verdulería'], description: 'Verdulería del barrio' });
+    tx(ivan, { type: 'expense', date: d(6 + w * 7), amount: $(between(3_000, 9_000)), account_id: ivanMp, category_id: cat['Transporte público'], description: 'Carga SUBE' });
   }
-  tx(beto, { type: 'expense', date: d(11), amount: $(between(40_000, 70_000)), account_id: betoMp, category_id: cat['Restaurantes'], description: 'Cena afuera', is_shared: true });
-  tx(ana, { type: 'expense', date: d(19), amount: $(between(20_000, 35_000)), account_id: anaMp, category_id: cat['Delivery'], description: 'PedidosYa', merchant: 'PedidosYa', is_shared: true });
-  tx(beto, { type: 'expense', date: d(23), amount: $(between(25_000, 60_000)), account_id: betoBank, category_id: cat['Cine y eventos'], description: 'Recital', is_shared: true, split: { method: 'percent', values: [{ user_id: ana, value: 40 }, { user_id: beto, value: 60 }] } });
-  tx(ana, { type: 'expense', date: d(15), amount: $(between(15_000, 40_000)), account_id: anaCard, category_id: cat['Ropa'], description: 'Zara' });
-  tx(beto, { type: 'expense', date: d(16), amount: $(between(8_000, 25_000)), account_id: betoMp, category_id: cat['Farmacia'], description: 'Farmacity' });
-  tx(ana, { type: 'expense', date: d(20), amount: $(between(10_000, 30_000)), account_id: anaPrivate, category_id: cat['Regalos'], description: 'Regalo sorpresa para Beto' });
+  tx(milagros, { type: 'expense', date: d(11), amount: $(between(40_000, 70_000)), account_id: milagrosMp, category_id: cat['Restaurantes'], description: 'Cena afuera', is_shared: true });
+  tx(ivan, { type: 'expense', date: d(19), amount: $(between(20_000, 35_000)), account_id: ivanMp, category_id: cat['Delivery'], description: 'PedidosYa', merchant: 'PedidosYa', is_shared: true });
+  tx(milagros, { type: 'expense', date: d(23), amount: $(between(25_000, 60_000)), account_id: milagrosBank, category_id: cat['Cine y eventos'], description: 'Recital', is_shared: true, split: { method: 'percent', values: [{ user_id: ivan, value: 40 }, { user_id: milagros, value: 60 }] } });
+  tx(ivan, { type: 'expense', date: d(15), amount: $(between(15_000, 40_000)), account_id: ivanCard, category_id: cat['Ropa'], description: 'Zara' });
+  tx(milagros, { type: 'expense', date: d(16), amount: $(between(8_000, 25_000)), account_id: milagrosMp, category_id: cat['Farmacia'], description: 'Farmacity' });
+  tx(ivan, { type: 'expense', date: d(20), amount: $(between(10_000, 30_000)), account_id: ivanPrivate, category_id: cat['Regalos'], description: 'Regalo sorpresa para Milagros' });
   // Pay the card from the bank (a transfer, not spending).
-  tx(ana, { type: 'transfer', date: d(25), amount: $(between(30_000, 60_000)), account_id: anaBank, to_account_id: anaCard, description: 'Pago tarjeta Visa' });
+  tx(ivan, { type: 'transfer', date: d(25), amount: $(between(30_000, 60_000)), account_id: ivanBank, to_account_id: ivanCard, description: 'Pago tarjeta Visa' });
   // Buy dollars for the trip.
-  tx(ana, { type: 'transfer', date: d(21), amount: $(150_000), account_id: joint, to_account_id: jointUsd, to_amount: $(Math.round(150_000 / rate)), description: 'Compra de dólares para el viaje' });
+  tx(ivan, { type: 'transfer', date: d(21), amount: $(150_000), account_id: joint, to_account_id: jointUsd, to_amount: $(Math.round(150_000 / rate)), description: 'Compra de dólares para el viaje' });
   if (m !== currentMonth()) {
-    tx(beto, { type: 'adjustment', date: monthEnd(m), amount: $(between(15_000, 45_000)), account_id: betoInv, description: 'Rendimiento FCI' });
-    tx(beto, { type: 'transfer', date: d(27), amount: $(between(20_000, 60_000)), account_id: betoMp, to_account_id: anaMp, description: 'Le paso lo que le debo', is_settlement: true });
+    tx(milagros, { type: 'adjustment', date: monthEnd(m), amount: $(between(15_000, 45_000)), account_id: milagrosInv, description: 'Rendimiento FCI' });
+    tx(milagros, { type: 'transfer', date: d(27), amount: $(between(20_000, 60_000)), account_id: milagrosMp, to_account_id: ivanMp, description: 'Le paso lo que le debo', is_settlement: true });
   }
 }
 
 // Installments: a fridge in 6 cuotas, shared.
 createInstallmentPlan(
-  { amount: $(1_200_000), count: 6, purchase_date: addMonths(today(), -2), first_date: addMonths(today(), -1), account_id: anaCard, category_id: cat['Hogar'], description: 'Heladera', tags: ['hogar'], is_shared: true, is_private: false },
-  ana,
+  { amount: $(1_200_000), count: 6, purchase_date: addMonths(today(), -2), first_date: addMonths(today(), -1), account_id: ivanCard, category_id: cat['Hogar'], description: 'Heladera', tags: ['hogar'], is_shared: true, is_private: false },
+  ivan,
 );
 
 // Budgets (household + personal).
@@ -121,8 +121,8 @@ const budget = db().prepare('INSERT INTO budgets (category_id, scope, amount, cu
 for (const [name, amount] of [['Supermercado', 420_000], ['Salidas', 120_000], ['Servicios', 110_000], ['Vivienda', 760_000], ['Suscripciones', 30_000], ['Compras', 150_000]] as const) {
   budget.run(cat[name], 'household', $(amount), 'ARS');
 }
-budget.run(cat['Transporte'], `user:${ana}`, $(30_000), 'ARS');
-budget.run(cat['Compras'], `user:${ana}`, $(60_000), 'ARS');
+budget.run(cat['Transporte'], `user:${ivan}`, $(30_000), 'ARS');
+budget.run(cat['Compras'], `user:${ivan}`, $(60_000), 'ARS');
 
 // Goals.
 db().prepare('INSERT INTO goals (name, target_amount, currency, deadline, account_id, scope, color) VALUES (?, ?, ?, ?, ?, ?, ?)').run('Viaje a Brasil', $(3_000), 'USD', addMonths(today(), 8), jointUsd, 'household', 'cyan');
@@ -130,12 +130,12 @@ const fund = Number(
   db().prepare('INSERT INTO goals (name, target_amount, currency, deadline, account_id, scope, color) VALUES (?, ?, ?, ?, ?, ?, ?)').run('Fondo de emergencia', $(4_000_000), 'ARS', addMonths(today(), 12), null, 'household', 'orange')
     .lastInsertRowid,
 );
-for (let i = 4; i >= 0; i--) db().prepare('INSERT INTO goal_contributions (goal_id, date, amount, note, created_by) VALUES (?, ?, ?, ?, ?)').run(fund, addMonths(today(), -i), $(250_000), 'Aporte mensual', ana);
+for (let i = 4; i >= 0; i--) db().prepare('INSERT INTO goal_contributions (goal_id, date, amount, note, created_by) VALUES (?, ?, ?, ?, ?)').run(fund, addMonths(today(), -i), $(250_000), 'Aporte mensual', ivan);
 
 // Recurring bill that is due (creates a pending transaction on first run).
 db()
   .prepare(`INSERT INTO recurring (description, type, amount, account_id, category_id, frequency, interval, next_date, day_of_month, created_by) VALUES (?, 'expense', ?, ?, ?, 'monthly', 1, ?, ?, ?)`)
-  .run('Prepaga OSDE', $(185_000), joint, cat['Prepaga'], addDays(today(), -1), Number(addDays(today(), -1).slice(8)), ana);
+  .run('Prepaga OSDE', $(185_000), joint, cat['Prepaga'], addDays(today(), -1), Number(addDays(today(), -1).slice(8)), ivan);
 
 // Rules and a CSV preset example.
 db().prepare(`INSERT INTO rules (name, priority, match_type, pattern, set_category_id, set_merchant) VALUES (?, 10, 'contains', ?, ?, ?)`).run('Supermercados Coto', 'coto', cat['Almacén'], 'Coto');
@@ -147,4 +147,4 @@ db()
     JSON.stringify({ delimiter: ';', encoding: 'windows-1252', sheet: 0, skipRows: 0, hasHeader: true, columns: { date: 0, description: [1], debit: 2, credit: 3 }, amountMode: 'split', invertSign: false, dateFormat: 'DD/MM/YYYY', decimalSeparator: ',', skipIfContains: ['SALDO ANTERIOR'] }),
   );
 
-console.log(`Demo lista en ${config.dbPath}. Usuarios: ana / beto, contraseña: ${PASSWORD}`);
+console.log(`Demo lista en ${config.dbPath}. Usuarios: ivan / milagros, contraseña: ${PASSWORD}`);

@@ -149,10 +149,6 @@ export function BalancesPage() {
         }
       />
 
-      <Alert variant="light" color="blue" icon={<IconInfoCircle size={16} />} mb="lg">
-        Un gasto marcado como compartido y pagado con una cuenta personal genera deuda según la división (por defecto se configura en Ajustes). Los gastos pagados con
-        una cuenta común no generan deuda: ya son de los dos. Las transferencias entre cuentas personales de cada uno cuentan como pago de deuda.
-      </Alert>
 
       {q.isLoading && <Text c="dimmed">Cargando…</Text>}
       <SimpleGrid cols={{ base: 1, md: 2 }} mb="xl">

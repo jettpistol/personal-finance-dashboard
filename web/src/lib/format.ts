@@ -74,3 +74,12 @@ export const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
 
 // Decorative colors only: red, yellow and teal are reserved for errors, warnings and positive change.
 export const MANTINE_COLORS = ['indigo', 'blue', 'cyan', 'green', 'lime', 'orange', 'pink', 'grape', 'violet', 'gray', 'dark'];
+
+/** Splits an integer total into n parts that add up exactly (earlier parts take the remainder). */
+export function allocateEqual(total: number, n: number): number[] {
+  if (n <= 0) return [];
+  const base = Math.trunc(total / n);
+  const parts = Array(n).fill(base);
+  for (let i = 0; i < total - base * n; i++) parts[i]++;
+  return parts;
+}

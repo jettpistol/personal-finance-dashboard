@@ -108,3 +108,14 @@ describe('CpiIndex projection', () => {
     expect(cpi.isEstimate('2026-02')).toBe(true);
   });
 });
+
+describe('validationMessage', () => {
+  it('names the field in Spanish', async () => {
+    const { z } = await import('zod');
+    const { validationMessage } = await import('../src/lib/validation-message.js');
+    const r = z.object({ description: z.string().min(1) }).safeParse({ description: '' });
+    expect(validationMessage(r.error!)).toBe('Falta la descripción.');
+    const r2 = z.object({ amount: z.number().int().positive() }).safeParse({});
+    expect(validationMessage(r2.error!)).toBe('Falta el monto.');
+  });
+});

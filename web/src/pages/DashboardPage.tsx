@@ -67,6 +67,12 @@ function ReleaseColumn({ label, figure, history, rows, tone }: { label: string; 
   );
 }
 
+/** Signed money difference, green when it improves savings. */
+function MoneyDelta({ cents, currency }: { cents: number | null; currency: Currency }) {
+  if (cents == null) return <span style={{ color: 'var(--pfd-ink-2)' }}>—</span>;
+  return <span className={`num ${cents > 0 ? 'pfd-up' : cents < 0 ? 'pfd-down' : ''}`}>{money(cents, currency, { sign: true })}</span>;
+}
+
 function FragmentRow({ label, value }: ReleaseRow) {
   return (
     <>
@@ -144,9 +150,7 @@ function RankedCategories({ d, trend, infl, currency }: { d: Dashboard; trend: T
   );
 }
 
-function BudgetsPanel({ d, currency }: { d: Dashboard; currency: Currency }) {
-  const total = d.budgets.reduce((a, b) => a + (b.currency === currency ? b.amount : 0), 0);
-  const spent = d.budgets.reduce((a, b) => a + (b.currency === currency ? b.spent : 0), 0);
+function BudgetsPanel({ d }: { d: Dashboard }) {
   return (
     <Card data-bar="blue">
       <Group justify="space-between">
@@ -164,12 +168,6 @@ function BudgetsPanel({ d, currency }: { d: Dashboard; currency: Currency }) {
         </Text>
       ) : (
         <Stack gap={10}>
-          {total > 0 && (
-            <Text size="xs" c="var(--pfd-ink-2)">
-              Usado {money(spent, currency, { compact: true })} de {money(total, currency, { compact: true })} ({pct((spent / total) * 100, 0)})
-              {d.day_of_month ? ` · día ${d.day_of_month} del mes` : ''}
-            </Text>
-          )}
           {d.budgets.slice(0, 6).map((b) => (
             <div key={b.id}>
               <Group justify="space-between" mb={3} wrap="nowrap">
@@ -227,7 +225,6 @@ export function DashboardPage() {
       Var. real{estimated && <span className="pfd-note-mark">(e)</span>}
     </>
   );
-  const netChange = percentChange(s.net, d.previous.net);
 
   return (
     <>
@@ -288,14 +285,15 @@ export function DashboardPage() {
           tone="navy"
           history={hist.map((r) => r.net / 100)}
           rows={[
-            { label: 'Var. mensual', value: <Variation value={netChange} goodWhenUp /> },
-            { label: realLabel, value: <Variation value={realChange(netChange, cpi)} goodWhenUp /> },
+            { label: 'Vs. mes anterior', value: <MoneyDelta cents={s.net - d.previous.net} currency={currency} /> },
+            { label: realLabel, value: <MoneyDelta cents={cpi == null ? null : s.net - Math.round(d.previous.net * (1 + cpi / 100))} currency={currency} /> },
             { label: 'Tasa de ahorro', value: <span className={`num ${s.net < 0 ? 'pfd-down' : ''}`}>{pct(s.savings_rate)} <span style={{ color: 'var(--pfd-ink-2)', fontWeight: 400 }}>(ant. {pct(d.previous.savings_rate)})</span></span> },
           ]}
         />
       </div>
       <Source>
         {sourceText(currency, { real: currency === 'ARS', cpiMonth: infl.data?.cpi_latest_month ? monthName(infl.data.cpi_latest_month) : null })}
+        {d.fx ? ` · dólar BNA vendedor ${money(Math.round(d.fx.sell * 100), 'ARS')} (${date(d.fx.date, 'D MMM')})` : ''}
         {estimated ? ' · (e) estimado: el IPC de este mes todavía no se publicó y la variación real usa el último dato' : ''}
       </Source>
 
@@ -307,7 +305,7 @@ export function DashboardPage() {
               <Group justify="space-between" wrap="nowrap">
                 <Title order={4}>Últimos movimientos</Title>
                 <Group gap="sm" wrap="nowrap">
-                  <Button size="compact-xs" variant="default" leftSection={<IconPlus size={12} />} onClick={() => openTx()}>
+                  <Button size="compact-xs" className="pfd-rail-btn" leftSection={<IconPlus size={12} />} onClick={() => openTx()}>
                     Agregar
                   </Button>
                   <Anchor component={Link} to="/movimientos" size="xs">
@@ -321,10 +319,10 @@ export function DashboardPage() {
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 5 }}>
           <Stack gap="md">
-            <BudgetsPanel d={d} currency={currency} />
+            <BudgetsPanel d={d} />
             <Card data-bar="blue">
               <Group justify="space-between">
-                <Title order={4}>Saldos entre ustedes</Title>
+                <Title order={4}>Saldo compartido</Title>
                 <Anchor component={Link} to="/saldos" size="xs">
                   Detalle
                 </Anchor>

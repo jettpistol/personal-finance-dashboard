@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed:demo": "tsx src/seed-demo.ts",
-    "demo": "tsx src/seed-demo.ts --demo --if-empty && node dist/index.js --demo"
+    "demo": "tsx src/seed-demo.ts --demo --if-empty && node dist/index.js --demo",
+    "demo:reset": "node -e \"require('fs').rmSync('data-demo',{recursive:true,force:true})\" && npm run demo"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.3",

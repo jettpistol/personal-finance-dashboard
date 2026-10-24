@@ -7,6 +7,7 @@ import { ZodError } from 'zod';
 import { config } from './config.js';
 import { sessionUser } from './lib/auth.js';
 import { HttpError } from './lib/http.js';
+import { validationMessage } from './lib/validation-message.js';
 import { registerRoutes } from './routes/index.js';
 
 declare module 'fastify' {
@@ -20,9 +21,9 @@ const PUBLIC_API = new Set(['/api/auth/status', '/api/auth/login', '/api/auth/se
 
 export async function buildApp(opts: { logger?: boolean; serveWeb?: boolean } = {}): Promise<FastifyInstance> {
   const app = Fastify({
-    logger: opts.logger ? { level: 'info' } : false,
+    // Warnings and errors only: per-request lines would flood the log of a two-person app.
+    logger: opts.logger ? { level: 'warn' } : false,
     trustProxy: true,
-    disableRequestLogging: true,
     bodyLimit: 5 * 1024 * 1024,
   });
 
@@ -52,10 +53,7 @@ export async function buildApp(opts: { logger?: boolean; serveWeb?: boolean } = 
 
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof HttpError) return reply.code(err.status).send({ error: err.message });
-    if (err instanceof ZodError) {
-      const first = err.issues[0];
-      return reply.code(400).send({ error: `${first.path.join('.') || 'Datos'}: ${first.message}`, issues: err.issues });
-    }
+    if (err instanceof ZodError) return reply.code(400).send({ error: validationMessage(err), issues: err.issues });
     const status = (err as { statusCode?: number }).statusCode;
     if (status && status < 500) return reply.code(status).send({ error: (err as Error).message });
     req.log.error(err);
