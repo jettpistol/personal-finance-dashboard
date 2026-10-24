@@ -16,12 +16,13 @@ declare module 'fastify' {
 }
 
 export const SESSION_COOKIE = 'pfd_session';
-const PUBLIC_API = new Set(['/api/auth/status', '/api/auth/login', '/api/auth/setup']);
+const PUBLIC_API = new Set(['/api/auth/status', '/api/auth/login', '/api/auth/setup', '/api/health']);
 
 export async function buildApp(opts: { logger?: boolean; serveWeb?: boolean } = {}): Promise<FastifyInstance> {
   const app = Fastify({
     logger: opts.logger ? { level: 'info' } : false,
     trustProxy: true,
+    disableRequestLogging: true,
     bodyLimit: 5 * 1024 * 1024,
   });
 

@@ -86,9 +86,44 @@ export function categoryTotals(month: string, scope: Scope, currency: Currency, 
   return out;
 }
 
+/**
+ * Money moved between the joint pot and personal accounts, per month, from the scope's point of view.
+ * Household: + money put into joint accounts, - money taken back out. Personal scope: the opposite,
+ * for that user's own accounts. Without this, the household would show no income at all, and
+ * personal savings would ignore what each one hands over to the joint pot.
+ */
+function contributions(c: Ctx, from: string, to: string): Map<string, number> {
+  const out = new Map<string, number>();
+  const uid = scopeUserId(c.scope);
+  for (const t of visibleTxs(c, from, to)) {
+    if (t.type !== 'transfer' || t.to_account_id == null) continue;
+    const src = c.accounts.get(t.account_id);
+    const dst = c.accounts.get(t.to_account_id);
+    if (!src || !dst) continue;
+    const intoJoint = src.owner_id !== null && dst.owner_id === null;
+    const outOfJoint = src.owner_id === null && dst.owner_id !== null;
+    if (!intoJoint && !outOfJoint) continue;
+    const personal = intoJoint ? src.owner_id : dst.owner_id;
+    if (uid !== null && personal !== uid) continue;
+    let v = value(c, { amount: t.amount, currency: t.currency, date: t.date });
+    if (outOfJoint) v = -v;
+    if (uid !== null) v = -v;
+    const m = monthOf(t.date);
+    out.set(m, (out.get(m) ?? 0) + v);
+  }
+  return out;
+}
+
+function savingsRate(income: number, contrib: number, net: number): number | null {
+  const base = income + Math.max(0, contrib);
+  return base > 0 ? Math.round((net / base) * 1000) / 10 : null;
+}
+
 export type MonthSummary = {
   month: string;
   income: number;
+  /** Net money into (household) or out of (negative, personal) the joint pot. */
+  contributions: number;
   expense: number;
   net: number;
   savings_rate: number | null;
@@ -130,12 +165,15 @@ export function monthSummary(month: string, rc: ReportCtx): MonthSummary {
     merchants.set(key, m);
   }
   const name = (id: number) => (id === 0 ? 'Sin categoría' : (cats.get(id)?.name ?? '?'));
+  const contrib = contributions(c, monthStart(month), monthEnd(month)).get(month) ?? 0;
+  const net = income + contrib - expense;
   return {
     month,
     income,
+    contributions: contrib,
     expense,
-    net: income - expense,
-    savings_rate: income > 0 ? Math.round(((income - expense) / income) * 1000) / 10 : null,
+    net,
+    savings_rate: savingsRate(income, contrib, net),
     by_category: [...byRoot.entries()]
       .map(([id, b]) => ({
         category_id: id || null,
@@ -155,6 +193,7 @@ export function monthSummary(month: string, rc: ReportCtx): MonthSummary {
 export type TrendRow = {
   month: string;
   income: number;
+  contributions: number;
   expense: number;
   net: number;
   savings_rate: number | null;
@@ -168,7 +207,7 @@ export function trend(fromMonth: string, toMonth: string, rc: ReportCtx): { rows
   const cats = loadCategories();
   const months = monthRange(fromMonth, toMonth);
   const rows = new Map<string, TrendRow>(
-    months.map((m) => [m, { month: m, income: 0, expense: 0, net: 0, savings_rate: null, cpi_pct: c.cpi.pct.get(m) ?? null, categories: {} }]),
+    months.map((m) => [m, { month: m, income: 0, contributions: 0, expense: 0, net: 0, savings_rate: null, cpi_pct: c.cpi.pct.get(m) ?? null, categories: {} }]),
   );
   const seen = new Map<string, string | null>();
   for (const e of entries(c, monthStart(fromMonth), monthEnd(toMonth))) {
@@ -185,9 +224,13 @@ export function trend(fromMonth: string, toMonth: string, rc: ReportCtx): { rows
     seen.set(n, root == null ? 'gray' : (cats.get(root)?.color ?? null));
     row.categories[n] = (row.categories[n] ?? 0) + v;
   }
+  for (const [m, v] of contributions(c, monthStart(fromMonth), monthEnd(toMonth))) {
+    const row = rows.get(m);
+    if (row) row.contributions = v;
+  }
   for (const r of rows.values()) {
-    r.net = r.income - r.expense;
-    r.savings_rate = r.income > 0 ? Math.round((r.net / r.income) * 1000) / 10 : null;
+    r.net = r.income + r.contributions - r.expense;
+    r.savings_rate = savingsRate(r.income, r.contributions, r.net);
   }
   return { rows: [...rows.values()], categories: [...seen.entries()].map(([name, color]) => ({ name, color })), missing_rates: c.missingRates };
 }
@@ -218,7 +261,9 @@ export function netWorth(fromMonth: string, toMonth: string, rc: ReportCtx) {
     let assets = 0;
     let liabilities = 0;
     for (const a of included) {
-      const v = c.fx.convert(balances.get(a.id) ?? 0, a.currency, c.currency, end) ?? 0;
+      const converted = c.fx.convert(balances.get(a.id) ?? 0, a.currency, c.currency, end);
+      if (converted === null) c.missingRates = true;
+      const v = converted ?? 0;
       byType[a.type] = (byType[a.type] ?? 0) + v;
       total += v;
       if (v >= 0) assets += v;
@@ -226,7 +271,7 @@ export function netWorth(fromMonth: string, toMonth: string, rc: ReportCtx) {
     }
     rows.push({ month: m, total, by_type: byType, assets, liabilities });
   }
-  return { rows, accounts: included.map((a) => ({ id: a.id, name: a.name, type: a.type, currency: a.currency })) };
+  return { rows, accounts: included.map((a) => ({ id: a.id, name: a.name, type: a.type, currency: a.currency })), missing_rates: c.missingRates };
 }
 
 /** Spending per person: personal spending, their share of shared expenses, and what they paid for shared ones. */
@@ -319,6 +364,7 @@ export function inflationReport(month: string, rc: Omit<ReportCtx, 'currency' | 
     month,
     cpi_latest_month: cpi.latestMonth,
     cpi_month: cpi.pct.get(month) ?? null,
+    cpi_estimated: cpi.isEstimate(month),
     cpi_vs_prev: cpiPrev,
     cpi_vs_year: cpiYear,
     total: { amount: sum(cur), previous: sum(p), year_ago: sum(y), nominal_vs_prev: totalNominal, real_vs_prev: real(totalNominal, cpiPrev), nominal_vs_year: totalYear, real_vs_year: real(totalYear, cpiYear) },

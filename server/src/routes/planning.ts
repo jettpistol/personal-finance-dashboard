@@ -78,7 +78,7 @@ export default async function planningRoutes(app: FastifyInstance) {
     const totals = months.map((m) => categoryTotals(m, scope as Scope, 'ARS', req.userId));
     const avg = new Map<number, number>();
     for (const t of totals) for (const [cat, v] of t) avg.set(cat, (avg.get(cat) ?? 0) + v / months.length);
-    return [...avg.entries()].map(([category_id, amount]) => ({ category_id, amount: Math.round(amount / 100) * 100 }));
+    return [...avg.entries()].filter(([id]) => id > 0).map(([category_id, amount]) => ({ category_id, amount: Math.round(amount / 100) * 100 }));
   });
 
   // ---- Goals ----
@@ -126,8 +126,17 @@ export default async function planningRoutes(app: FastifyInstance) {
     return { id: Number(id) };
   });
 
+  // Goals are writable by the viewer when they belong to the household or to the viewer.
+  const writableGoal = (id: number, viewer: number) => {
+    const g = db().prepare('SELECT scope FROM goals WHERE id = ?').get(id) as { scope: Scope } | undefined;
+    if (!g || !scopeVisible(g.scope, viewer, loadUsers())) throw new HttpError(404, 'Meta no encontrada');
+    assertScopeWritable(g.scope, viewer);
+    return g;
+  };
+
   app.put('/goals/:id', async (req) => {
     const id = idParam(req.params);
+    writableGoal(id, req.userId);
     const g = parse(goalSchema, req.body);
     assertScopeWritable(g.scope as Scope, req.userId);
     db()
@@ -137,16 +146,22 @@ export default async function planningRoutes(app: FastifyInstance) {
   });
 
   app.delete('/goals/:id', async (req) => {
-    db().prepare('DELETE FROM goals WHERE id = ?').run(idParam(req.params));
+    const id = idParam(req.params);
+    writableGoal(id, req.userId);
+    db().prepare('DELETE FROM goals WHERE id = ?').run(id);
     return { ok: true };
   });
 
-  app.get('/goals/:id/contributions', async (req) =>
-    db().prepare('SELECT * FROM goal_contributions WHERE goal_id = ? ORDER BY date DESC, id DESC').all(idParam(req.params)),
-  );
+  app.get('/goals/:id/contributions', async (req) => {
+    const id = idParam(req.params);
+    const g = db().prepare('SELECT scope FROM goals WHERE id = ?').get(id) as { scope: Scope } | undefined;
+    if (!g || !scopeVisible(g.scope, req.userId, loadUsers())) throw new HttpError(404, 'Meta no encontrada');
+    return db().prepare('SELECT * FROM goal_contributions WHERE goal_id = ? ORDER BY date DESC, id DESC').all(id);
+  });
 
   app.post('/goals/:id/contributions', async (req) => {
     const goalId = idParam(req.params);
+    writableGoal(goalId, req.userId);
     const c = parse(z.object({ date: z.string().refine(isValidDate), amount: z.number().int(), note: z.string().max(200).nullish() }), req.body);
     const id = db()
       .prepare('INSERT INTO goal_contributions (goal_id, date, amount, note, created_by) VALUES (?, ?, ?, ?, ?)')
@@ -155,7 +170,9 @@ export default async function planningRoutes(app: FastifyInstance) {
   });
 
   app.delete('/goals/:goalId/contributions/:id', async (req) => {
-    db().prepare('DELETE FROM goal_contributions WHERE id = ?').run(idParam(req.params));
+    const goalId = idParam({ id: (req.params as { goalId: string }).goalId });
+    writableGoal(goalId, req.userId);
+    db().prepare('DELETE FROM goal_contributions WHERE id = ? AND goal_id = ?').run(idParam(req.params), goalId);
     return { ok: true };
   });
 }

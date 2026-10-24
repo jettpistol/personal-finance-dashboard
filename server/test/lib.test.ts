@@ -100,3 +100,11 @@ describe('backup rotation', () => {
     expect([...backupsToKeep(dates, 2, 2)].sort()).toEqual(['2026-09-01', '2026-10-01', '2026-10-02', '2026-10-03']);
   });
 });
+
+describe('CpiIndex projection', () => {
+  it('projects unpublished months with the latest rate', () => {
+    const cpi = new CpiIndex([{ month: '2026-01', pct: 10 }]);
+    expect(cpi.between('2026-01', '2026-03')).toBeCloseTo(21);
+    expect(cpi.isEstimate('2026-02')).toBe(true);
+  });
+});

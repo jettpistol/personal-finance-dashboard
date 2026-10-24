@@ -104,6 +104,10 @@ describe('money flows', () => {
     expect(accounts.find((a: { id: number }) => a.id === ids.anaUsd).balance).toBe(100_00);
     const household = (await call('beto', 'GET', `/api/dashboard?scope=household&month=${M}`)).body;
     expect(household.summary.expense).toBe(40_000_00);
+    // Ana's transfer into the joint account is household money in and personal money out.
+    expect(household.summary.contributions).toBe(10_000_00);
+    expect(dash.summary.contributions).toBe(-10_000_00);
+    expect(dash.summary.net).toBe(900_000_00 - 10_000_00 - 22_000_00);
   });
 
   it('hides private transactions and the private dashboard', async () => {

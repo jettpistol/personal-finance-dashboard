@@ -137,10 +137,18 @@ export async function buildReviewDocx(month: string, scope: Scope, viewer: numbe
       children: [new TextRun({ text: `Generado el ${today().split('-').reverse().join('/')}${rate ? ` · Dólar BNA: $ ${rate.toLocaleString('es-AR')}` : ''}`, color: MUTED, size: 18 })],
     }),
     kpiTable([
-      { label: 'Ingresos', value: m(s.income), sub: `${pct(change(s.income, p.income))} vs ${monthLabel(prevMonth)}`, color: '40C057' },
+      {
+        label: s.contributions > 0 ? 'Ingresos y aportes' : 'Ingresos',
+        value: m(s.income + Math.max(0, s.contributions)),
+        sub: `${pct(change(s.income + Math.max(0, s.contributions), p.income + Math.max(0, p.contributions)))} vs ${monthLabel(prevMonth)}`,
+        color: '40C057',
+      },
       { label: 'Gastos', value: m(s.expense), sub: `${pct(change(s.expense, p.expense))} vs ${monthLabel(prevMonth)}`, color: 'FA5252' },
       { label: 'Ahorro', value: m(s.net), sub: `Tasa de ahorro: ${s.savings_rate == null ? '—' : `${s.savings_rate.toFixed(1).replace('.', ',')}%`}`, color: ACCENT },
     ]),
+    ...(s.contributions
+      ? [note(s.contributions > 0 ? `Incluye ${m(s.contributions)} de aportes al pozo común desde las cuentas personales.` : `Aportes al hogar del mes: ${m(-s.contributions)} (ya descontados del ahorro).`)]
+      : []),
     note(`Equivalente en ${otherCurrency}: ingresos ${formatMoney(sOther.income, otherCurrency)}, gastos ${formatMoney(sOther.expense, otherCurrency)}, ahorro ${formatMoney(sOther.net, otherCurrency)} (cada movimiento al dólar BNA de su día).`),
   );
 

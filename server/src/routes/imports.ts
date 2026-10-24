@@ -106,6 +106,7 @@ export default async function importRoutes(app: FastifyInstance) {
     }
     const { rows, errors } = parseRows(table, config);
     const rules = loadRules();
+    const kinds = new Map((db().prepare('SELECT id, kind FROM categories').all() as { id: number; kind: string }[]).map((c) => [c.id, c.kind]));
     const hashExists = db().prepare('SELECT 1 FROM transactions WHERE import_hash = ? LIMIT 1');
     const similar = db().prepare('SELECT id, description FROM transactions WHERE account_id = ? AND date = ? AND amount = ? LIMIT 1');
     const items = rows.map((r) => {
@@ -114,6 +115,8 @@ export default async function importRoutes(app: FastifyInstance) {
       const hash = importHash(account.id, r.date, r.amount, r.description);
       const patch = applyRules(rules, { description: r.description, amount: r.amount, account_id: account.id });
       const type = patch?.type ?? (direction === 'out' ? 'expense' : 'income');
+      // A rule's category only applies when it matches the row's kind (gasto / ingreso).
+      const categoryId = patch?.category_id != null && kinds.get(patch.category_id) === type ? patch.category_id : null;
       const dup = hashExists.get(hash) ? 'exact' : similar.get(account.id, r.date, amount) ? 'similar' : null;
       return {
         line: r.line,
@@ -123,7 +126,7 @@ export default async function importRoutes(app: FastifyInstance) {
         direction,
         currency_mismatch: r.currency != null && r.currency !== account.currency,
         type,
-        category_id: patch?.category_id ?? null,
+        category_id: categoryId,
         merchant: patch?.merchant ?? r.merchant,
         notes: r.notes,
         tags: patch?.tags ?? [],

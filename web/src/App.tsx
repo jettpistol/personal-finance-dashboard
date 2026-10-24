@@ -1,0 +1,76 @@
+import { useEffect } from 'react';
+import { Center, Loader } from '@mantine/core';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { api } from './lib/api';
+import { AppStateProvider } from './lib/app-state';
+import { useUsers } from './lib/queries';
+import { Layout } from './components/Layout';
+import { LoginPage } from './pages/LoginPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { TransactionsPage } from './pages/TransactionsPage';
+import { AccountsPage } from './pages/AccountsPage';
+import { BalancesPage } from './pages/BalancesPage';
+import { BudgetsPage } from './pages/BudgetsPage';
+import { GoalsPage } from './pages/GoalsPage';
+import { ReportsPage } from './pages/ReportsPage';
+import { ImportPage } from './pages/ImportPage';
+import { RulesPage } from './pages/RulesPage';
+import { RecurringPage } from './pages/RecurringPage';
+import { ReviewPage } from './pages/ReviewPage';
+import { SettingsPage } from './pages/SettingsPage';
+
+type Status = { needsSetup: boolean; user: { id: number; username: string; display_name: string; color: string } | null };
+
+export function App() {
+  const qc = useQueryClient();
+  const status = useQuery({ queryKey: ['auth'], queryFn: () => api.get<Status>('/auth/status'), staleTime: Infinity });
+
+  useEffect(() => {
+    const onUnauthorized = () => qc.invalidateQueries({ queryKey: ['auth'] });
+    window.addEventListener('pfd:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('pfd:unauthorized', onUnauthorized);
+  }, [qc]);
+
+  if (status.isLoading) {
+    return (
+      <Center h="100vh">
+        <Loader />
+      </Center>
+    );
+  }
+  if (!status.data?.user) return <LoginPage setup={!!status.data?.needsSetup} />;
+  return <Authed me={status.data.user} />;
+}
+
+function Authed({ me }: { me: NonNullable<Status['user']> }) {
+  const users = useUsers();
+  if (!users.data) {
+    return (
+      <Center h="100vh">
+        <Loader />
+      </Center>
+    );
+  }
+  return (
+    <AppStateProvider me={me} users={users.data}>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/movimientos" element={<TransactionsPage />} />
+          <Route path="/cuentas" element={<AccountsPage />} />
+          <Route path="/saldos" element={<BalancesPage />} />
+          <Route path="/presupuestos" element={<BudgetsPage />} />
+          <Route path="/metas" element={<GoalsPage />} />
+          <Route path="/reportes" element={<ReportsPage />} />
+          <Route path="/importar" element={<ImportPage />} />
+          <Route path="/reglas" element={<RulesPage />} />
+          <Route path="/recurrentes" element={<RecurringPage />} />
+          <Route path="/cierre" element={<ReviewPage />} />
+          <Route path="/ajustes" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </AppStateProvider>
+  );
+}

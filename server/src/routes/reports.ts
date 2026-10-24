@@ -53,7 +53,7 @@ export default async function reportRoutes(app: FastifyInstance) {
       scope,
       currency,
       summary,
-      previous: { income: previous.income, expense: previous.expense, net: previous.net, savings_rate: previous.savings_rate },
+      previous: { income: previous.income, contributions: previous.contributions, expense: previous.expense, net: previous.net, savings_rate: previous.savings_rate },
       budgets: budgetStatus(month, scope, viewer),
       accounts: scopeAccs,
       accounts_total: scopeAccs.reduce((a, b) => a + (b.converted ?? 0), 0),
@@ -85,13 +85,16 @@ export default async function reportRoutes(app: FastifyInstance) {
     const totals = t.rows.reduce(
       (acc, r) => {
         acc.income += r.income;
+        acc.contributions += r.contributions;
         acc.expense += r.expense;
         for (const [k, v] of Object.entries(r.categories)) acc.categories[k] = (acc.categories[k] ?? 0) + v;
         return acc;
       },
-      { income: 0, expense: 0, categories: {} as Record<string, number> },
+      { income: 0, contributions: 0, expense: 0, categories: {} as Record<string, number> },
     );
-    return { year, ...t, totals: { ...totals, net: totals.income - totals.expense, savings_rate: totals.income > 0 ? Math.round(((totals.income - totals.expense) / totals.income) * 1000) / 10 : null } };
+    const net = totals.income + totals.contributions - totals.expense;
+    const base = totals.income + Math.max(0, totals.contributions);
+    return { year, ...t, totals: { ...totals, net, savings_rate: base > 0 ? Math.round((net / base) * 1000) / 10 : null } };
   });
 
   app.get('/reports/net-worth', async (req) => {
@@ -126,7 +129,7 @@ export default async function reportRoutes(app: FastifyInstance) {
   app.get('/balances', async (req) => {
     const accounts = loadAccounts();
     const shared = fetchTxs()
-      .filter((t) => (t.is_shared || t.is_settlement) && t.status === 'confirmed' && txVisibility(t, req.userId, accounts) !== 'hidden')
+      .filter((t) => (t.is_shared || t.is_settlement) && t.status === 'confirmed' && t.date <= today() && txVisibility(t, req.userId, accounts) !== 'hidden')
       .slice(0, 100)
       .map((t) => presentTx(t, req.userId, accounts));
     return { balances: balances(), activity: shared };

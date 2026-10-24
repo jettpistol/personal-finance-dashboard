@@ -45,10 +45,26 @@ export class CpiIndex {
     return b / a;
   }
 
-  /** Accumulated inflation between the end of `from` and the end of `to`, as a percentage. */
+  /** Whether `month` is after the last published CPI (so figures involving it are estimates). */
+  isEstimate(month: string): boolean {
+    const last = this.latestMonth;
+    return !!last && month > last;
+  }
+
+  /** Like level(), but months not yet published are projected with the latest monthly rate. */
+  private projectedLevel(month: string): number | null {
+    const last = this.latestMonth;
+    if (!last || month <= last) return this.level(month);
+    const [ly, lm] = last.split('-').map(Number);
+    const [y, m] = month.split('-').map(Number);
+    const months = (y - ly) * 12 + (m - lm);
+    return this.levels.get(last)! * Math.pow(1 + this.pct.get(last)! / 100, months);
+  }
+
+  /** Accumulated inflation between the end of `from` and the end of `to`, as a percentage. Unpublished months are projected. */
   between(from: string, to: string): number | null {
-    const a = this.level(from);
-    const b = this.level(to);
+    const a = this.projectedLevel(from);
+    const b = this.projectedLevel(to);
     if (!a || !b) return null;
     return (b / a - 1) * 100;
   }
