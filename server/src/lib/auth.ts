@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
-import { db } from '../db/index.js';
+import { coreDb } from '../db/index.js';
 import { config } from '../config.js';
 
 const scrypt = promisify(crypto.scrypt) as (pw: string, salt: Buffer, len: number, opts: crypto.ScryptOptions) => Promise<Buffer>;
@@ -42,14 +42,14 @@ export function createSession(userId: number): { token: string; expiresAt: numbe
   const token = crypto.randomBytes(32).toString('base64url');
   const now = Date.now();
   const expiresAt = now + config.sessionDays * 24 * 3600 * 1000;
-  db().prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)').run(hashToken(token), userId, expiresAt, now);
-  db().prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
+  coreDb().prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)').run(hashToken(token), userId, expiresAt, now);
+  coreDb().prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
   return { token, expiresAt };
 }
 
 export function sessionUser(token: string | undefined): number | null {
   if (!token) return null;
-  const row = db().prepare('SELECT user_id, expires_at FROM sessions WHERE token_hash = ?').get(hashToken(token)) as
+  const row = coreDb().prepare('SELECT user_id, expires_at FROM sessions WHERE token_hash = ?').get(hashToken(token)) as
     | { user_id: number; expires_at: number }
     | undefined;
   if (!row || row.expires_at < Date.now()) return null;
@@ -57,14 +57,14 @@ export function sessionUser(token: string | undefined): number | null {
 }
 
 export function destroySession(token: string | undefined) {
-  if (token) db().prepare('DELETE FROM sessions WHERE token_hash = ?').run(hashToken(token));
+  if (token) coreDb().prepare('DELETE FROM sessions WHERE token_hash = ?').run(hashToken(token));
 }
 
 export function destroyUserSessions(userId: number, exceptToken?: string) {
   if (exceptToken) {
-    db().prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').run(userId, hashToken(exceptToken));
+    coreDb().prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').run(userId, hashToken(exceptToken));
   } else {
-    db().prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+    coreDb().prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
   }
 }
 
@@ -82,7 +82,7 @@ const FORGET_AFTER_MS = 24 * 3600 * 1000;
 type Attempt = { key: string; failures: number; locked_until: number; last_failure_at: number };
 
 function getAttempt(key: string, now: number): Attempt {
-  const row = db().prepare('SELECT * FROM login_attempts WHERE key = ?').get(key) as Attempt | undefined;
+  const row = coreDb().prepare('SELECT * FROM login_attempts WHERE key = ?').get(key) as Attempt | undefined;
   if (!row || now - row.last_failure_at > FORGET_AFTER_MS) return { key, failures: 0, locked_until: 0, last_failure_at: 0 };
   return row;
 }
@@ -103,7 +103,7 @@ export function registerFailure(keys: AttemptKey[], now = Date.now()): number {
       lockedUntil = now + step;
       longest = Math.max(longest, step);
     }
-    db()
+    coreDb()
       .prepare(
         `INSERT INTO login_attempts (key, failures, locked_until, last_failure_at) VALUES (?, ?, ?, ?)
          ON CONFLICT(key) DO UPDATE SET failures = excluded.failures, locked_until = excluded.locked_until, last_failure_at = excluded.last_failure_at`,
@@ -114,7 +114,7 @@ export function registerFailure(keys: AttemptKey[], now = Date.now()): number {
 }
 
 export function clearFailures(keys: AttemptKey[]) {
-  const del = db().prepare('DELETE FROM login_attempts WHERE key = ?');
+  const del = coreDb().prepare('DELETE FROM login_attempts WHERE key = ?');
   for (const k of keys) del.run(k.key);
 }
 

@@ -74,6 +74,12 @@ typography:
     fontWeight: 700
     lineHeight: 1
     letterSpacing: "0.04em"
+  hero-amount:
+    fontFamily: "'Cascadia Code', ui-monospace, Menlo, Consolas, monospace"
+    fontSize: "44px"
+    fontWeight: 600
+    lineHeight: 1.25
+    fontFeature: "'tnum' 1"
 rounded:
   square: "0px"
   hairline: "1px"
@@ -230,6 +236,7 @@ A cool institutional palette: navy and graphite structure on a blue-grey ground,
 **Display Font:** Source Sans 3 Variable (with Source Sans 3, Myriad Pro, system-ui)
 **Body Font:** Source Sans 3 Variable (same stack)
 **Label/Mono Font:** the same face; monospace (ui-monospace, SF Mono, Menlo) only for technical strings.
+**Hero Amount Font:** Cascadia Code, only for the big editable amount at the top of a form.
 
 **Character:** one humanist sans in the Myriad lineage carries everything, which is what puts the system in the early-2010s web without imitating its gloss. Tabular figures are on at the body level, so every column of amounts aligns.
 
@@ -241,6 +248,7 @@ A cool institutional palette: navy and graphite structure on a blue-grey ground,
 - **Label** (400, 0.75rem): release rows, legends, table headers (700, muted ink), "Fuente:" lines, footer.
 - **Nav group** (700, 11px, +0.02em, sentence case): rail section labels in muted steel.
 - **Tag** (700, 10px, +0.04em, uppercase): the small state tags only.
+- **Hero amount** (Cascadia Code 600, 44px): the amount a form is about, centered and unboxed, "−" in down-red for gastos and "+" in up-green for ingresos, with the currency as a small menu beside it.
 
 ### Named Rules
 **The Tabular Everywhere Rule.** Every amount and percentage is set with tabular numerals and does not wrap.
@@ -274,7 +282,7 @@ Panels are flat: no drop shadow on any box, depth comes from 1px rules, the stri
 
 ## Shapes
 
-Square by default. Corners are 0px on panels, modals, tabs, pagination, tags, progress bars and rail links, 1px on buttons and inputs (the theme default), 2px at most on switches and the remaining small controls. Only avatars and notification indicators are round. Borders are always 1px; dotted 1px rules separate the release figure from its rows; dashed outlines mean "real". Category swatches are 10px squares.
+Square by default. Corners are 0px on panels, modals, tabs, pagination, tags, progress bars and rail links, 1px on buttons and inputs (the theme default), 2px at most on the remaining small controls. Only switches (the familiar pill lever), avatars and notification indicators are round. Borders are always 1px; dotted 1px rules separate the release figure from its rows; dashed outlines mean "real". Category swatches are 10px squares.
 
 ## Components
 

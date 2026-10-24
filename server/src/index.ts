@@ -1,9 +1,9 @@
 import { config } from './config.js';
-import { openDb, setDb } from './db/index.js';
+import { initProfiles } from './lib/profiles.js';
 import { buildApp } from './app.js';
 import { startScheduler } from './lib/scheduler.js';
 
-setDb(openDb(config.dbPath));
+initProfiles();
 const app = await buildApp({ logger: true, serveWeb: true });
 await app.listen({ port: config.port, host: config.host });
 console.log(`Finanzas lista en http://localhost:${config.port} (datos en ${config.dataDir})`);

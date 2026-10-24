@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { db } from '../db/index.js';
+import { coreDb } from '../db/index.js';
+import { profilesEnabled, syncUsers } from '../lib/profiles.js';
 import { config } from '../config.js';
 import {
   attemptKeys,
@@ -41,28 +42,30 @@ function setSessionCookie(reply: FastifyReply, userId: number) {
 }
 
 export function userCount(): number {
-  return (db().prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n;
+  return (coreDb().prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n;
 }
 
 export async function createUser(input: z.infer<typeof newUserSchema>): Promise<number> {
   const weak = validatePasswordStrength(input.password);
   if (weak) throw new HttpError(400, weak);
-  const exists = db().prepare('SELECT 1 FROM users WHERE username = ?').get(input.username);
+  const exists = coreDb().prepare('SELECT 1 FROM users WHERE username = ?').get(input.username);
   if (exists) throw new HttpError(409, 'Ese nombre de usuario ya existe.');
   const colors = ['blue', 'pink', 'teal', 'orange'];
   const color = input.color ?? colors[userCount() % colors.length];
-  return Number(
-    db()
+  const id = Number(
+    coreDb()
       .prepare('INSERT INTO users (username, display_name, password_hash, color) VALUES (?, ?, ?, ?)')
       .run(input.username, input.display_name, await hashPassword(input.password), color).lastInsertRowid,
   );
+  if (profilesEnabled()) syncUsers();
+  return id;
 }
 
 export default async function authRoutes(app: FastifyInstance) {
   app.get('/auth/status', async (req) => {
     const uid = sessionUser(req.cookies[SESSION_COOKIE]);
     const user = uid
-      ? db().prepare('SELECT id, username, display_name, color FROM users WHERE id = ?').get(uid)
+      ? coreDb().prepare('SELECT id, username, display_name, color FROM users WHERE id = ?').get(uid)
       : null;
     return { needsSetup: userCount() === 0, user };
   });
@@ -74,7 +77,8 @@ export default async function authRoutes(app: FastifyInstance) {
     const userId = await createUser(input);
     if (userCount() > 1) {
       // Lost a race with another setup request; undo.
-      db().prepare('DELETE FROM users WHERE id = ?').run(userId);
+      coreDb().prepare('DELETE FROM users WHERE id = ?').run(userId);
+      if (profilesEnabled()) syncUsers();
       throw new HttpError(409, 'La configuración inicial ya se realizó.');
     }
     setSessionCookie(reply, userId);
@@ -89,7 +93,7 @@ export default async function authRoutes(app: FastifyInstance) {
       reply.header('retry-after', Math.ceil(wait / 1000));
       return reply.code(429).send({ error: `Demasiados intentos. Esperá ${Math.ceil(wait / 1000)} segundos.`, retryAfter: Math.ceil(wait / 1000) });
     }
-    const user = db().prepare('SELECT id, password_hash FROM users WHERE username = ?').get(username.trim()) as
+    const user = coreDb().prepare('SELECT id, password_hash FROM users WHERE username = ?').get(username.trim()) as
       | { id: number; password_hash: string }
       | undefined;
     const ok = await verifyPassword(password, user?.password_hash ?? (await getDummyHash()));
@@ -117,11 +121,11 @@ export default async function authRoutes(app: FastifyInstance) {
 
   app.post('/auth/password', async (req) => {
     const { current, next } = parse(z.object({ current: z.string().max(200), next: z.string().max(200) }), req.body);
-    const user = db().prepare('SELECT password_hash FROM users WHERE id = ?').get(req.userId) as { password_hash: string };
-    if (!(await verifyPassword(current, user.password_hash))) throw new HttpError(400, 'La contraseña actual no es correcta.');
+    const user = coreDb().prepare('SELECT password_hash FROM users WHERE id = ?').get(req.userId) as { password_hash: string };
+    if (!(await verifyPassword(current, user.password_hash))) throw new HttpError(400, 'La contraseña actual no es correcta.', 'current');
     const weak = validatePasswordStrength(next);
-    if (weak) throw new HttpError(400, weak);
-    db().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await hashPassword(next), req.userId);
+    if (weak) throw new HttpError(400, weak, 'next');
+    coreDb().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await hashPassword(next), req.userId);
     destroyUserSessions(req.userId, req.cookies[SESSION_COOKIE]);
     return { ok: true };
   });

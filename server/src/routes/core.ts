@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { db, getSetting, setSetting } from '../db/index.js';
+import { coreDb, db, getSetting, setSetting } from '../db/index.js';
+import { profilesEnabled, syncUsers } from '../lib/profiles.js';
 import { HttpError } from '../lib/http.js';
 import { accountBalances, accountVisible, loadAccounts, loadUsers } from '../lib/domain.js';
 import { loadConverter } from '../lib/fx.js';
@@ -73,7 +74,8 @@ export default async function coreRoutes(app: FastifyInstance) {
       sets.push(`${k} = ?`);
       values.push(typeof v === 'boolean' ? (v ? 1 : 0) : v === '' ? null : v);
     }
-    if (sets.length) db().prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...values, req.userId);
+    if (sets.length) coreDb().prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...values, req.userId);
+    if (profilesEnabled()) syncUsers();
     return { ok: true };
   });
 
@@ -90,7 +92,8 @@ export default async function coreRoutes(app: FastifyInstance) {
     if (!entry || entry.userId !== req.userId || entry.expires < Date.now()) throw new HttpError(400, 'Código vencido. Generá uno nuevo.');
     const chatId = await findChatIdByCode(code);
     if (!chatId) throw new HttpError(404, 'Todavía no recibimos tu mensaje. Enviá el comando al bot y reintentá.');
-    db().prepare('UPDATE users SET telegram_chat_id = ? WHERE id = ?').run(chatId, req.userId);
+    coreDb().prepare('UPDATE users SET telegram_chat_id = ? WHERE id = ?').run(chatId, req.userId);
+    if (profilesEnabled()) syncUsers();
     linkCodes.delete(code);
     await sendTelegramMessage(chatId, '✅ Listo, vas a recibir las alertas de Finanzas acá.');
     return { ok: true };

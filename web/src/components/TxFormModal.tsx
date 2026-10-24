@@ -27,7 +27,7 @@ import { api } from '../lib/api';
 import { useApp } from '../lib/app-state';
 import { fromCents, money, toCents, today } from '../lib/format';
 import { compressImage } from '../lib/image';
-import { notifyError, notifyOk, useAccounts, useRefreshData, useSettings, useTags } from '../lib/queries';
+import { errorFields, FieldError, notifyError, notifyOk, useAccounts, useRefreshData, useSettings, useTags } from '../lib/queries';
 import type { SplitMethod, Tx, TxType } from '../lib/types';
 import { AccountSelect, CategorySelect, MoneyInput } from './inputs';
 import { SplitEditor, splitProblem } from './SplitEditor';
@@ -114,6 +114,18 @@ export function TxFormModal() {
   const [saving, setSaving] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [suggested, setSuggested] = useState<string | null>(null);
+  const [bad, setBad] = useState<Set<string>>(new Set());
+  const clearBad = (field: string) =>
+    setBad((b) => {
+      if (!b.has(field)) return b;
+      const next = new Set(b);
+      next.delete(field);
+      return next;
+    });
+  const fail = (e: unknown) => {
+    setBad(new Set(errorFields(e)));
+    notifyError(e);
+  };
 
   useEffect(() => {
     if (existing.data) setForm(fromTx(existing.data));
@@ -126,7 +138,12 @@ export function TxFormModal() {
     if (mine) setForm((f) => ({ ...f, account_id: mine.id }));
   }, [accounts.data, editId, form.account_id, me.id]);
 
-  const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const set = <K extends keyof Form>(k: K, v: Form[K]) => {
+    clearBad(k === 'date' ? 'purchase_date' : k);
+    clearBad(k);
+    setForm((f) => ({ ...f, [k]: v }));
+  };
+  const splittable = form.type === 'expense' || form.type === 'income';
   const account = accounts.data?.find((a) => a.id === form.account_id);
   const toAccount = accounts.data?.find((a) => a.id === form.to_account_id);
   const crossCurrency = form.type === 'transfer' && account && toAccount && account.currency !== toAccount.currency;
@@ -170,9 +187,12 @@ export function TxFormModal() {
   };
 
   const save = async () => {
-    if (!form.account_id) return notifyError(new Error('Elegí una cuenta.'));
-    const splitIssue = form.type === 'expense' && form.is_shared ? splitProblem(form.split_method, form.split_values, users, toCents(form.amount), account?.currency) : null;
-    if (splitIssue) return notifyError(new Error(splitIssue));
+    if (!toCents(form.amount) || (form.type !== 'adjustment' && toCents(form.amount) < 0)) return fail(new FieldError('Ingresá el monto.', ['amount']));
+    if (!form.account_id) return fail(new FieldError('Elegí una cuenta.', ['account_id']));
+    if (form.type === 'transfer' && !form.to_account_id) return fail(new FieldError('Elegí la cuenta destino.', ['to_account_id']));
+    if (crossCurrency && !(toCents(form.to_amount) > 0)) return fail(new FieldError(`Indicá cuánto entró en ${toAccount!.currency}.`, ['to_amount']));
+    const splitIssue = splittable && form.is_shared ? splitProblem(form.split_method, form.split_values, users, toCents(form.amount), account?.currency) : null;
+    if (splitIssue) return fail(new FieldError(splitIssue, ['split']));
     setSaving(true);
     try {
       const base = {
@@ -184,8 +204,8 @@ export function TxFormModal() {
         merchant: form.merchant || null,
         notes: form.notes || null,
         tags: form.tags,
-        is_shared: form.type === 'expense' && form.is_shared,
-        split: form.type === 'expense' ? splitPayload() : null,
+        is_shared: splittable && form.is_shared,
+        split: splittable ? splitPayload() : null,
         is_private: form.is_private,
       };
       let id = editId;
@@ -212,7 +232,7 @@ export function TxFormModal() {
       refresh();
       closeTx();
     } catch (e) {
-      notifyError(e);
+      fail(e);
     } finally {
       setSaving(false);
     }
@@ -227,7 +247,7 @@ export function TxFormModal() {
       refresh();
       closeTx();
     } catch (e) {
-      notifyError(e);
+      fail(e);
     } finally {
       setSaving(false);
     }
@@ -297,13 +317,21 @@ export function TxFormModal() {
               description={form.type === 'adjustment' ? 'Negativo para restar del saldo' : undefined}
               required
               data-autofocus
+              error={bad.has('amount')}
             />
-            <DateInput label={form.installments ? 'Fecha de compra' : 'Fecha'} value={form.date} onChange={(v) => v && set('date', v)} valueFormat="DD/MM/YYYY" required />
+            <DateInput
+              label={form.installments ? 'Fecha de compra' : 'Fecha'}
+              value={form.date}
+              onChange={(v) => v && set('date', v)}
+              valueFormat="DD/MM/YYYY"
+              required
+              error={bad.has('date') || bad.has('purchase_date')}
+            />
           </SimpleGrid>
 
           <SimpleGrid cols={{ base: 1, xs: form.type === 'transfer' ? 2 : 1 }}>
-            <AccountSelect label={form.type === 'transfer' ? 'Desde' : 'Cuenta'} value={form.account_id} onChange={(v) => set('account_id', v)} writableOnly required />
-            {form.type === 'transfer' && <AccountSelect label="Hacia" value={form.to_account_id} onChange={(v) => set('to_account_id', v)} required />}
+            <AccountSelect label={form.type === 'transfer' ? 'Desde' : 'Cuenta'} value={form.account_id} onChange={(v) => set('account_id', v)} writableOnly required error={bad.has('account_id')} />
+            {form.type === 'transfer' && <AccountSelect label="Hacia" value={form.to_account_id} onChange={(v) => set('to_account_id', v)} required error={bad.has('to_account_id')} />}
           </SimpleGrid>
           {crossCurrency && (
             <MoneyInput
@@ -313,6 +341,7 @@ export function TxFormModal() {
               value={form.to_amount}
               onChange={(v) => set('to_amount', v)}
               required
+              error={bad.has('to_amount')}
             />
           )}
           {crossOwner && (
@@ -330,10 +359,18 @@ export function TxFormModal() {
             value={form.description}
             onChange={(e) => set('description', e.currentTarget.value)}
             onBlur={suggest}
+            error={bad.has('description')}
           />
           {(form.type === 'expense' || form.type === 'income') && (
             <>
-              <CategorySelect label="Categoría" kind={form.type} value={form.category_id} onChange={(v) => set('category_id', v)} placeholder="Elegí una categoría" />
+              <CategorySelect
+                label="Categoría"
+                kind={form.type}
+                value={form.category_id}
+                onChange={(v) => set('category_id', v)}
+                placeholder="Elegí una categoría"
+                error={bad.has('category_id')}
+              />
               {suggested && (
                 <Text size="xs" c="dimmed" mt={-6}>
                   {suggested}
@@ -347,7 +384,7 @@ export function TxFormModal() {
           )}
           <Collapse in={form.installments && form.type === 'expense' && !editId}>
             <SimpleGrid cols={2}>
-              <NumberInput label="Cantidad de cuotas" min={2} max={72} value={form.count} onChange={(v) => set('count', v)} />
+              <NumberInput label="Cantidad de cuotas" min={2} max={72} value={form.count} onChange={(v) => set('count', v)} error={bad.has('count')} />
               <DateInput label="Primera cuota" description="Mes en que llega el primer resumen" value={form.first_date} onChange={(v) => v && set('first_date', v)} valueFormat="DD/MM/YYYY" />
             </SimpleGrid>
             {Number(form.count) > 1 && toCents(form.amount) > 0 && (
@@ -357,11 +394,15 @@ export function TxFormModal() {
             )}
           </Collapse>
 
-          {form.type === 'expense' && (
+          {splittable && (
             <Stack gap={6}>
               <Switch
-                label="Gasto compartido"
-                description="Se divide entre ustedes y suma a lo que uno le debe al otro (si se pagó con una cuenta personal)."
+                label={form.type === 'income' ? 'Ingreso compartido' : 'Gasto compartido'}
+                description={
+                  form.type === 'income'
+                    ? 'Es de los dos: se reparte y, si entró a una cuenta personal, quien lo recibió le debe su parte al otro.'
+                    : 'Se divide entre ustedes y suma a lo que uno le debe al otro (si se pagó con una cuenta personal).'
+                }
                 checked={form.is_shared}
                 onChange={(e) => set('is_shared', e.currentTarget.checked)}
               />
@@ -370,13 +411,21 @@ export function TxFormModal() {
                   <SplitEditor
                     method={form.split_method}
                     values={form.split_values}
-                    onChange={(m, v) => setForm((f) => ({ ...f, split_method: m, split_values: v }))}
+                    onChange={(m, v) => {
+                      clearBad('split');
+                      setForm((f) => ({ ...f, split_method: m, split_values: v }));
+                    }}
                     users={users}
                     total={toCents(form.amount)}
                     currency={account?.currency}
                     defaultSplit={settings.data?.default_split}
+                    invalid={bad.has('split')}
                   />
-                  {account?.owner_id === null && <Text size="xs" c="dimmed">Pagado con una cuenta común: se reparte en los totales personales pero no genera deuda.</Text>}
+                  {account?.owner_id === null && (
+                    <Text size="xs" c="dimmed">
+                      {form.type === 'income' ? 'Entró a una cuenta común' : 'Pagado con una cuenta común'}: se reparte en los totales personales pero no genera deuda.
+                    </Text>
+                  )}
                 </Stack>
               </Collapse>
             </Stack>

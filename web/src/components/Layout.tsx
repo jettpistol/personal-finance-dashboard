@@ -23,6 +23,7 @@ import {
   IconArrowsExchange,
   IconBell,
   IconCalendar,
+  IconDatabase,
   IconChevronDown,
   IconChevronUp,
   IconBuildingBank,
@@ -47,6 +48,7 @@ import { api } from '../lib/api';
 import { useApp } from '../lib/app-state';
 import type { Notification, Scope } from '../lib/types';
 import { TxFormModal } from './TxFormModal';
+import { useProfiles, useSelectProfile } from '../lib/profiles';
 import { date } from '../lib/format';
 
 const NAV = [
@@ -65,6 +67,7 @@ const NAV = [
   { to: '/reglas', label: 'Reglas', icon: IconWand },
   { to: '/recurrentes', label: 'Recurrentes', icon: IconRepeat },
   { section: '' },
+  { to: '/perfiles', label: 'Perfil de datos', icon: IconDatabase },
   { to: '/ajustes', label: 'Ajustes', icon: IconSettings },
 ] as const;
 
@@ -104,6 +107,36 @@ export function CurrencyToggle() {
         <BarTabs compact value={currency} onChange={(v) => setCurrency(v as 'ARS' | 'USD')} data={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]} label="Moneda" />
       </div>
     </Tooltip>
+  );
+}
+
+/** Data profile in use, always visible; the menu switches profile. */
+function ProfileSwitcher() {
+  const q = useProfiles();
+  const select = useSelectProfile();
+  const current = q.data?.profiles.find((p) => p.id === q.data?.current);
+  if (!q.data?.profiles.length) return null;
+  return (
+    <Menu position="bottom-end" withArrow>
+      <Menu.Target>
+        <UnstyledButton className="pfd-bar-tab pfd-bar-tab-solo" aria-label="Perfil de datos">
+          <IconDatabase size={15} style={{ marginRight: 6 }} />
+          {current?.name ?? 'Perfil'}
+        </UnstyledButton>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Label>Perfil de datos</Menu.Label>
+        {q.data.profiles.map((p) => (
+          <Menu.Item key={p.id} onClick={() => p.id !== current?.id && select(p.id, p.name)} fw={p.id === current?.id ? 700 : 400}>
+            {p.name}
+          </Menu.Item>
+        ))}
+        <Menu.Divider />
+        <Menu.Item component={Link} to="/perfiles">
+          Administrar perfiles
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
   );
 }
 
@@ -187,7 +220,8 @@ export function Layout({ children }: { children: ReactNode }) {
             )}
             {scoped && !isMobile && <ScopeSelector />}
           </Group>
-          <Group gap="xs" wrap="nowrap" align="center">
+          <Group gap="xs" wrap="nowrap" align="center" h="100%">
+            {!isMobile && <ProfileSwitcher />}
             <CurrencyToggle />
             <NotificationsBell />
             <Menu position="bottom-end" withArrow>

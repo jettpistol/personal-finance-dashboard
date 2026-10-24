@@ -254,4 +254,15 @@ export const migrations: string[] = [
   UPDATE accounts SET color = CASE color WHEN 'red' THEN 'violet' WHEN 'yellow' THEN 'lime' WHEN 'teal' THEN 'blue' ELSE color END;
   UPDATE goals SET color = CASE color WHEN 'red' THEN 'violet' WHEN 'yellow' THEN 'lime' WHEN 'teal' THEN 'blue' ELSE color END;
   `,
+  // Data profiles: separate datasets (e.g. real data, test data, empty) the household can switch between.
+  // Only the core database uses this table; each profile has its own database file.
+  `
+  CREATE TABLE profiles (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    file TEXT NOT NULL UNIQUE,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  `,
 ];

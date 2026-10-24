@@ -66,7 +66,7 @@ export const theme = createTheme({
     Paper: { defaultProps: { radius: 0 } },
     Badge: { defaultProps: { radius: 'xs' }, styles: { root: { textTransform: 'none', fontWeight: 600, letterSpacing: 0 } } },
     Avatar: { defaultProps: { radius: 1000 } },
-    Switch: { defaultProps: { radius: 2 } },
+    Switch: { defaultProps: { radius: 1000 } },
     Indicator: { defaultProps: { radius: 1000 } },
     Popover: { defaultProps: { shadow: 'md', radius: 'sm' } },
     Menu: { defaultProps: { shadow: 'md', radius: 'sm' } },

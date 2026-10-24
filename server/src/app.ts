@@ -9,6 +9,8 @@ import { sessionUser } from './lib/auth.js';
 import { HttpError } from './lib/http.js';
 import { validationMessage } from './lib/validation-message.js';
 import { registerRoutes } from './routes/index.js';
+import { PROFILE_COOKIE, profileDb, profilesEnabled, resolveProfile } from './lib/profiles.js';
+import { withDb } from './db/index.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -31,6 +33,12 @@ export async function buildApp(opts: { logger?: boolean; serveWeb?: boolean } = 
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024, files: 1 } });
 
   app.decorateRequest('userId', 0);
+  // Each request reads and writes the data profile chosen in this browser (cookie), or the default one.
+  app.addHook('onRequest', (req, _reply, done) => {
+    if (!profilesEnabled() || !req.url.startsWith('/api/')) return done();
+    const p = resolveProfile(req.cookies[PROFILE_COOKIE]);
+    withDb(profileDb(p), p.id, done);
+  });
   app.addHook('onRequest', async (req, reply) => {
     if (!req.url.startsWith('/api/')) return;
     reply.header('cache-control', 'no-store');
@@ -52,8 +60,8 @@ export async function buildApp(opts: { logger?: boolean; serveWeb?: boolean } = 
   });
 
   app.setErrorHandler((err, req, reply) => {
-    if (err instanceof HttpError) return reply.code(err.status).send({ error: err.message });
-    if (err instanceof ZodError) return reply.code(400).send({ error: validationMessage(err), issues: err.issues });
+    if (err instanceof HttpError) return reply.code(err.status).send({ error: err.message, fields: err.field ? [err.field] : undefined });
+    if (err instanceof ZodError) return reply.code(400).send({ error: validationMessage(err), issues: err.issues, fields: [...new Set(err.issues.map((i) => String(i.path[0] ?? '')).filter(Boolean))] });
     const status = (err as { statusCode?: number }).statusCode;
     if (status && status < 500) return reply.code(status).send({ error: (err as Error).message });
     req.log.error(err);

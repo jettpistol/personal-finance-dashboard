@@ -23,7 +23,7 @@ import { IconEdit, IconPlus, IconTrash, IconWand } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { date, fromCents, money, toCents } from '../lib/format';
-import { categoryLabel, categorySelectData, notifyError, notifyOk, useAccounts, useCategories, useRefreshData } from '../lib/queries';
+import { categoryLabel, categorySelectData, errorFields, FieldError, notifyError, notifyOk, useAccounts, useCategories, useRefreshData } from '../lib/queries';
 import type { Currency, Rule } from '../lib/types';
 import { PageHeader } from '../components/Layout';
 import { AccountSelect, CategorySelect, MoneyInput } from '../components/inputs';
@@ -253,10 +253,18 @@ function RuleModal({ rule, onClose }: { rule: Rule | null; onClose: () => void }
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [matches, setMatches] = useState<TestMatch[] | null>(null);
-  const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const [bad, setBad] = useState<string[]>([]);
+  const set = <K extends keyof Form>(k: K, v: Form[K]) => {
+    setBad((b) => b.filter((x) => x !== k));
+    setForm((f) => ({ ...f, [k]: v }));
+  };
+  const fail = (e: unknown) => {
+    setBad(errorFields(e));
+    notifyError(e);
+  };
 
   const save = async () => {
-    if (!form.pattern.trim()) return notifyError(new Error('Escribí el texto a buscar.'));
+    if (!form.pattern.trim()) return fail(new FieldError('Escribí el texto a buscar.', ['pattern']));
     setSaving(true);
     try {
       if (rule) await api.put(`/rules/${rule.id}`, toPayload(form));
@@ -265,7 +273,7 @@ function RuleModal({ rule, onClose }: { rule: Rule | null; onClose: () => void }
       notifyOk('Regla guardada');
       onClose();
     } catch (e) {
-      notifyError(e);
+      fail(e);
     } finally {
       setSaving(false);
     }
@@ -311,6 +319,7 @@ function RuleModal({ rule, onClose }: { rule: Rule | null; onClose: () => void }
             description={form.match_type === 'regex' ? 'Expresión regular, sin distinguir mayúsculas' : 'Sin distinguir mayúsculas ni acentos'}
             value={form.pattern}
             onChange={(e) => set('pattern', e.currentTarget.value)}
+            error={bad.includes('pattern')}
             required
           />
         </SimpleGrid>

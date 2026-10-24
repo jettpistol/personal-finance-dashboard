@@ -3,6 +3,8 @@ import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 import '@mantine/charts/styles.css';
 import '@fontsource-variable/source-sans-3';
+import '@fontsource/cascadia-code/400.css';
+import '@fontsource/cascadia-code/600.css';
 import './styles.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -15,6 +17,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from './App';
 import { theme } from './theme';
 import './lib/format';
+
+// Switches toggle only from the lever itself: a click on the text next to it must not act as
+// a click on the control (the browser's default for <label>).
+document.addEventListener(
+  'click',
+  (e) => {
+    if ((e.target as HTMLElement | null)?.closest?.('.mantine-Switch-labelWrapper')) e.preventDefault();
+  },
+  true,
+);
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 15_000 } },

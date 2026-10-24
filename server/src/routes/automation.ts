@@ -50,7 +50,7 @@ function ruleRow(r: z.infer<typeof ruleSchema>) {
     try {
       new RegExp(r.pattern);
     } catch {
-      throw new HttpError(400, 'La expresión regular no es válida.');
+      throw new HttpError(400, 'La expresión regular no es válida.', 'pattern');
     }
   }
   return [
@@ -136,12 +136,12 @@ export default async function automationRoutes(app: FastifyInstance) {
 
   const writeRecurring = (r: z.infer<typeof recurringSchema>, viewer: number) => {
     const account = loadAccounts().get(r.account_id);
-    if (!account || !accountVisible(account, viewer)) throw new HttpError(400, 'Cuenta inválida');
+    if (!account || !accountVisible(account, viewer)) throw new HttpError(400, 'Cuenta inválida', 'account_id');
     assertWritable(account, viewer);
     return [
       r.description, r.type, r.amount, r.account_id, r.category_id ?? null, r.frequency, r.interval, r.next_date,
       Number(r.next_date.slice(8, 10)), r.end_date ?? null, r.merchant ?? null, r.notes ?? null, JSON.stringify(r.tags),
-      r.is_shared && r.type === 'expense' ? 1 : 0, r.split ? JSON.stringify(r.split) : null, r.is_private ? 1 : 0, r.active ? 1 : 0,
+      r.is_shared ? 1 : 0, r.split ? JSON.stringify(r.split) : null, r.is_private ? 1 : 0, r.active ? 1 : 0,
     ];
   };
   const REC_COLS = 'description, type, amount, account_id, category_id, frequency, interval, next_date, day_of_month, end_date, merchant, notes, tags, is_shared, split, is_private, active';

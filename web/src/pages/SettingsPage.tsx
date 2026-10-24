@@ -32,7 +32,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, download, qs } from '../lib/api';
 import { useApp } from '../lib/app-state';
 import { date, MANTINE_COLORS, monthName, today } from '../lib/format';
-import { notifyError, notifyOk, useCategories, useMe, useSettings, useUsers } from '../lib/queries';
+import { errorFields, notifyError, notifyOk, useCategories, useMe, useSettings, useUsers } from '../lib/queries';
 import type { Category, FxRate, Settings } from '../lib/types';
 import { PageHeader } from '../components/Layout';
 
@@ -105,6 +105,11 @@ function ProfileTab() {
   const [saving, setSaving] = useState(false);
   const [pw, setPw] = useState({ current: '', next: '', repeat: '' });
   const [savingPw, setSavingPw] = useState(false);
+  const [pwBad, setPwBad] = useState<string[]>([]);
+  const editPw = (k: keyof typeof pw, v: string) => {
+    setPwBad((b) => b.filter((x) => x !== k && !(k === 'next' && x === 'repeat')));
+    setPw((p) => ({ ...p, [k]: v }));
+  };
 
   useEffect(() => {
     if (!me.data) return;
@@ -127,13 +132,17 @@ function ProfileTab() {
   };
 
   const changePassword = async () => {
-    if (pw.next !== pw.repeat) return notifyError(new Error('Las contraseñas nuevas no coinciden.'));
+    if (pw.next !== pw.repeat) {
+      setPwBad(['repeat']);
+      return notifyError(new Error('Las contraseñas nuevas no coinciden.'));
+    }
     setSavingPw(true);
     try {
       await api.post('/auth/password', { current: pw.current, next: pw.next });
       setPw({ current: '', next: '', repeat: '' });
       notifyOk('Contraseña cambiada. Se cerraron tus otras sesiones.');
     } catch (e) {
+      setPwBad(errorFields(e));
       notifyError(e);
     } finally {
       setSavingPw(false);
@@ -168,9 +177,9 @@ function ProfileTab() {
       <Card>
         <Stack>
           <Title order={4}>Cambiar contraseña</Title>
-          <PasswordInput label="Contraseña actual" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.currentTarget.value })} autoComplete="current-password" />
-          <PasswordInput label="Nueva contraseña" description="Mínimo 10 caracteres" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.currentTarget.value })} autoComplete="new-password" />
-          <PasswordInput label="Repetir nueva contraseña" value={pw.repeat} onChange={(e) => setPw({ ...pw, repeat: e.currentTarget.value })} autoComplete="new-password" />
+          <PasswordInput label="Contraseña actual" value={pw.current} onChange={(e) => editPw('current', e.currentTarget.value)} error={pwBad.includes('current')} autoComplete="current-password" />
+          <PasswordInput label="Nueva contraseña" description="Mínimo 10 caracteres" value={pw.next} onChange={(e) => editPw('next', e.currentTarget.value)} error={pwBad.includes('next')} autoComplete="new-password" />
+          <PasswordInput label="Repetir nueva contraseña" value={pw.repeat} onChange={(e) => editPw('repeat', e.currentTarget.value)} error={pwBad.includes('repeat')} autoComplete="new-password" />
           <Group justify="flex-end">
             <Button onClick={changePassword} loading={savingPw} disabled={!pw.current || !pw.next}>
               Cambiar contraseña

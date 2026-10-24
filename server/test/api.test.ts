@@ -90,6 +90,17 @@ describe('money flows', () => {
     expect(bal.settlements).toEqual([]);
   });
 
+  it('splits shared income: the receiver owes the other their share', async () => {
+    const before = (await call('ana', 'GET', '/api/balances')).body.balances[0];
+    const r = await call('ana', 'POST', '/api/transactions', { type: 'income', date: D(2), amount: 20_000_00, account_id: ids.anaBank, category_id: cat['Otros ingresos'], description: 'Alquiler cochera', is_shared: true });
+    expect(r.status).toBe(200);
+    const after = (await call('ana', 'GET', '/api/balances')).body.balances[0];
+    const net = (b: { users: { user_id: number; net: number }[] }, uid: number) => b.users.find((u) => u.user_id === uid)!.net;
+    expect(net(after, 1) - net(before, 1)).toBe(-10_000_00);
+    expect(net(after, 2) - net(before, 2)).toBe(10_000_00);
+    await call('ana', 'DELETE', `/api/transactions/${r.body.id}`);
+  });
+
   it('keeps transfers between own accounts out of totals', async () => {
     await call('ana', 'POST', '/api/transactions', { type: 'transfer', date: D(3), amount: 10_000_00, account_id: ids.anaBank, to_account_id: ids.joint, description: 'Aporte' });
     await call('ana', 'POST', '/api/transactions', { type: 'transfer', date: D(3), amount: 100_000_00, account_id: ids.anaBank, to_account_id: ids.anaUsd, to_amount: 100_00, description: 'Compra USD' });

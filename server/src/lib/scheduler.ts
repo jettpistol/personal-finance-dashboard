@@ -1,12 +1,11 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { config } from '../config.js';
-import { db, getSetting, setSetting } from '../db/index.js';
+import { db, getSetting, setSetting, withDb } from '../db/index.js';
 import { addMonthsToMonth, currentMonth, monthLabel, today } from './dates.js';
 import { generateDueRecurring } from './recurring.js';
 import { refreshRates } from './fx.js';
 import { loadCpi, refreshCpi } from './cpi.js';
-import { runBackup } from './backup.js';
+import { runBackup, todaysBackupExists } from './backup.js';
+import { listProfiles, profileDb, profilesEnabled } from './profiles.js';
 import { buildReviewDocx, reviewFileName } from './review.js';
 import { notify } from './notify.js';
 import { loadUsers, type Scope } from './domain.js';
@@ -58,7 +57,7 @@ async function sendMonthlyReviews() {
   }
 }
 
-export async function tick() {
+async function tickProfile() {
   await step('recurring', () => generateDueRecurring());
   if (due('fx_last_refresh', FX_EVERY_MS)) await step('fx', () => refreshRates());
   if (due('cpi_last_refresh', CPI_EVERY_MS)) await step('cpi', () => refreshCpi());
@@ -75,11 +74,17 @@ export async function tick() {
     }
   });
   await step('backup', async () => {
-    if (!fs.existsSync(path.join(config.backupsDir, `finanzas-${today()}.sqlite`))) await runBackup();
+    if (!todaysBackupExists()) await runBackup();
   });
   await step('monthly review', async () => {
     if (Number(today().slice(8, 10)) <= 3 && loadUsers().length) await sendMonthlyReviews();
   });
+}
+
+/** Every profile gets its own recurring bills, rates, backups and reviews. */
+export async function tick() {
+  if (!profilesEnabled()) return tickProfile();
+  for (const p of listProfiles()) await withDb(profileDb(p), p.id, () => tickProfile());
 }
 
 export function startScheduler() {

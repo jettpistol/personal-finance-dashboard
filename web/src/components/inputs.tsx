@@ -23,14 +23,21 @@ export function AccountSelect({
   onChange,
   writableOnly,
   includeArchived,
+  currency,
   ...props
-}: Omit<SelectProps, 'value' | 'onChange' | 'data'> & { value: number | null | undefined; onChange: (id: number | null) => void; writableOnly?: boolean; includeArchived?: boolean }) {
+}: Omit<SelectProps, 'value' | 'onChange' | 'data'> & {
+  value: number | null | undefined;
+  onChange: (id: number | null) => void;
+  writableOnly?: boolean;
+  includeArchived?: boolean;
+  currency?: Currency;
+}) {
   const accounts = useAccounts();
   const { users } = useApp();
   return (
     <Select
       searchable
-      data={accountSelectData(accounts.data, users, { writableOnly, includeArchived })}
+      data={accountSelectData(accounts.data, users, { writableOnly, includeArchived, currency })}
       value={value == null ? null : String(value)}
       onChange={(v) => onChange(v ? Number(v) : null)}
       nothingFoundMessage="Sin cuentas"

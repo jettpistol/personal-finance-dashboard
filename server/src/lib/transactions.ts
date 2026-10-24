@@ -55,15 +55,15 @@ export function computeSplits(total: number, split: SplitInput | null | undefine
       break;
     case 'percent': {
       const pcts = userIds.map(valueOf);
-      if (pcts.some((p) => p < 0)) throw new HttpError(400, 'Los porcentajes no pueden ser negativos.');
-      if (Math.abs(pcts.reduce((a, b) => a + b, 0) - 100) > 0.01) throw new HttpError(400, 'Los porcentajes deben sumar 100.');
+      if (pcts.some((p) => p < 0)) throw new HttpError(400, 'Los porcentajes no pueden ser negativos.', 'split');
+      if (Math.abs(pcts.reduce((a, b) => a + b, 0) - 100) > 0.01) throw new HttpError(400, 'Los porcentajes deben sumar 100.', 'split');
       amounts = allocate(total, pcts);
       break;
     }
     case 'exact': {
       amounts = userIds.map((u) => Math.round(valueOf(u)));
-      if (amounts.some((a) => a < 0)) throw new HttpError(400, 'Los montos no pueden ser negativos.');
-      if (amounts.reduce((a, b) => a + b, 0) !== total) throw new HttpError(400, 'Los montos de la división deben sumar el total.');
+      if (amounts.some((a) => a < 0)) throw new HttpError(400, 'Los montos no pueden ser negativos.', 'split');
+      if (amounts.reduce((a, b) => a + b, 0) !== total) throw new HttpError(400, 'Los montos de la división deben sumar el total.', 'split');
       break;
     }
   }
@@ -76,19 +76,19 @@ type Normalised = Omit<Tx, 'id' | 'created_at' | 'updated_at' | 'splits'> & { sp
 export function normaliseTx(input: TxInput, viewer: number, existing?: Tx): Normalised {
   const accounts = loadAccounts();
   const account = accounts.get(input.account_id);
-  if (!account || !accountVisible(account, viewer)) throw new HttpError(400, 'Cuenta inválida.');
+  if (!account || !accountVisible(account, viewer)) throw new HttpError(400, 'Cuenta inválida.', 'account_id');
   assertWritable(account, viewer);
 
   let toAccount: Account | undefined;
   let toAmount: number | null = null;
   let isSettlement = false;
   if (input.type === 'transfer') {
-    if (input.to_account_id == null) throw new HttpError(400, 'Elegí la cuenta destino.');
+    if (input.to_account_id == null) throw new HttpError(400, 'Elegí la cuenta destino.', 'to_account_id');
     toAccount = accounts.get(input.to_account_id);
-    if (!toAccount || !accountVisible(toAccount, viewer)) throw new HttpError(400, 'Cuenta destino inválida.');
-    if (toAccount.id === account.id) throw new HttpError(400, 'La cuenta destino debe ser distinta a la de origen.');
+    if (!toAccount || !accountVisible(toAccount, viewer)) throw new HttpError(400, 'Cuenta destino inválida.', 'to_account_id');
+    if (toAccount.id === account.id) throw new HttpError(400, 'La cuenta destino debe ser distinta a la de origen.', 'to_account_id');
     if (toAccount.currency !== account.currency) {
-      if (!input.to_amount) throw new HttpError(400, 'Indicá el monto recibido en la moneda de la cuenta destino.');
+      if (!input.to_amount) throw new HttpError(400, 'Indicá el monto recibido en la moneda de la cuenta destino.', 'to_amount');
       toAmount = input.to_amount;
     }
     const crossOwner = account.owner_id !== null && toAccount.owner_id !== null && account.owner_id !== toAccount.owner_id;
@@ -97,23 +97,24 @@ export function normaliseTx(input: TxInput, viewer: number, existing?: Tx): Norm
   }
 
   if (input.type === 'adjustment') {
-    if (input.amount === 0) throw new HttpError(400, 'El ajuste no puede ser cero.');
+    if (input.amount === 0) throw new HttpError(400, 'El ajuste no puede ser cero.', 'amount');
   } else if (input.amount <= 0) {
-    throw new HttpError(400, 'El monto debe ser mayor a cero.');
+    throw new HttpError(400, 'El monto debe ser mayor a cero.', 'amount');
   }
 
   let categoryId: number | null = input.category_id ?? null;
   if (input.type === 'expense' || input.type === 'income') {
     if (categoryId != null) {
       const cat = loadCategories().get(categoryId);
-      if (!cat) throw new HttpError(400, 'Categoría inválida.');
-      if (cat.kind !== input.type) throw new HttpError(400, 'La categoría no corresponde al tipo de movimiento.');
+      if (!cat) throw new HttpError(400, 'Categoría inválida.', 'category_id');
+      if (cat.kind !== input.type) throw new HttpError(400, 'La categoría no corresponde al tipo de movimiento.', 'category_id');
     }
   } else {
     categoryId = null;
   }
 
-  const isShared = input.type === 'expense' && input.is_shared;
+  // Shared expenses and shared income (e.g. rent collected for both) are split the same way.
+  const isShared = (input.type === 'expense' || input.type === 'income') && input.is_shared;
   const userIds = loadUsers().map((u) => u.id);
   const splits = isShared ? computeSplits(input.amount, input.split, userIds) : [];
   const isPrivate = input.is_private && !isShared && !isSettlement && account.owner_id !== null;

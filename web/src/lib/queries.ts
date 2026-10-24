@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
-import { api } from './api';
-import type { Account, Category, Me, Settings, User } from './types';
+import { ApiError, api } from './api';
+import type { Account, Category, Currency, Me, Settings, User } from './types';
 
 export const useMe = () => useQuery({ queryKey: ['me'], queryFn: () => api.get<Me>('/me') });
 export const useUsers = () => useQuery({ queryKey: ['users'], queryFn: () => api.get<User[]>('/users'), staleTime: 60_000 });
@@ -18,6 +18,23 @@ export function useRefreshData() {
       qc.invalidateQueries({ queryKey: [key] });
     }
   };
+}
+
+/** A form error that also names the fields to paint red. */
+export class FieldError extends Error {
+  constructor(
+    message: string,
+    public fields: string[],
+  ) {
+    super(message);
+  }
+}
+
+/** Fields an error is about: from a FieldError, or from the API's `fields`. */
+export function errorFields(e: unknown): string[] {
+  if (e instanceof FieldError) return e.fields;
+  if (e instanceof ApiError) return (e.data as { fields?: string[] } | undefined)?.fields ?? [];
+  return [];
 }
 
 export function notifyError(e: unknown) {
@@ -56,9 +73,11 @@ export function categorySelectData(cats: Category[] | undefined, kind: 'expense'
   }));
 }
 
-export function accountSelectData(accounts: Account[] | undefined, users: User[] | undefined, opts: { writableOnly?: boolean; includeArchived?: boolean } = {}) {
+export function accountSelectData(accounts: Account[] | undefined, users: User[] | undefined, opts: { writableOnly?: boolean; includeArchived?: boolean; currency?: Currency } = {}) {
   if (!accounts) return [];
-  const list = accounts.filter((a) => (opts.includeArchived || !a.archived) && (!opts.writableOnly || a.can_edit || !a.is_private));
+  const list = accounts.filter(
+    (a) => (opts.includeArchived || !a.archived) && (!opts.writableOnly || a.can_edit || !a.is_private) && (!opts.currency || a.currency === opts.currency),
+  );
   const groups: { group: string; items: { value: string; label: string }[] }[] = [];
   const add = (group: string, items: Account[]) => {
     if (items.length) groups.push({ group, items: items.map((a) => ({ value: String(a.id), label: `${a.name} (${a.currency})` })) });

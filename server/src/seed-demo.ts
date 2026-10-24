@@ -1,20 +1,24 @@
-// Fills an EMPTY database with two demo users and ~5 months of realistic data.
+// Creates two demo users and a "Prueba (demo)" data profile with ~5 months of realistic data.
+// The default "Vacío" profile stays empty.
 // Usage: npm run demo (seeds server/data-demo once, then starts the app on it)
 // Exchange rates and CPI are synthetic (source "demo"); refresh them from Ajustes once online.
 import { config } from './config.js';
-import { db, openDb, setDb } from './db/index.js';
+import { coreDb, db, setDb } from './db/index.js';
+import { createProfile, initProfiles, profileDb, syncUsers } from './lib/profiles.js';
+
+const DEMO_PROFILE = 'Prueba (demo)';
 import { hashPassword } from './lib/auth.js';
 import { addDays, addMonths, addMonthsToMonth, currentMonth, monthEnd, today } from './lib/dates.js';
 import { createInstallmentPlan, createTx, type TxInput } from './lib/transactions.js';
 import { upsertRate } from './lib/fx.js';
 
-setDb(openDb(config.dbPath));
-if ((db().prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n > 0) {
+initProfiles();
+if ((coreDb().prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n > 0) {
   if (process.argv.includes('--if-empty')) {
-    console.log(`Demo ya cargada en ${config.dbPath}.`);
+    console.log(`Demo ya cargada en ${config.dataDir}.`);
     process.exit(0);
   }
-  console.error(`La base ${config.dbPath} ya tiene usuarios. Usá un DATA_DIR vacío para la demo.`);
+  console.error(`${config.dataDir} ya tiene usuarios. Usá un DATA_DIR vacío para la demo.`);
   process.exit(1);
 }
 
@@ -23,9 +27,13 @@ const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 const between = (a: number, b: number) => Math.round(a + rnd() * (b - a));
 
 const PASSWORD = 'demo-finanzas';
-const insertUser = db().prepare('INSERT INTO users (username, display_name, password_hash, color) VALUES (?, ?, ?, ?)');
-const ivan = Number(insertUser.run('ivan', 'Iván', await hashPassword(PASSWORD), 'pink').lastInsertRowid);
-const milagros = Number(insertUser.run('milagros', 'Milagros', await hashPassword(PASSWORD), 'blue').lastInsertRowid);
+const insertUser = coreDb().prepare('INSERT INTO users (username, display_name, password_hash, color) VALUES (?, ?, ?, ?)');
+const ivan = Number(insertUser.run('ivan', 'Iván', await hashPassword(PASSWORD), 'blue').lastInsertRowid);
+const milagros = Number(insertUser.run('milagros', 'Milagros', await hashPassword(PASSWORD), 'pink').lastInsertRowid);
+// The demo data goes into its own profile; the default profile stays empty.
+const demoProfile = createProfile(DEMO_PROFILE);
+syncUsers();
+setDb(profileDb(demoProfile));
 
 const cat = Object.fromEntries((db().prepare('SELECT id, name FROM categories').all() as { id: number; name: string }[]).map((c) => [c.name, c.id]));
 const acc = (name: string, type: string, currency: string, owner: number | null, opening: number, priv = 0) =>
@@ -147,4 +155,4 @@ db()
     JSON.stringify({ delimiter: ';', encoding: 'windows-1252', sheet: 0, skipRows: 0, hasHeader: true, columns: { date: 0, description: [1], debit: 2, credit: 3 }, amountMode: 'split', invertSign: false, dateFormat: 'DD/MM/YYYY', decimalSeparator: ',', skipIfContains: ['SALDO ANTERIOR'] }),
   );
 
-console.log(`Demo lista en ${config.dbPath}. Usuarios: ivan / milagros, contraseña: ${PASSWORD}`);
+console.log(`Demo lista en ${config.dataDir}. Usuarios: ivan / milagros, contraseña: ${PASSWORD}. Elegí el perfil "${DEMO_PROFILE}" en Perfil de datos.`);

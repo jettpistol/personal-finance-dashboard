@@ -1,11 +1,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import Database from 'better-sqlite3';
 import { migrations } from './migrations.js';
 
 export type DB = Database.Database;
 
+// Two kinds of database: the core one (logins, sessions, the list of data profiles) and one per
+// data profile (accounts, transactions, budgets...). Each request and each scheduler run reads
+// and writes its profile's database through db(); coreDb() is for logins and profiles.
 let instance: DB | null = null;
+let coreInstance: DB | null = null;
+const current = new AsyncLocalStorage<{ db: DB; profileId: number | null }>();
 
 export function openDb(file: string): DB {
   if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -18,13 +24,35 @@ export function openDb(file: string): DB {
   return db;
 }
 
+/** Fallback database when no profile is active (tests use a single in-memory database for everything). */
 export function setDb(db: DB) {
   instance = db;
 }
 
+export function setCoreDb(db: DB) {
+  coreInstance = db;
+}
+
+/** The active data profile's database. */
 export function db(): DB {
+  const store = current.getStore();
+  if (store) return store.db;
   if (!instance) throw new Error('Database not initialised');
   return instance;
+}
+
+/** Logins, sessions and the list of data profiles. */
+export function coreDb(): DB {
+  return coreInstance ?? db();
+}
+
+export function currentProfileId(): number | null {
+  return current.getStore()?.profileId ?? null;
+}
+
+/** Runs fn (and everything it awaits) against a profile's database. */
+export function withDb<T>(target: DB, profileId: number | null, fn: () => T): T {
+  return current.run({ db: target, profileId }, fn);
 }
 
 function migrate(db: DB) {

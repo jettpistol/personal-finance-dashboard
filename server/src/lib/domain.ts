@@ -194,7 +194,7 @@ export function scopeEntry(tx: Tx, scope: Scope, accounts: Map<number, Account>)
   const uid = scopeUserId(scope);
   const base = { kind: tx.type, currency: tx.currency, date: tx.date, category_id: tx.category_id, tx } as const;
 
-  if (tx.type === 'expense' && tx.is_shared && tx.splits.length) {
+  if (tx.is_shared && tx.splits.length) {
     if (uid === null) return { ...base, amount: tx.amount };
     const share = tx.splits.find((s) => s.user_id === uid)?.amount ?? 0;
     return share ? { ...base, amount: share } : null;
@@ -258,6 +258,12 @@ export function ledger(txs: Tx[], accounts: Map<number, Account>): Map<Currency,
       if (payer == null) continue; // paid from the joint pot: nobody owes anybody
       add(tx.currency, payer, tx.amount);
       for (const s of tx.splits) add(tx.currency, s.user_id, -s.amount);
+    } else if (tx.type === 'income' && tx.is_shared && tx.splits.length) {
+      // Shared income received in one person's account: they owe the others their shares.
+      const receiver = payerOf(tx, accounts);
+      if (receiver == null) continue; // received in the joint pot: already shared
+      add(tx.currency, receiver, -tx.amount);
+      for (const s of tx.splits) add(tx.currency, s.user_id, s.amount);
     } else if (tx.type === 'transfer' && tx.is_settlement && tx.to_account_id != null) {
       const from = accounts.get(tx.account_id)?.owner_id;
       const to = accounts.get(tx.to_account_id)?.owner_id;
