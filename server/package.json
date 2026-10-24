@@ -1,0 +1,32 @@
+{
+  "name": "pfd-server",
+  "version": "0.1.0",
+  "description": "Personal finance dashboard backend: Mercado Pago ingestion, webhooks and export",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "start": "tsx --env-file-if-exists=.env src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "sync": "tsx --env-file-if-exists=.env scripts/sync.ts",
+    "simulate:webhook": "tsx --env-file-if-exists=.env scripts/simulate-webhook.ts"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "5.1.0",
+    "mercadopago": "3.6.1"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.3",
+    "@types/node": "22.15.30",
+    "@types/supertest": "6.0.3",
+    "supertest": "7.1.1",
+    "tsx": "4.19.4",
+    "typescript": "5.8.3",
+    "vitest": "3.2.4"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  }
+}
