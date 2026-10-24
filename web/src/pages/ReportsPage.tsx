@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Group, SegmentedControl, Switch, Tabs, Tooltip } from '@mantine/core';
+import { Group, SegmentedControl, Tabs } from '@mantine/core';
 import { PageHeader } from '../components/Layout';
+import { NominalRealSwitch } from '../components/Informe';
 import { InflationTab, MerchantsTab, NetWorthTab, PeopleTab, SavingsTab, TrendTab, YearTab, type ReportParams } from '../components/ReportTabs';
 import { scopeName, useApp } from '../lib/app-state';
 import { addMonths, currentMonth } from '../lib/format';
@@ -40,17 +41,13 @@ export function ReportsPage() {
               />
             )}
             {USES_REAL.includes(tab) && (
-              <Tooltip label={currency === 'USD' ? 'Solo aplica a montos en pesos' : 'Expresa los montos de meses anteriores en pesos de hoy usando el IPC (INDEC)'} multiline w={260} withArrow>
-                <div>
-                  <Switch label="Pesos constantes" checked={real} disabled={currency === 'USD'} onChange={(e) => setReal(e.currentTarget.checked)} />
-                </div>
-              </Tooltip>
+              <NominalRealSwitch value={real ? 'real' : 'nominal'} onChange={(m) => setReal(m === 'real')} currency={currency} />
             )}
           </Group>
         }
       />
       <Tabs value={tab} onChange={(v) => v && setTab(v as Tab)} keepMounted={false}>
-        <Tabs.List mb="md" style={{ flexWrap: 'nowrap', overflowX: 'auto' }}>
+        <Tabs.List style={{ flexWrap: 'nowrap', overflowX: 'auto' }}>
           <Tabs.Tab value="trend">Tendencia</Tabs.Tab>
           <Tabs.Tab value="year">Anual</Tabs.Tab>
           <Tabs.Tab value="savings">Ahorro</Tabs.Tab>

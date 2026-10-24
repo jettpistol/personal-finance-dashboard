@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Avatar, Badge, Button, Card, Group, Modal, Select, SimpleGrid, Stack, Table, Text, TextInput, ThemeIcon } from '@mantine/core';
+import { Alert, Avatar, Badge, Button, Card, Group, Modal, Select, SimpleGrid, Stack, Table, Text, TextInput, Title } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { IconArrowRight, IconCheck, IconInfoCircle, IconPlus, IconUsers } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
@@ -88,9 +88,7 @@ function SummaryCard({ b, onSettle }: { b: BalanceSummary; onSettle: (s: Settle)
       </Group>
       {!b.settlements.length ? (
         <Group gap="sm">
-          <ThemeIcon color="teal" radius="xl" size="lg">
-            <IconCheck size={18} />
-          </ThemeIcon>
+          <IconCheck size={18} color="var(--pfd-up)" />
           <Text fw={700} fz="xl">
             Están a mano
           </Text>
@@ -162,9 +160,7 @@ export function BalancesPage() {
         {q.data && !q.data.balances.length && (
           <Card>
             <Group gap="sm">
-              <ThemeIcon color="teal" radius="xl" size="lg">
-                <IconCheck size={18} />
-              </ThemeIcon>
+              <IconCheck size={18} color="var(--pfd-up)" />
               <div>
                 <Text fw={700} fz="xl">
                   Están a mano
@@ -179,9 +175,7 @@ export function BalancesPage() {
       </SimpleGrid>
 
       <Card>
-        <Text fw={700} mb="sm">
-          Actividad
-        </Text>
+        <Title order={4}>Actividad</Title>
         {!q.data?.activity.length ? (
           <Text c="dimmed" size="sm" ta="center" py="md">
             Sin gastos compartidos todavía.
@@ -214,9 +208,7 @@ export function BalancesPage() {
                       </Table.Td>
                       <Table.Td>
                         <Group gap={6} wrap="nowrap">
-                          <ThemeIcon size={20} radius="xl" variant="light" color={settlement ? 'teal' : 'grape'}>
-                            {settlement ? <IconArrowRight size={12} /> : <IconUsers size={12} />}
-                          </ThemeIcon>
+                          <span style={{ display: "inline-flex", color: `var(--mantine-color-${settlement ? 'teal' : 'grape'}-7)` }}>{settlement ? <IconArrowRight size={12} /> : <IconUsers size={12} />}</span>
                           <Text size="sm" fw={500} lineClamp={1}>
                             {settlement ? `${name(t.owner_id)} le pagó a ${name(other(t.owner_id))}` : t.description || t.merchant || '(sin descripción)'}
                           </Text>

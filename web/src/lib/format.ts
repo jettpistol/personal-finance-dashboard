@@ -72,4 +72,5 @@ export const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
   wallet: 'Billetera virtual',
 };
 
-export const MANTINE_COLORS = ['blue', 'indigo', 'cyan', 'teal', 'green', 'lime', 'yellow', 'orange', 'red', 'pink', 'grape', 'violet', 'gray', 'dark'];
+// Decorative colors only: red, yellow and teal are reserved for errors, warnings and positive change.
+export const MANTINE_COLORS = ['indigo', 'blue', 'cyan', 'green', 'lime', 'orange', 'pink', 'grape', 'violet', 'gray', 'dark'];

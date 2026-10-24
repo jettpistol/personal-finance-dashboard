@@ -13,7 +13,6 @@ import {
   Switch,
   Text,
   TextInput,
-  ThemeIcon,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { IconDots, IconEdit, IconListDetails, IconLock, IconPlus, IconTrash } from '@tabler/icons-react';
@@ -171,17 +170,16 @@ function AccountCard({ a, onEdit }: { a: Account; onEdit: () => void }) {
     });
 
   return (
-    <Card opacity={a.archived ? 0.6 : 1} style={{ borderTop: `4px solid var(--mantine-color-${a.color ?? 'gray'}-5)` }}>
+    <Card opacity={a.archived ? 0.6 : 1}>
       <Group justify="space-between" align="flex-start" wrap="nowrap">
         <div style={{ minWidth: 0 }}>
           <Group gap={6} wrap="nowrap">
+            <span className="pfd-swatch" style={{ background: `var(--mantine-color-${a.color ?? 'gray'}-6)` }} />
             <Text fw={700} lineClamp={1}>
               {a.name}
             </Text>
             {!!a.is_private && (
-              <ThemeIcon size={18} radius="xl" variant="light" color="gray" title="Privada">
-                <IconLock size={11} />
-              </ThemeIcon>
+              <IconLock size={11} color="var(--pfd-ink-2)" />
             )}
           </Group>
           <Group gap={4} mt={2}>
@@ -279,7 +277,7 @@ export function AccountsPage() {
       />
 
       <Card mb="lg">
-        <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+        <Text size="sm" c="var(--pfd-ink-2)" fw={650}>
           Patrimonio visible
         </Text>
         <Text className="num" fz={30} fw={800} c={total < 0 ? 'red' : undefined}>

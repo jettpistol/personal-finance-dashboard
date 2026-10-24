@@ -7,7 +7,7 @@ import {
   Group,
   Menu,
   Modal,
-  RingProgress,
+  Progress,
   Select,
   SimpleGrid,
   Stack,
@@ -272,17 +272,6 @@ function GoalCard({ g, onEdit, onContrib }: { g: Goal; onEdit: () => void; onCon
       </Group>
 
       <Group mt="md" wrap="nowrap" gap="md">
-        <RingProgress
-          size={96}
-          thickness={10}
-          roundCaps
-          sections={[{ value: Math.max(0, Math.min(100, g.pct)), color: done ? 'teal' : color }]}
-          label={
-            <Text ta="center" fw={800} size="sm">
-              {Math.round(g.pct)}%
-            </Text>
-          }
-        />
         <div style={{ minWidth: 0 }}>
           <Text className="num" fw={800} fz="lg">
             {money(g.saved, g.currency)}
@@ -299,9 +288,18 @@ function GoalCard({ g, onEdit, onContrib }: { g: Goal; onEdit: () => void; onCon
         </div>
       </Group>
 
-      <Text size="sm" mt="sm" c={done ? 'teal' : undefined}>
+      <Group justify="space-between" mt="sm" mb={4}>
+        <Text size="xs" c="var(--pfd-ink-2)">
+          Avance
+        </Text>
+        <Text size="xs" fw={700} className="num">
+          {Math.round(g.pct)}%
+        </Text>
+      </Group>
+      <Progress value={Math.max(0, Math.min(100, g.pct))} color={done ? 'teal.7' : `${color}.7`} size={10} aria-label={`Avance de ${g.name}`} />
+      <Text size="sm" mt="sm" fw={done ? 600 : undefined}>
         {done
-          ? '¡Meta cumplida! 🎉'
+          ? 'Meta cumplida.'
           : g.monthly_needed != null
             ? `Necesitás ahorrar ${money(g.monthly_needed, g.currency)} por mes`
             : `Faltan ${money(g.remaining, g.currency)}`}

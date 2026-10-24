@@ -1,5 +1,5 @@
-import { Badge, Checkbox, Group, Table, Text, ThemeIcon, Tooltip } from '@mantine/core';
-import { IconArrowRight, IconLock, IconPaperclip, IconRepeat, IconUsers } from '@tabler/icons-react';
+import { Badge, Checkbox, Group, Table, Text, Tooltip } from '@mantine/core';
+import { IconArrowRight, IconPaperclip } from '@tabler/icons-react';
 import { useApp } from '../lib/app-state';
 import { date, money } from '../lib/format';
 import { categoryColor, categoryLabel, useAccounts, useCategories } from '../lib/queries';
@@ -58,7 +58,7 @@ export function TxTable({
 
   return (
     <Table.ScrollContainer minWidth={compact ? 0 : 640}>
-      <Table verticalSpacing={compact ? 6 : 'xs'} highlightOnHover>
+      <Table verticalSpacing={compact ? 6 : 'xs'} highlightOnHover data-compact={compact || undefined}>
         {!compact && (
           <Table.Thead>
             <Table.Tr>
@@ -98,33 +98,27 @@ export function TxTable({
                 </Table.Td>
                 <Table.Td>
                   <Group gap={6} wrap="nowrap">
-                    <Text size="sm" fw={500} lineClamp={1}>
+                    <Text size="sm" fw={500} lineClamp={compact ? 2 : 1}>
                       {t.description || t.merchant || '(sin descripción)'}
                     </Text>
                     {t.status === 'pending' && (
-                      <Badge size="xs" color="yellow" variant="light">
+                      <span className="pfd-tag" data-tone="ocre">
                         Pendiente
-                      </Badge>
+                      </span>
                     )}
                     {!!t.is_shared && (
-                      <Tooltip label={`Compartido · pagó ${payer?.display_name ?? 'la cuenta común'}`}>
-                        <ThemeIcon size={18} variant="light" color="grape" radius="xl">
-                          <IconUsers size={11} />
-                        </ThemeIcon>
+                      <Tooltip label={`Pagó ${payer?.display_name ?? 'la cuenta común'}`}>
+                        <span className="pfd-tag" data-tone="grape">
+                          Compartido
+                        </span>
                       </Tooltip>
                     )}
                     {!!t.is_private && (
-                      <Tooltip label="Privado">
-                        <ThemeIcon size={18} variant="light" color="gray" radius="xl">
-                          <IconLock size={11} />
-                        </ThemeIcon>
-                      </Tooltip>
+                      <span className="pfd-tag" data-tone="gray">
+                        Privado
+                      </span>
                     )}
-                    {t.recurring_id && (
-                      <ThemeIcon size={18} variant="light" color="blue" radius="xl">
-                        <IconRepeat size={11} />
-                      </ThemeIcon>
-                    )}
+                    {t.recurring_id && !compact && <span className="pfd-tag">Recurrente</span>}
                     {t.has_receipt && <IconPaperclip size={14} color="var(--mantine-color-dimmed)" />}
                   </Group>
                   {!compact && t.tags.length > 0 && (

@@ -124,7 +124,7 @@ function PendingSection() {
       </Group>
       {!items.length ? (
         <Text c="dimmed" size="sm">
-          No hay movimientos pendientes. 🎉
+          No hay movimientos pendientes: todo lo recurrente de este mes ya está confirmado.
         </Text>
       ) : (
         <Stack gap="xs">

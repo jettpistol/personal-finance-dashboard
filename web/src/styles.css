@@ -1,5 +1,66 @@
+/* Informe del mes: tokens shared by the shell and the boxed panels. */
+:root {
+  --pfd-ground: #eceff4;
+  --pfd-panel: #ffffff;
+  --pfd-strip: #f3f5f9;
+  --pfd-rule: #cdd5e1;
+  --pfd-rule-strong: #aab5c6;
+  --pfd-ink: #1b2434;
+  --pfd-ink-2: #4f5b70;
+  --pfd-rail: #0f2a4a;
+  --pfd-rail-2: #17375e;
+  --pfd-rail-ink: #dbe5f2;
+  --pfd-rail-ink-2: #93a8c4;
+  --pfd-real: var(--mantine-color-ocre-6);
+  --pfd-up: #2b7a4b;
+  --pfd-down: #b4362f;
+  --pfd-focus: var(--mantine-color-navy-6);
+}
+
+[data-mantine-color-scheme='dark'] {
+  --pfd-ground: #0f141c;
+  --pfd-panel: #161d28;
+  --pfd-strip: #1c2532;
+  --pfd-rule: #2c3747;
+  --pfd-rule-strong: #3d4a5e;
+  --pfd-ink: #e4e9f1;
+  --pfd-ink-2: #a3aec0;
+  --pfd-rail: #0a1a2e;
+  --pfd-rail-2: #12284a;
+  --pfd-real: var(--mantine-color-ocre-4);
+  --pfd-up: #5cbf86;
+  --pfd-down: #ef7b72;
+  --pfd-focus: var(--mantine-color-navy-3);
+}
+
 body {
-  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+  background: var(--pfd-ground);
+  color: var(--pfd-ink);
+  font-feature-settings: 'tnum' 1;
+}
+
+::selection {
+  background: var(--mantine-color-navy-2);
+  color: var(--mantine-color-navy-9);
+}
+
+input,
+textarea {
+  caret-color: var(--pfd-focus);
+}
+
+:focus-visible {
+  outline: 2px solid var(--pfd-focus);
+  outline-offset: 1px;
+}
+
+a {
+  text-underline-offset: 2px;
+}
+
+* {
+  scrollbar-color: var(--pfd-rule-strong) transparent;
+  scrollbar-width: thin;
 }
 
 .num {
@@ -12,14 +73,658 @@ body {
 }
 
 .clickable-row:hover {
-  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  background: var(--pfd-strip);
 }
 
-.nav-section-label {
+/* ---- Boxed panels ----
+   Every Card is a ruled box; when it opens with a title (alone or in a row with actions),
+   that row becomes the panel's header strip. */
+.mantine-Card-root {
+  background: var(--pfd-panel);
+  border-color: var(--pfd-rule);
+}
+
+.mantine-Card-root > .mantine-Title-root:first-child,
+.mantine-Card-root > .mantine-Group-root:first-child:has(> .mantine-Title-root),
+.mantine-Card-root > .mantine-Group-root:first-child:has(> div > .mantine-Title-root) {
+  margin: calc(var(--card-padding) * -1) calc(var(--card-padding) * -1) var(--card-padding) !important;
+  padding: 8px var(--card-padding);
+  min-height: 40px;
+  background: var(--pfd-strip);
+  border-bottom: 1px solid var(--pfd-rule);
+}
+
+.mantine-Card-root > .mantine-Title-root:first-child,
+.mantine-Card-root > .mantine-Group-root:first-child > .mantine-Title-root,
+.mantine-Card-root > .mantine-Group-root:first-child > div > .mantine-Title-root {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.mantine-Card-root > .mantine-Title-root:first-child {
+  display: flex;
+  align-items: center;
+}
+
+/* A title followed by an explanatory line keeps the line inside the strip. */
+.mantine-Card-root > .mantine-Title-root:first-child + .mantine-Text-root[data-size='xs'] {
+  margin: calc(var(--card-padding) * -1 - 1px) calc(var(--card-padding) * -1) var(--card-padding) !important;
+  padding: 0 var(--card-padding) 8px;
+  background: var(--pfd-strip);
+  border-bottom: 1px solid var(--pfd-rule);
+}
+
+/* Tables: ruled, with a strip header. */
+.mantine-Table-table {
+  --table-border-color: var(--pfd-rule);
+}
+
+.mantine-Table-thead .mantine-Table-th {
+  background: var(--pfd-strip);
   font-size: var(--mantine-font-size-xs);
   font-weight: 700;
-  text-transform: uppercase;
+  color: var(--pfd-ink-2);
+  border-bottom: 1px solid var(--pfd-rule-strong);
+}
+
+/* Inputs and segmented controls: square, visibly bordered. */
+.mantine-Input-input {
+  border-color: var(--pfd-rule-strong);
+}
+
+.mantine-SegmentedControl-root {
+  border: 1px solid var(--pfd-rule-strong);
+  background: var(--pfd-strip);
+  padding: 2px;
+}
+
+.mantine-SegmentedControl-indicator {
+  box-shadow: none;
+  border: 1px solid var(--pfd-rule-strong);
+}
+
+.mantine-Progress-root {
+  border-radius: 0;
+  background: var(--pfd-strip);
+  box-shadow: inset 0 0 0 1px var(--pfd-rule);
+}
+
+.mantine-Progress-section {
+  border-radius: 0;
+}
+
+.mantine-Tabs-list {
+  --tab-border-color: var(--pfd-rule);
+}
+
+.mantine-Modal-header {
+  background: var(--pfd-strip);
+  border-bottom: 1px solid var(--pfd-rule);
+  min-height: 48px;
+  padding-block: 8px;
+  margin-bottom: var(--mantine-spacing-md);
+}
+
+/* Source line under figures and charts. */
+.pfd-source {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--pfd-ink-2);
+  margin-top: 6px;
+}
+
+/* ---- Shell ---- */
+.pfd-rail {
+  background: var(--pfd-rail);
+  color: var(--pfd-rail-ink);
+  border-right: 0;
+}
+
+.pfd-rail .nav-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--pfd-rail-ink-2);
+  padding: 14px 12px 4px;
+}
+
+.pfd-rail .mantine-NavLink-root {
+  color: var(--pfd-rail-ink);
+  border-radius: 0;
+  padding-block: 7px;
+  transition: background-color 150ms ease-out;
+}
+
+.pfd-rail .mantine-NavLink-root:hover {
+  background: var(--pfd-rail-2);
+}
+
+.pfd-rail .mantine-NavLink-root[data-active] {
+  background: var(--pfd-panel);
+  color: var(--mantine-color-navy-9);
+  font-weight: 700;
+}
+
+[data-mantine-color-scheme='dark'] .pfd-rail .mantine-NavLink-root[data-active] {
+  background: var(--pfd-rail-2);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px var(--mantine-color-navy-5);
+}
+
+.pfd-rail .mantine-NavLink-label {
+  font-size: var(--mantine-font-size-sm);
+}
+
+.pfd-topbar {
+  background: var(--pfd-panel);
+  border-bottom: 1px solid var(--pfd-rule);
+}
+
+.pfd-brand {
+  color: #fff;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+/* ---- Informe: the headline release table ---- */
+.pfd-release {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--pfd-panel);
+  border: 1px solid var(--pfd-rule);
+}
+
+.pfd-release > section {
+  padding: 14px 16px 12px;
+  border-left: 1px solid var(--pfd-rule);
+  min-width: 0;
+}
+
+.pfd-release > section:first-child {
+  border-left: 0;
+}
+
+.pfd-release-figure {
+  font-size: 1.75rem;
+  font-weight: 750;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+.pfd-release-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  row-gap: 2px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dotted var(--pfd-rule-strong);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.pfd-release-rows dt {
+  color: var(--pfd-ink-2);
+}
+
+.pfd-release-rows dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.pfd-up {
+  color: var(--pfd-up);
+}
+
+.pfd-down {
+  color: var(--pfd-down);
+}
+
+.pfd-real {
+  color: var(--pfd-real);
+}
+
+@media (max-width: 48em) {
+  .pfd-release {
+    grid-template-columns: 1fr;
+  }
+  .pfd-release > section {
+    border-left: 0;
+    border-top: 1px solid var(--pfd-rule);
+  }
+  .pfd-release > section:first-child {
+    border-top: 0;
+  }
+}
+
+/* Ranked category bars with a ghost of the comparison month. */
+.pfd-rank-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 160px) 1fr 110px 64px;
+  align-items: center;
+  column-gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--pfd-rule);
+}
+
+.pfd-rank-row:last-child {
+  border-bottom: 0;
+}
+
+.pfd-rank-track {
+  position: relative;
+  height: 14px;
+}
+
+.pfd-rank-bar,
+.pfd-rank-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  transition: width 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pfd-rank-ghost {
+  border: 1px solid var(--pfd-rule-strong);
+  background: transparent;
+}
+
+.pfd-rank-ghost[data-real] {
+  border-color: var(--pfd-real);
+  border-style: dashed;
+}
+
+@media (max-width: 36em) {
+  .pfd-rank-row {
+    grid-template-columns: 1fr 96px 56px;
+  }
+  .pfd-rank-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+.pfd-swatch {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+/* ===== Early-2010s layer (pinned by the users: 2012 Apple Store, 2010 Fandom) ===== */
+
+:root {
+  --pfd-bar-top: #4b586b;
+  --pfd-bar-bottom: #2a3343;
+  --pfd-bar-edge: #1b2230;
+  --pfd-strip-top: #fbfcfd;
+  --pfd-strip-bottom: #e8ecf2;
+  --pfd-blue-top: #3f73b3;
+  --pfd-blue-bottom: #20508b;
+  --pfd-blue-edge: #173f70;
+  --pfd-btn-top: #ffffff;
+  --pfd-btn-bottom: #eaeef3;
+  --pfd-btn-edge: #aeb9c8;
+}
+
+[data-mantine-color-scheme='dark'] {
+  --pfd-bar-top: #2b3546;
+  --pfd-bar-bottom: #18202c;
+  --pfd-bar-edge: #0b1016;
+  --pfd-strip-top: #222c3a;
+  --pfd-strip-bottom: #1a2230;
+  --pfd-blue-top: #2c5c96;
+  --pfd-blue-bottom: #1a3f6e;
+  --pfd-blue-edge: #102c50;
+  --pfd-btn-top: #2a3444;
+  --pfd-btn-bottom: #1f2733;
+  --pfd-btn-edge: #3d4a5e;
+}
+
+/* Dark top bar with divided, pressed-in tabs. */
+.pfd-topbar {
+  background: linear-gradient(var(--pfd-bar-top), var(--pfd-bar-bottom));
+  border-bottom: 1px solid var(--pfd-bar-edge);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: #e6edf6;
+}
+
+.pfd-bar-tabs {
+  display: flex;
+  align-self: stretch;
+  height: 100%;
+  border-right: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.pfd-bar-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  height: 100%;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  color: #dfe7f2;
+  border-left: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.08);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.pfd-bar-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pfd-bar-tab[data-active] {
+  color: #fff;
+  background: linear-gradient(rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.28));
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+.pfd-bar-tab:focus-visible {
+  outline-offset: -3px;
+  outline-color: #fff;
+}
+
+.pfd-bar-tabs[data-compact] .pfd-bar-tab {
+  padding: 0 12px;
+  font-size: var(--mantine-font-size-xs);
+}
+
+.pfd-topbar .pfd-bar-icon {
+  color: #e6edf6;
+}
+
+/* Breadcrumb strip carrying the page title and actions. */
+.pfd-crumbs {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: var(--mantine-spacing-lg);
+  background: linear-gradient(var(--pfd-strip-top), var(--pfd-strip-bottom));
+  border: 1px solid var(--pfd-rule);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.pfd-crumbs-path {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.pfd-crumbs-home {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  padding: 0 14px;
+  color: var(--pfd-ink-2);
+  border-right: 1px solid var(--pfd-rule);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.7);
+}
+
+.pfd-crumbs-home:hover {
+  color: var(--mantine-color-navy-8);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.pfd-crumbs-title {
+  padding: 8px 14px;
+  min-width: 0;
+}
+
+.pfd-crumbs-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 10px;
+}
+
+/* Panel title bars: a grey gradient by default, blue on side panels (data-bar="blue"). */
+.mantine-Card-root > .mantine-Title-root:first-child,
+.mantine-Card-root > .mantine-Group-root:first-child:has(> .mantine-Title-root),
+.mantine-Card-root > .mantine-Group-root:first-child:has(> div > .mantine-Title-root),
+.mantine-Card-root > .mantine-Title-root:first-child + .mantine-Text-root[data-size='xs'] {
+  background: linear-gradient(var(--pfd-strip-top), var(--pfd-strip-bottom));
+}
+
+.mantine-Card-root > .mantine-Title-root:first-child,
+.mantine-Card-root > .mantine-Group-root:first-child:has(> .mantine-Title-root),
+.mantine-Card-root > .mantine-Group-root:first-child:has(> div > .mantine-Title-root) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.mantine-Card-root[data-bar='blue'] {
+  border-color: var(--pfd-blue-edge);
+}
+
+.mantine-Card-root[data-bar='blue'] > .mantine-Title-root:first-child,
+.mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child {
+  background: linear-gradient(var(--pfd-blue-top), var(--pfd-blue-bottom));
+  border-bottom-color: var(--pfd-blue-edge);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Title-root,
+.mantine-Card-root[data-bar='blue'] > .mantine-Title-root:first-child {
+  color: #fff;
+}
+
+.mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Text-root {
+  color: #dbe6f4;
+}
+
+/* Small "ver / más" buttons inside a title bar. */
+.mantine-Card-root > .mantine-Group-root:first-child .mantine-Anchor-root {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mantine-color-navy-8);
+  text-decoration: none;
+  background: linear-gradient(var(--pfd-btn-top), var(--pfd-btn-bottom));
+  border: 1px solid var(--pfd-btn-edge);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.mantine-Card-root > .mantine-Group-root:first-child .mantine-Anchor-root:active {
+  box-shadow: inset 0 1px 3px rgba(15, 42, 74, 0.25);
+}
+
+[data-mantine-color-scheme='dark'] .mantine-Card-root > .mantine-Group-root:first-child .mantine-Anchor-root {
+  color: var(--pfd-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Buttons and inputs with a little depth. */
+.mantine-Button-root {
+  transition: box-shadow 120ms ease-out, background-color 150ms ease-out;
+}
+
+.mantine-Button-root[data-variant='filled'] {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+  border: 1px solid rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 1px 1px rgba(15, 42, 74, 0.14);
+}
+
+.mantine-Button-root[data-variant='default'],
+.mantine-Button-root[data-variant='white'] {
+  background-image: linear-gradient(var(--pfd-btn-top), var(--pfd-btn-bottom));
+  border: 1px solid var(--pfd-btn-edge);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 1px rgba(15, 42, 74, 0.1);
+}
+
+[data-mantine-color-scheme='light'] .mantine-Button-root[data-variant='white'] {
+  color: var(--mantine-color-navy-9);
+}
+
+[data-mantine-color-scheme='dark'] .mantine-Button-root[data-variant='white'] {
+  color: var(--pfd-ink);
+}
+
+.mantine-Button-root:not([data-disabled]):active {
+  background-image: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.22);
+  transform: none;
+}
+
+.mantine-Button-root[data-disabled] {
+  background-image: none;
+  box-shadow: none;
+}
+
+.mantine-Input-input {
+  box-shadow: inset 0 1px 2px rgba(15, 42, 74, 0.09);
+}
+
+.mantine-Input-input:focus,
+.mantine-Input-input:focus-within {
+  border-color: var(--mantine-color-navy-6);
+  box-shadow: inset 0 1px 2px rgba(15, 42, 74, 0.09), 0 0 0 2px var(--mantine-color-navy-1);
+}
+
+[data-mantine-color-scheme='dark'] .mantine-Input-input:focus,
+[data-mantine-color-scheme='dark'] .mantine-Input-input:focus-within {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 2px var(--mantine-color-navy-8);
+}
+
+/* NEW-style state tags. */
+.pfd-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
   letter-spacing: 0.04em;
-  color: var(--mantine-color-dimmed);
-  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm) 4px;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(var(--tag-top, #3a6aa6), var(--tag-bottom, #1f4a82));
+  white-space: nowrap;
+}
+
+.pfd-tag[data-tone='ocre'] {
+  --tag-top: #e49536;
+  --tag-bottom: #b9640a;
+}
+
+.pfd-tag[data-tone='grape'] {
+  --tag-top: #8d5fb5;
+  --tag-bottom: #61397f;
+}
+
+.pfd-tag[data-tone='gray'] {
+  --tag-top: #7d889b;
+  --tag-bottom: #566175;
+}
+
+/* Tabs attached to their panel. */
+.mantine-Tabs-list {
+  gap: 3px;
+}
+
+.mantine-Tabs-tab {
+  background: linear-gradient(var(--pfd-strip-top), var(--pfd-strip-bottom));
+  border: 1px solid var(--pfd-rule) !important;
+  border-bottom-color: var(--pfd-rule-strong) !important;
+  font-weight: 600;
+  color: var(--pfd-ink-2);
+}
+
+.mantine-Tabs-tab[data-active] {
+  background: var(--pfd-panel);
+  border-color: var(--pfd-rule-strong) !important;
+  border-bottom-color: var(--pfd-panel) !important;
+  color: var(--pfd-ink);
+}
+
+/* Square pagination. */
+.mantine-Pagination-control {
+  background-image: linear-gradient(var(--pfd-btn-top), var(--pfd-btn-bottom));
+  border-color: var(--pfd-btn-edge);
+  font-weight: 600;
+}
+
+.mantine-Pagination-control[data-active] {
+  background-image: linear-gradient(var(--pfd-blue-top), var(--pfd-blue-bottom));
+  border-color: var(--pfd-blue-edge);
+}
+
+.mantine-Alert-root {
+  border: 1px solid color-mix(in srgb, var(--alert-color) 35%, transparent);
+}
+
+/* Slim footer strip. */
+.pfd-footer {
+  margin-top: var(--mantine-spacing-xl);
+  padding: 10px 0 4px;
+  border-top: 1px solid var(--pfd-rule);
+  font-size: var(--mantine-font-size-xs);
+  color: var(--pfd-ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.pfd-footer a {
+  color: var(--pfd-ink-2);
+}
+
+/* Buttons inside a blue bar keep dark ink on their light face; other bar text is light. */
+.mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Text-root:not(.mantine-Anchor-root) {
+  color: #dbe6f4 !important;
+}
+
+[data-mantine-color-scheme='light'] .mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Anchor-root {
+  color: var(--mantine-color-navy-9) !important;
+}
+
+[data-mantine-color-scheme='dark'] .mantine-Card-root[data-bar='blue'] > .mantine-Group-root:first-child .mantine-Anchor-root {
+  color: #e6edf6 !important;
+}
+
+/* On a phone the compact list keeps descriptions readable: only "Pendiente" stays tagged. */
+@media (max-width: 48em) {
+  .mantine-Table-table[data-compact] .pfd-tag:not([data-tone='ocre']) {
+    display: none;
+  }
+}
+
+/* Tabs attached to their panel: the active tab opens onto a ruled box holding the tab's content. */
+.mantine-Tabs-panel {
+  border: 1px solid var(--pfd-rule-strong);
+  border-top: 0;
+  background: var(--pfd-strip);
+  padding: var(--mantine-spacing-md);
+}
+
+.mantine-Tabs-list {
+  margin-bottom: 0 !important;
+}
+
+/* Boxed toggle buttons for filters (instead of pill chips). */
+.pfd-toggle[data-on] {
+  background-image: linear-gradient(var(--pfd-blue-top), var(--pfd-blue-bottom)) !important;
+  border-color: var(--pfd-blue-edge) !important;
+  color: #fff !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Provisional-figure mark, as in statistical releases. */
+.pfd-note-mark {
+  font-size: 0.75em;
+  vertical-align: super;
+  margin-left: 1px;
+  color: var(--pfd-real);
+  font-weight: 700;
 }

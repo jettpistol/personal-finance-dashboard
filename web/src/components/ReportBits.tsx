@@ -51,7 +51,7 @@ export function Delta({ value, goodWhenUp, suffix, size = 'xs' }: { value: numbe
 export function Kpi({ label, value, hint, children }: { label: string; value: ReactNode; hint?: string; children?: ReactNode }) {
   const body = (
     <Card padding="md">
-      <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+      <Text size="sm" c="var(--pfd-ink-2)" fw={650}>
         {label}
       </Text>
       <Text fz={22} fw={800} className="num" mt={4}>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, Chip, Group, Menu, Pagination, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Card, Group, Menu, Pagination, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useDebouncedValue } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
@@ -154,23 +154,30 @@ export function TransactionsPage() {
             <Select placeholder="Etiqueta" clearable searchable data={tags.data ?? []} value={tag} onChange={setTag} />
           </SimpleGrid>
           <Group gap="xs">
-            <Chip.Group multiple value={flags} onChange={setFlags}>
-              <Chip size="xs" value="shared">
-                Compartidos
-              </Chip>
-              <Chip size="xs" value="pending">
-                Pendientes
-              </Chip>
-              <Chip size="xs" value="uncategorized">
-                Sin categoría
-              </Chip>
-              <Chip size="xs" value="installments">
-                En cuotas
-              </Chip>
-            </Chip.Group>
-            <Chip size="xs" checked={onlyScope} onChange={setOnlyScope}>
+            {[
+              ['shared', 'Compartidos'],
+              ['pending', 'Pendientes'],
+              ['uncategorized', 'Sin categoría'],
+              ['installments', 'En cuotas'],
+            ].map(([value, label]) => {
+              const on = flags.includes(value);
+              return (
+                <Button
+                  key={value}
+                  size="compact-xs"
+                  variant="default"
+                  className="pfd-toggle"
+                  data-on={on || undefined}
+                  aria-pressed={on}
+                  onClick={() => setFlags(on ? flags.filter((f) => f !== value) : [...flags, value])}
+                >
+                  {label}
+                </Button>
+              );
+            })}
+            <Button size="compact-xs" variant="default" className="pfd-toggle" data-on={onlyScope || undefined} aria-pressed={onlyScope} onClick={() => setOnlyScope(!onlyScope)}>
               Solo del tablero seleccionado
-            </Chip>
+            </Button>
           </Group>
         </Stack>
       </Card>

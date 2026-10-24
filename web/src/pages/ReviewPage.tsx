@@ -284,7 +284,7 @@ export function ReviewPage() {
                   Guardar notas
                 </Button>
                 {!r?.closed_at && (
-                  <Button size="xs" color="teal" leftSection={<IconCheck size={14} />} onClick={() => saveNotes(true)} loading={saving} disabled={!canEdit}>
+                  <Button size="xs" leftSection={<IconCheck size={14} />} onClick={() => saveNotes(true)} loading={saving} disabled={!canEdit}>
                     Marcar mes como cerrado
                   </Button>
                 )}

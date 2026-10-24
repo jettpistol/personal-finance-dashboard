@@ -354,7 +354,7 @@ function PreviewStep({
           {included.length} a importar
         </Badge>
         {dupCount > 0 && (
-          <Badge variant="light" color="orange" size="lg">
+          <Badge variant="light" color="yellow" size="lg">
             {dupCount} duplicadas
           </Badge>
         )}
@@ -492,7 +492,7 @@ function PreviewStep({
                       )}
                       {it.duplicate === 'exact' && (
                         <Tooltip label="Ya importaste esta fila antes">
-                          <Badge size="xs" color="orange">
+                          <Badge size="xs" color="yellow">
                             Duplicado
                           </Badge>
                         </Tooltip>

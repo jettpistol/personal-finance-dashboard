@@ -14,6 +14,7 @@ import {
   Stack,
   Table,
   Text,
+  Title,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { IconEdit, IconInfoCircle, IconPlus, IconSparkles, IconTrash, IconTrendingUp } from '@tabler/icons-react';
@@ -259,7 +260,7 @@ export function BudgetsPage() {
       <Card mb="lg">
         <Group justify="space-between" align="flex-end" wrap="wrap">
           <div>
-            <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+            <Text size="xs" c="dimmed" fw={650}>
               Gastado del presupuesto (ARS)
             </Text>
             <Text className="num" fz={28} fw={800}>
@@ -331,9 +332,7 @@ export function BudgetsPage() {
 
       {unbudgeted.length > 0 && (
         <Card>
-          <Text fw={700} mb={4}>
-            Gastos sin presupuesto este mes
-          </Text>
+          <Title order={4}>Gastos sin presupuesto este mes</Title>
           <Text size="xs" c="dimmed" mb="sm">
             Categorías con gastos que no tienen límite definido.
           </Text>

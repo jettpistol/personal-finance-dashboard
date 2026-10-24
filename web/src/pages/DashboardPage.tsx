@@ -1,77 +1,22 @@
-import { useState } from 'react';
-import {
-  Alert,
-  Anchor,
-  Badge,
-  Button,
-  Card,
-  Grid,
-  Group,
-  Loader,
-  Progress,
-  SimpleGrid,
-  Stack,
-  Text,
-  ThemeIcon,
-  Title,
-  Tooltip,
-} from '@mantine/core';
-import { DonutChart } from '@mantine/charts';
-import { IconAlertTriangle, IconArrowDownRight, IconArrowUpRight, IconCalendarDue, IconCash, IconPigMoney, IconPlus, IconScale, IconWallet } from '@tabler/icons-react';
+import { useState, type ReactNode } from 'react';
+import { Alert, Anchor, Button, Card, Grid, Group, Progress, Skeleton, Stack, Text, Title, Tooltip } from '@mantine/core';
+import { Sparkline } from '@mantine/charts';
+import { IconAlertTriangle, IconCalendarDue, IconPlus } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { api, qs } from '../lib/api';
 import { scopeName, useApp } from '../lib/app-state';
-import { currentMonth, date, money, monthName, pct } from '../lib/format';
-import type { BalanceSummary, Dashboard, Goal } from '../lib/types';
+import { addMonths, currentMonth, date, money, monthName, pct } from '../lib/format';
+import type { BalanceSummary, Currency, Dashboard, Goal } from '../lib/types';
 import { MonthSelect, PageHeader } from '../components/Layout';
 import { TxTable } from '../components/TxTable';
-
-function change(a: number, b: number): number | null {
-  return b ? ((a - b) / Math.abs(b)) * 100 : null;
-}
-
-function Kpi({ label, value, icon: Icon, color, delta, deltaGood, hint }: { label: string; value: string; icon: typeof IconCash; color: string; delta?: number | null; deltaGood?: 'up' | 'down'; hint?: string }) {
-  const good = delta == null ? null : deltaGood === 'up' ? delta >= 0 : delta <= 0;
-  return (
-    <Card>
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <div>
-          <Text size="xs" c="dimmed" fw={700} tt="uppercase">
-            {label}
-          </Text>
-          <Text fz={24} fw={800} className="num" mt={4}>
-            {value}
-          </Text>
-        </div>
-        <ThemeIcon variant="light" color={color} size={38} radius="md">
-          <Icon size={20} />
-        </ThemeIcon>
-      </Group>
-      {delta != null && (
-        <Group gap={4} mt={6}>
-          {delta >= 0 ? <IconArrowUpRight size={14} color={`var(--mantine-color-${good ? 'teal' : 'red'}-6)`} /> : <IconArrowDownRight size={14} color={`var(--mantine-color-${good ? 'teal' : 'red'}-6)`} />}
-          <Text size="xs" c={good ? 'teal' : 'red'} fw={600}>
-            {pct(delta, 0, true)}
-          </Text>
-          <Text size="xs" c="dimmed">
-            vs mes anterior
-          </Text>
-        </Group>
-      )}
-      {hint && (
-        <Text size="xs" c="dimmed" mt={delta != null ? 0 : 6}>
-          {hint}
-        </Text>
-      )}
-    </Card>
-  );
-}
+import type { Inflation, Trend } from '../components/ReportTabs';
+import { NominalRealSwitch, Source, Variation, percentChange, realChange, sourceText, type Measure } from '../components/Informe';
 
 export function SharedBalanceText({ balances }: { balances: BalanceSummary[] }) {
   const { me, users } = useApp();
   const lines = balances.flatMap((b) => b.settlements.map((s) => ({ ...s, currency: b.currency })));
-  if (!lines.length) return <Text fw={600}>Están a mano 🎉</Text>;
+  if (!lines.length) return <Text fw={600}>Están a mano.</Text>;
   const name = (id: number) => (id === me.id ? 'vos' : (users.find((u) => u.id === id)?.display_name ?? '?'));
   return (
     <Stack gap={4}>
@@ -79,11 +24,11 @@ export function SharedBalanceText({ balances }: { balances: BalanceSummary[] }) 
         <Text key={i} fw={600}>
           {l.from === me.id ? (
             <>
-              Le debés <Text span c="red" inherit className="num">{money(l.amount, l.currency)}</Text> a {name(l.to)}
+              Le debés <span className="num pfd-down">{money(l.amount, l.currency)}</span> a {name(l.to)}
             </>
           ) : l.to === me.id ? (
             <>
-              {name(l.from)} te debe <Text span c="teal" inherit className="num">{money(l.amount, l.currency)}</Text>
+              {name(l.from)} te debe <span className="num pfd-up">{money(l.amount, l.currency)}</span>
             </>
           ) : (
             <>
@@ -96,197 +41,303 @@ export function SharedBalanceText({ balances }: { balances: BalanceSummary[] }) 
   );
 }
 
+type ReleaseRow = { label: ReactNode; value: ReactNode };
+
+function ReleaseColumn({ label, figure, history, rows, tone }: { label: string; figure: string; history: number[]; rows: ReleaseRow[]; tone: 'navy' | 'red' | 'teal' }) {
+  const color = { navy: 'navy.7', red: 'red.7', teal: 'teal.7' }[tone];
+  return (
+    <section>
+      <Text size="sm" fw={650} c="var(--pfd-ink-2)">
+        {label}
+      </Text>
+      <Group justify="space-between" align="flex-end" wrap="nowrap" gap="sm" mt={2}>
+        <div className="pfd-release-figure num">{figure}</div>
+        {history.some((v) => v !== 0) && (
+          <Tooltip label="Últimos 6 meses" withArrow>
+            <Sparkline w={84} h={30} data={history} color={color} curveType="linear" fillOpacity={0.12} strokeWidth={1.5} aria-label={`${label}: últimos 6 meses`} />
+          </Tooltip>
+        )}
+      </Group>
+      <dl className="pfd-release-rows">
+        {rows.map((r, i) => (
+          <FragmentRow key={i} label={r.label} value={r.value} />
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function FragmentRow({ label, value }: ReleaseRow) {
+  return (
+    <>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </>
+  );
+}
+
+function RankedCategories({ d, trend, infl, currency }: { d: Dashboard; trend: Trend | undefined; infl: Inflation | undefined; currency: Currency }) {
+  const [measure, setMeasure] = useState<Measure>('nominal');
+  const real = measure === 'real' && currency === 'ARS';
+  const s = d.summary;
+  const prevRow = trend?.rows.find((r) => r.month === addMonths(d.month, -1));
+  const cpi = infl?.cpi_vs_prev ?? null;
+  const rows = s.by_category.map((c) => {
+    const prevNominal = prevRow?.categories[c.name] ?? 0;
+    const prev = real && cpi != null ? Math.round(prevNominal * (1 + cpi / 100)) : prevNominal;
+    return { ...c, prev, change: percentChange(c.amount, prev) };
+  });
+  const max = Math.max(1, ...rows.flatMap((r) => [r.amount, r.prev]));
+  return (
+    <Card>
+      <Group justify="space-between" wrap="nowrap">
+        <Title order={4}>Gasto por rubro</Title>
+        <NominalRealSwitch value={measure} onChange={setMeasure} currency={currency} />
+      </Group>
+      {rows.length === 0 ? (
+        <Text c="dimmed" size="sm">
+          Todavía no hay gastos este mes. Cargá uno con «Nuevo movimiento» o importá el resumen del banco.
+        </Text>
+      ) : (
+        <>
+          <Group gap="lg" mb={6}>
+            <Group gap={6}>
+              <span className="pfd-swatch" style={{ background: 'var(--mantine-color-navy-7)' }} />
+              <Text size="xs" c="var(--pfd-ink-2)">
+                {monthName(d.month)}
+              </Text>
+            </Group>
+            <Group gap={6}>
+              <span className="pfd-swatch" style={{ border: `1px ${real ? 'dashed var(--pfd-real)' : 'solid var(--pfd-rule-strong)'}` }} />
+              <Text size="xs" c="var(--pfd-ink-2)">
+                {monthName(addMonths(d.month, -1))}
+                {real ? ' en pesos de hoy' : ''}
+              </Text>
+            </Group>
+          </Group>
+          <div>
+            {rows.map((r) => (
+              <div key={r.name} className="pfd-rank-row">
+                <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
+                  <span className="pfd-swatch" style={{ background: `var(--mantine-color-${r.color ?? 'gray'}-6)` }} />
+                  <Text size="sm" truncate>
+                    {r.name}
+                  </Text>
+                </Group>
+                <div className="pfd-rank-track" aria-hidden>
+                  <div className="pfd-rank-bar" style={{ width: `${(r.amount / max) * 100}%`, background: 'var(--mantine-color-navy-7)' }} />
+                  {r.prev > 0 && <div className="pfd-rank-ghost" data-real={real || undefined} style={{ width: `${(r.prev / max) * 100}%` }} />}
+                </div>
+                <Text size="sm" fw={600} ta="right" className="num">
+                  {money(r.amount, currency)}
+                </Text>
+                <Text size="xs" ta="right" fw={600}>
+                  <Variation value={r.change} goodWhenUp={false} digits={0} />
+                </Text>
+              </div>
+            ))}
+          </div>
+          <Source>{sourceText(currency, { real, cpiMonth: infl?.cpi_latest_month ? monthName(infl.cpi_latest_month) : null })}</Source>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function BudgetsPanel({ d, currency }: { d: Dashboard; currency: Currency }) {
+  const total = d.budgets.reduce((a, b) => a + (b.currency === currency ? b.amount : 0), 0);
+  const spent = d.budgets.reduce((a, b) => a + (b.currency === currency ? b.spent : 0), 0);
+  return (
+    <Card data-bar="blue">
+      <Group justify="space-between">
+        <Title order={4}>Presupuestos</Title>
+        <Anchor component={Link} to="/presupuestos" size="xs">
+          Editar
+        </Anchor>
+      </Group>
+      {d.budgets.length === 0 ? (
+        <Text c="dimmed" size="sm">
+          Sin presupuestos para este tablero.{' '}
+          <Anchor component={Link} to="/presupuestos">
+            Definir presupuestos
+          </Anchor>
+        </Text>
+      ) : (
+        <Stack gap={10}>
+          {total > 0 && (
+            <Text size="xs" c="var(--pfd-ink-2)">
+              Usado {money(spent, currency, { compact: true })} de {money(total, currency, { compact: true })} ({pct((spent / total) * 100, 0)})
+              {d.day_of_month ? ` · día ${d.day_of_month} del mes` : ''}
+            </Text>
+          )}
+          {d.budgets.slice(0, 6).map((b) => (
+            <div key={b.id}>
+              <Group justify="space-between" mb={3} wrap="nowrap">
+                <Text size="sm" truncate>
+                  {b.category_name}
+                </Text>
+                <Text size="xs" className="num" fw={600} c={b.pct >= 100 ? 'red.8' : b.pct >= 80 ? 'ocre.8' : 'var(--pfd-ink-2)'}>
+                  {money(b.spent, b.currency, { compact: true })} / {money(b.amount, b.currency, { compact: true })}
+                </Text>
+              </Group>
+              <Progress value={Math.min(100, b.pct)} color={b.pct >= 100 ? 'red.7' : b.pct >= 80 ? 'ocre.5' : 'teal.7'} size={8} aria-label={`${b.category_name}: ${pct(b.pct, 0)}`} />
+            </div>
+          ))}
+        </Stack>
+      )}
+    </Card>
+  );
+}
+
 export function DashboardPage() {
   const { scope, currency, users, me, openTx } = useApp();
   const [month, setMonth] = useState(currentMonth());
   const q = useQuery({ queryKey: ['dashboard', scope, currency, month], queryFn: () => api.get<Dashboard>(`/dashboard${qs({ scope, currency, month })}`) });
+  const trend = useQuery({
+    queryKey: ['reports', 'trend', scope, currency, month],
+    queryFn: () => api.get<Trend>(`/reports/trend${qs({ scope, currency, from: addMonths(month, -5), to: month })}`),
+  });
+  const infl = useQuery({ queryKey: ['reports', 'inflation', scope, month], queryFn: () => api.get<Inflation>(`/reports/inflation${qs({ scope, month })}`) });
   const goals = useQuery({ queryKey: ['goals'], queryFn: () => api.get<Goal[]>('/goals') });
   const d = q.data;
 
   if (q.error) return <Alert color="red">{(q.error as Error).message}</Alert>;
-  if (!d) return <Loader />;
+  if (!d) {
+    return (
+      <Stack>
+        <Skeleton h={40} w={320} />
+        <Skeleton h={150} />
+        <Skeleton h={320} />
+      </Stack>
+    );
+  }
 
   const s = d.summary;
-  const donut = s.by_category.slice(0, 8).map((c) => ({ name: c.name, value: c.amount / 100, color: `${c.color ?? 'gray'}.6` }));
-  const rest = s.by_category.slice(8).reduce((a, c) => a + c.amount, 0);
-  if (rest > 0) donut.push({ name: 'Otras', value: rest / 100, color: 'gray.4' });
-  const budgetTotal = d.budgets.reduce((a, b) => a + (b.currency === currency ? b.amount : 0), 0);
-  const budgetSpent = d.budgets.reduce((a, b) => a + (b.currency === currency ? b.spent : 0), 0);
+  const inflow = s.income + Math.max(0, s.contributions);
+  const prevInflow = d.previous.income + Math.max(0, d.previous.contributions);
+  const hist = trend.data?.rows ?? [];
+  const cpi = currency === 'ARS' ? (infl.data?.cpi_vs_prev ?? null) : null;
+  const expenseChange = percentChange(s.expense, d.previous.expense);
+  const inflowChange = percentChange(inflow, prevInflow);
   const scopeGoals = (goals.data ?? []).filter((g) => g.scope === scope && !g.archived).slice(0, 3);
   const empty = s.count === 0 && d.accounts.length === 0;
+  const estimated = currency === 'ARS' && infl.data != null && infl.data.cpi_month == null;
+  const realLabel = (
+    <>
+      Var. real{estimated && <span className="pfd-note-mark">(e)</span>}
+    </>
+  );
+  const netChange = percentChange(s.net, d.previous.net);
 
   return (
     <>
       <PageHeader
-        title={scopeName(scope, users, me.id)}
-        description={`Resumen de ${monthName(month).toLowerCase()}${d.fx ? ` · Dólar BNA ${money(Math.round(d.fx.sell * 100), 'ARS')} (${date(d.fx.date, 'D MMM')})` : ''}`}
+        title={`Informe de ${monthName(month).toLowerCase()}`}
+        description={`${scopeName(scope, users, me.id)} · montos en ${currency}${d.fx ? ` · dólar BNA vendedor ${money(Math.round(d.fx.sell * 100), 'ARS')} (${date(d.fx.date, 'D MMM')})` : ''}`}
         actions={<MonthSelect value={month} onChange={setMonth} />}
       />
 
       {empty && (
-        <Alert color="blue" mb="md" title="¡Bienvenidos!">
-          Para empezar: creá sus cuentas en <Anchor component={Link} to="/cuentas">Cuentas</Anchor> (la cuenta común y las personales), revisá las categorías y presupuestos, y
-          cargá movimientos a mano o importando el resumen del banco en <Anchor component={Link} to="/importar">Importar</Anchor>.
+        <Alert color="navy" mb="md" title="Primeros pasos">
+          Creá sus cuentas en <Anchor component={Link} to="/cuentas">Cuentas</Anchor> (la común y las de cada uno), revisá categorías y presupuestos, y cargá
+          movimientos a mano o importando el resumen del banco en <Anchor component={Link} to="/importar">Importar</Anchor>.
         </Alert>
       )}
       {s.missing_rates && (
-        <Alert color="orange" icon={<IconAlertTriangle size={16} />} mb="md">
-          Faltan cotizaciones del dólar BNA para convertir algunos movimientos. Actualizalas en <Anchor component={Link} to="/ajustes">Ajustes</Anchor>.
+        <Alert color="ocre" icon={<IconAlertTriangle size={16} />} mb="md">
+          Faltan cotizaciones del dólar BNA para convertir algunos movimientos. Cargalas en <Anchor component={Link} to="/ajustes">Ajustes</Anchor>.
         </Alert>
       )}
       {d.pending > 0 && (
-        <Alert color="yellow" icon={<IconCalendarDue size={16} />} mb="md">
-          Tenés {d.pending} {d.pending === 1 ? 'movimiento recurrente' : 'movimientos recurrentes'} para confirmar.{' '}
-          <Anchor component={Link} to="/recurrentes">
-            Revisar
+        <Alert color="ocre" icon={<IconCalendarDue size={16} />} mb="md">
+          {d.pending === 1 ? 'Hay 1 movimiento recurrente' : `Hay ${d.pending} movimientos recurrentes`} para confirmar.{' '}
+          <Anchor component={Link} to="/recurrentes" fw={600}>
+            Revisar ahora
           </Anchor>
         </Alert>
       )}
 
-      <SimpleGrid cols={{ base: 1, xs: 2, lg: 4 }} mb="md">
-        <Kpi
+      <div className="pfd-release" role="group" aria-label="Resumen del mes">
+        <ReleaseColumn
+          label="Gastos"
+          figure={money(s.expense, currency)}
+          tone="red"
+          history={hist.map((r) => r.expense / 100)}
+          rows={[
+            { label: 'Var. mensual', value: <Variation value={expenseChange} goodWhenUp={false} /> },
+            { label: realLabel, value: <Variation value={realChange(expenseChange, cpi)} goodWhenUp={false} /> },
+            { label: 'Mes anterior', value: <span className="num">{money(d.previous.expense, currency)}</span> },
+          ]}
+        />
+        <ReleaseColumn
           label={s.contributions > 0 ? 'Ingresos y aportes' : 'Ingresos'}
-          value={money(s.income + Math.max(0, s.contributions), currency)}
-          icon={IconCash}
-          color="teal"
-          delta={change(s.income + Math.max(0, s.contributions), d.previous.income + Math.max(0, d.previous.contributions))}
-          deltaGood="up"
-          hint={s.contributions > 0 ? `Aportes al pozo común: ${money(s.contributions, currency)}` : s.contributions < 0 ? `Aportaste al hogar: ${money(-s.contributions, currency)}` : undefined}
+          figure={money(inflow, currency)}
+          tone="teal"
+          history={hist.map((r) => (r.income + Math.max(0, r.contributions)) / 100)}
+          rows={[
+            { label: 'Var. mensual', value: <Variation value={inflowChange} goodWhenUp /> },
+            { label: realLabel, value: <Variation value={realChange(inflowChange, cpi)} goodWhenUp /> },
+            s.contributions
+              ? { label: s.contributions > 0 ? 'De aportes al pozo' : 'Aportaste al hogar', value: <span className="num">{money(Math.abs(s.contributions), currency)}</span> }
+              : { label: 'Mes anterior', value: <span className="num">{money(prevInflow, currency)}</span> },
+          ]}
         />
-        <Kpi label="Gastos" value={money(s.expense, currency)} icon={IconWallet} color="red" delta={change(s.expense, d.previous.expense)} deltaGood="down" />
-        <Kpi
+        <ReleaseColumn
           label="Ahorro del mes"
-          value={money(s.net, currency)}
-          icon={IconPigMoney}
-          color="blue"
-          hint={s.savings_rate == null ? 'Sin ingresos registrados' : `Tasa de ahorro: ${pct(s.savings_rate)}`}
+          figure={money(s.net, currency)}
+          tone="navy"
+          history={hist.map((r) => r.net / 100)}
+          rows={[
+            { label: 'Var. mensual', value: <Variation value={netChange} goodWhenUp /> },
+            { label: realLabel, value: <Variation value={realChange(netChange, cpi)} goodWhenUp /> },
+            { label: 'Tasa de ahorro', value: <span className={`num ${s.net < 0 ? 'pfd-down' : ''}`}>{pct(s.savings_rate)} <span style={{ color: 'var(--pfd-ink-2)', fontWeight: 400 }}>(ant. {pct(d.previous.savings_rate)})</span></span> },
+          ]}
         />
-        <Kpi label="Saldo en cuentas" value={money(d.accounts_total, currency)} icon={IconScale} color="grape" hint={`${d.accounts.length} cuentas`} />
-      </SimpleGrid>
+      </div>
+      <Source>
+        {sourceText(currency, { real: currency === 'ARS', cpiMonth: infl.data?.cpi_latest_month ? monthName(infl.data.cpi_latest_month) : null })}
+        {estimated ? ' · (e) estimado: el IPC de este mes todavía no se publicó y la variación real usa el último dato' : ''}
+      </Source>
 
-      <Grid gutter="md">
+      <Grid gutter="md" mt="lg">
         <Grid.Col span={{ base: 12, md: 7 }}>
-          <Card h="100%">
-            <Group justify="space-between" mb="sm">
-              <Title order={4}>Gastos por categoría</Title>
-              <Anchor component={Link} to="/reportes" size="sm">
-                Ver reportes
-              </Anchor>
-            </Group>
-            {s.by_category.length === 0 ? (
-              <Text c="dimmed" size="sm">
-                Sin gastos este mes.
-              </Text>
-            ) : (
-              <Group align="center" wrap="wrap" gap="xl">
-                <DonutChart
-                  data={donut}
-                  size={180}
-                  thickness={26}
-                  withTooltip
-                  tooltipDataSource="segment"
-                  valueFormatter={(v) => money(Math.round(v * 100), currency)}
-                  chartLabel={money(s.expense, currency, { compact: true })}
-                />
-                <Stack gap={6} style={{ flex: 1, minWidth: 220 }}>
-                  {s.by_category.slice(0, 8).map((c) => (
-                    <Group key={c.name} justify="space-between" wrap="nowrap" gap="xs">
-                      <Group gap={8} wrap="nowrap">
-                        <div style={{ width: 10, height: 10, borderRadius: 3, background: `var(--mantine-color-${c.color ?? 'gray'}-6)`, flexShrink: 0 }} />
-                        <Text size="sm" lineClamp={1}>
-                          {c.name}
-                        </Text>
-                      </Group>
-                      <Group gap={8} wrap="nowrap">
-                        <Text size="xs" c="dimmed">
-                          {pct((c.amount / s.expense) * 100, 0)}
-                        </Text>
-                        <Text size="sm" fw={600} className="num">
-                          {money(c.amount, currency)}
-                        </Text>
-                      </Group>
-                    </Group>
-                  ))}
-                </Stack>
+          <Stack gap="md">
+            <RankedCategories d={d} trend={trend.data} infl={infl.data} currency={currency} />
+            <Card>
+              <Group justify="space-between" wrap="nowrap">
+                <Title order={4}>Últimos movimientos</Title>
+                <Group gap="sm" wrap="nowrap">
+                  <Button size="compact-xs" variant="default" leftSection={<IconPlus size={12} />} onClick={() => openTx()}>
+                    Agregar
+                  </Button>
+                  <Anchor component={Link} to="/movimientos" size="xs">
+                    Ver todos
+                  </Anchor>
+                </Group>
               </Group>
-            )}
-          </Card>
+              <TxTable rows={d.recent} compact />
+            </Card>
+          </Stack>
         </Grid.Col>
-
-        <Grid.Col span={{ base: 12, md: 5 }}>
-          <Card h="100%">
-            <Group justify="space-between" mb="sm">
-              <Title order={4}>Presupuestos</Title>
-              <Anchor component={Link} to="/presupuestos" size="sm">
-                Editar
-              </Anchor>
-            </Group>
-            {d.budgets.length === 0 ? (
-              <Text c="dimmed" size="sm">
-                Todavía no hay presupuestos para este tablero.{' '}
-                <Anchor component={Link} to="/presupuestos">
-                  Crear presupuestos
-                </Anchor>
-              </Text>
-            ) : (
-              <Stack gap="sm">
-                {budgetTotal > 0 && (
-                  <Text size="sm" c="dimmed">
-                    {money(budgetSpent, currency)} de {money(budgetTotal, currency)} ({pct((budgetSpent / budgetTotal) * 100, 0)})
-                    {d.day_of_month ? ` · día ${d.day_of_month} del mes` : ''}
-                  </Text>
-                )}
-                {d.budgets.slice(0, 6).map((b) => (
-                  <div key={b.id}>
-                    <Group justify="space-between" mb={2} wrap="nowrap">
-                      <Text size="sm" fw={500} lineClamp={1}>
-                        {b.category_name}
-                      </Text>
-                      <Text size="xs" c={b.pct >= 100 ? 'red' : b.pct >= 80 ? 'orange' : 'dimmed'} className="num">
-                        {money(b.spent, b.currency, { compact: true })} / {money(b.amount, b.currency, { compact: true })}
-                      </Text>
-                    </Group>
-                    <Progress value={Math.min(100, b.pct)} color={b.pct >= 100 ? 'red' : b.pct >= 80 ? 'orange' : 'teal'} size="sm" />
-                  </div>
-                ))}
-              </Stack>
-            )}
-          </Card>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, md: 7 }}>
-          <Card>
-            <Group justify="space-between" mb="xs">
-              <Title order={4}>Últimos movimientos</Title>
-              <Group gap="xs">
-                <Button size="compact-sm" variant="light" leftSection={<IconPlus size={14} />} onClick={() => openTx()}>
-                  Agregar
-                </Button>
-                <Anchor component={Link} to="/movimientos" size="sm">
-                  Ver todos
-                </Anchor>
-              </Group>
-            </Group>
-            <TxTable rows={d.recent} compact />
-          </Card>
-        </Grid.Col>
-
         <Grid.Col span={{ base: 12, md: 5 }}>
           <Stack gap="md">
-            <Card>
-              <Group justify="space-between" mb="xs">
-                <Title order={4}>Gastos compartidos</Title>
-                <Anchor component={Link} to="/saldos" size="sm">
+            <BudgetsPanel d={d} currency={currency} />
+            <Card data-bar="blue">
+              <Group justify="space-between">
+                <Title order={4}>Saldos entre ustedes</Title>
+                <Anchor component={Link} to="/saldos" size="xs">
                   Detalle
                 </Anchor>
               </Group>
               <SharedBalanceText balances={d.balances} />
             </Card>
-
-            <Card>
-              <Title order={4} mb="xs">
-                Cuentas
-              </Title>
+            <Card data-bar="blue">
+              <Group justify="space-between">
+                <Title order={4}>Cuentas</Title>
+                <Text size="xs" fw={600} className="num" c="var(--pfd-ink-2)">
+                  Total {money(d.accounts_total, currency)}
+                </Text>
+              </Group>
               {d.accounts.length === 0 ? (
                 <Text c="dimmed" size="sm">
                   Sin cuentas en este tablero.
@@ -295,11 +346,11 @@ export function DashboardPage() {
                 <Stack gap={6}>
                   {d.accounts.map((a) => (
                     <Group key={a.id} justify="space-between" wrap="nowrap">
-                      <Text size="sm" lineClamp={1}>
+                      <Text size="sm" truncate>
                         {a.name}
                       </Text>
-                      <Tooltip label={a.currency !== currency ? `${money(a.converted, currency)} al dólar BNA de hoy` : ''} disabled={a.currency === currency}>
-                        <Text size="sm" fw={600} className="num" c={a.balance < 0 ? 'red' : undefined}>
+                      <Tooltip label={`${money(a.converted, currency)} al dólar BNA de hoy`} disabled={a.currency === currency}>
+                        <Text size="sm" fw={600} className={`num ${a.balance < 0 ? 'pfd-down' : ''}`}>
                           {money(a.balance, a.currency)}
                         </Text>
                       </Tooltip>
@@ -310,10 +361,8 @@ export function DashboardPage() {
             </Card>
 
             {d.upcoming_installments.length > 0 && (
-              <Card>
-                <Title order={4} mb="xs">
-                  Cuotas por venir
-                </Title>
+              <Card data-bar="blue">
+                <Title order={4}>Cuotas comprometidas</Title>
                 <Stack gap={6}>
                   {d.upcoming_installments.map((u) => (
                     <Group key={u.month} justify="space-between">
@@ -328,28 +377,28 @@ export function DashboardPage() {
             )}
 
             {scopeGoals.length > 0 && (
-              <Card>
-                <Group justify="space-between" mb="xs">
-                  <Title order={4}>Metas</Title>
-                  <Anchor component={Link} to="/metas" size="sm">
+              <Card data-bar="blue">
+                <Group justify="space-between">
+                  <Title order={4}>Metas de ahorro</Title>
+                  <Anchor component={Link} to="/metas" size="xs">
                     Ver metas
                   </Anchor>
                 </Group>
                 <Stack gap="sm">
                   {scopeGoals.map((g) => (
                     <div key={g.id}>
-                      <Group justify="space-between" mb={2}>
-                        <Text size="sm" fw={500}>
+                      <Group justify="space-between" mb={3} wrap="nowrap">
+                        <Text size="sm" fw={600} truncate>
                           {g.name}
                         </Text>
-                        <Badge variant="light" color={g.color ?? 'blue'}>
+                        <Text size="xs" fw={700} className="num">
                           {pct(g.pct, 0)}
-                        </Badge>
+                        </Text>
                       </Group>
-                      <Progress value={g.pct} color={g.color ?? 'blue'} size="sm" />
-                      <Text size="xs" c="dimmed" mt={2}>
+                      <Progress value={g.pct} color="navy.7" size={8} aria-label={`${g.name}: ${pct(g.pct, 0)}`} />
+                      <Text size="xs" c="var(--pfd-ink-2)" mt={3} className="num">
                         {money(g.saved, g.currency)} de {money(g.target_amount, g.currency)}
-                        {g.monthly_needed ? ` · ${money(g.monthly_needed, g.currency)}/mes` : ''}
+                        {g.monthly_needed ? ` · faltan ${money(g.monthly_needed, g.currency)} por mes` : ''}
                       </Text>
                     </div>
                   ))}
@@ -358,6 +407,7 @@ export function DashboardPage() {
             )}
           </Stack>
         </Grid.Col>
+
       </Grid>
     </>
   );

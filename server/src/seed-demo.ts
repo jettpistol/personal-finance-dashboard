@@ -125,7 +125,7 @@ budget.run(cat['Transporte'], `user:${ana}`, $(30_000), 'ARS');
 budget.run(cat['Compras'], `user:${ana}`, $(60_000), 'ARS');
 
 // Goals.
-db().prepare('INSERT INTO goals (name, target_amount, currency, deadline, account_id, scope, color) VALUES (?, ?, ?, ?, ?, ?, ?)').run('Viaje a Brasil', $(3_000), 'USD', addMonths(today(), 8), jointUsd, 'household', 'teal');
+db().prepare('INSERT INTO goals (name, target_amount, currency, deadline, account_id, scope, color) VALUES (?, ?, ?, ?, ?, ?, ?)').run('Viaje a Brasil', $(3_000), 'USD', addMonths(today(), 8), jointUsd, 'household', 'cyan');
 const fund = Number(
   db().prepare('INSERT INTO goals (name, target_amount, currency, deadline, account_id, scope, color) VALUES (?, ?, ?, ?, ?, ?, ?)').run('Fondo de emergencia', $(4_000_000), 'ARS', addMonths(today(), 12), null, 'household', 'orange')
     .lastInsertRowid,

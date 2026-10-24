@@ -384,7 +384,7 @@ const TYPE_COLORS: Record<string, string> = {
   savings: 'teal.6',
   investment: 'grape.6',
   wallet: 'cyan.6',
-  cash: 'yellow.6',
+  cash: 'lime.6',
   credit_card: 'red.6',
 };
 
@@ -484,7 +484,7 @@ export function PeopleTab({ currency }: { currency: Currency }) {
         <>
           <SimpleGrid cols={{ base: 1, sm: Math.min(people.length, 3) }}>
             {people.map((u) => (
-              <Card key={u.user_id} style={{ borderTop: `4px solid var(--mantine-color-${u.color}-6)` }}>
+              <Card key={u.user_id}>
                 <Text fw={700} size="lg">
                   {u.name}
                 </Text>
@@ -682,12 +682,22 @@ export function InflationTab({ scope }: { scope: Scope }) {
               <Table verticalSpacing={6} fz="sm">
                 <Table.Thead>
                   <Table.Tr>
+                    <Table.Th />
+                    <Table.Th />
+                    <Table.Th ta="center" colSpan={3} style={{ borderLeft: '1px solid var(--pfd-rule)' }}>
+                      vs mes anterior
+                    </Table.Th>
+                    <Table.Th ta="center" colSpan={3} style={{ borderLeft: '1px solid var(--pfd-rule)' }}>
+                      vs hace un año
+                    </Table.Th>
+                  </Table.Tr>
+                  <Table.Tr>
                     <Table.Th>Categoría</Table.Th>
                     <Table.Th ta="right">{monthName(month, true)}</Table.Th>
-                    <Table.Th ta="right">Mes anterior</Table.Th>
+                    <Table.Th ta="right" style={{ borderLeft: '1px solid var(--pfd-rule)' }}>Mes anterior</Table.Th>
                     <Table.Th ta="right">Nominal</Table.Th>
                     <Table.Th ta="right">Real</Table.Th>
-                    <Table.Th ta="right">Hace un año</Table.Th>
+                    <Table.Th ta="right" style={{ borderLeft: '1px solid var(--pfd-rule)' }}>Hace un año</Table.Th>
                     <Table.Th ta="right">Nominal</Table.Th>
                     <Table.Th ta="right">Real</Table.Th>
                   </Table.Tr>
@@ -709,7 +719,7 @@ export function InflationTab({ scope }: { scope: Scope }) {
                         <RealPct value={c.real_vs_prev} />
                       </Table.Td>
                       <Table.Td ta="right" className="num" c="dimmed">
-                        {money(c.year_ago, 'ARS', { compact: true })}
+                        {c.year_ago ? money(c.year_ago, 'ARS', { compact: true }) : 'sin dato'}
                       </Table.Td>
                       <Table.Td ta="right" className="num">
                         {pct(c.nominal_vs_year, 1, true)}
@@ -734,7 +744,7 @@ export function InflationTab({ scope }: { scope: Scope }) {
                       <RealPct value={d.total.real_vs_prev} />
                     </Table.Td>
                     <Table.Td ta="right" className="num" c="dimmed">
-                      {money(d.total.year_ago, 'ARS', { compact: true })}
+                      {d.total.year_ago ? money(d.total.year_ago, 'ARS', { compact: true }) : 'sin dato'}
                     </Table.Td>
                     <Table.Td ta="right" className="num" fw={700}>
                       {pct(d.total.nominal_vs_year, 1, true)}
@@ -755,7 +765,7 @@ export function InflationTab({ scope }: { scope: Scope }) {
               h={220}
               data={d.history.filter((h) => h.cpi_pct != null).map((h) => ({ month: monthName(h.month, true), IPC: h.cpi_pct }))}
               dataKey="month"
-              series={[{ name: 'IPC', color: 'orange.6' }]}
+              series={[{ name: 'IPC', color: 'ocre.6' }]}
               valueFormatter={(v) => pct(v)}
               gridAxis="y"
               maxBarWidth={28}

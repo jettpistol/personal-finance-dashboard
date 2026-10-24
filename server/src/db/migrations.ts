@@ -247,4 +247,11 @@ export const migrations: string[] = [
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   `,
+  // Redesign: red, yellow and teal are reserved for errors, warnings and positive change,
+  // so decorative colors move into the statistical family.
+  `
+  UPDATE categories SET color = CASE color WHEN 'red' THEN 'violet' WHEN 'yellow' THEN 'lime' WHEN 'teal' THEN 'blue' ELSE color END;
+  UPDATE accounts SET color = CASE color WHEN 'red' THEN 'violet' WHEN 'yellow' THEN 'lime' WHEN 'teal' THEN 'blue' ELSE color END;
+  UPDATE goals SET color = CASE color WHEN 'red' THEN 'violet' WHEN 'yellow' THEN 'lime' WHEN 'teal' THEN 'blue' ELSE color END;
+  `,
 ];

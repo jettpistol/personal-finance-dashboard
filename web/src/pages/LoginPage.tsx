@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Center, Paper, PasswordInput, Stack, Text, TextInput, ThemeIcon, Title } from '@mantine/core';
-import { IconChartBar, IconLock } from '@tabler/icons-react';
+import { Alert, Button, Center, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
+import { IconLock } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 
@@ -38,19 +38,18 @@ export function LoginPage({ setup }: { setup: boolean }) {
   };
 
   return (
-    <Center mih="100vh" p="md">
-      <Paper withBorder shadow="sm" p="xl" w="100%" maw={400}>
-        <form onSubmit={submit}>
+    <Center mih="100vh" p="md" style={{ background: 'var(--pfd-rail)' }}>
+      <Paper withBorder w="100%" maw={400} style={{ borderColor: 'var(--pfd-rule)' }}>
+        <div style={{ background: 'var(--pfd-strip)', borderBottom: '1px solid var(--pfd-rule)', padding: '14px 24px' }}>
+          <Title order={1} fz={22}>
+            Finanzas
+          </Title>
+          <Text c="var(--pfd-ink-2)" size="sm">
+            {setup ? 'Primera configuración: creá tu usuario. Después vas a poder agregar a tu pareja.' : 'Ingresá con tu usuario y contraseña.'}
+          </Text>
+        </div>
+        <form onSubmit={submit} style={{ padding: 24 }}>
           <Stack>
-            <Stack gap={4} align="center">
-              <ThemeIcon size={48} radius="xl">
-                <IconChartBar />
-              </ThemeIcon>
-              <Title order={2}>Finanzas</Title>
-              <Text c="dimmed" size="sm" ta="center">
-                {setup ? 'Primera configuración: creá tu usuario. Después vas a poder agregar a tu pareja.' : 'Ingresá con tu usuario'}
-              </Text>
-            </Stack>
             {error && (
               <Alert color="red" icon={<IconLock size={16} />}>
                 {wait > 0 ? `${error.replace(/\d+ segundos/, `${wait} segundos`)}` : error}
