@@ -57,7 +57,7 @@ npm install          # new versions may add dependencies
 npm run demo:reset   # rebuilds and reloads the demo data
 ```
 
-The footer shows the version you're running (`Finanzas v0.3.1 · …`); it's bumped in the root `package.json` with every change.
+The footer shows the version you're running (`Finanzas v0.3.2 · …`); it's bumped in the root `package.json` with every change.
 
 ### Development
 
