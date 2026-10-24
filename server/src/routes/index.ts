@@ -7,6 +7,7 @@ import automationRoutes from './automation.js';
 import planningRoutes from './planning.js';
 import reportRoutes from './reports.js';
 import exportRoutes from './exports.js';
+import mercadoPagoRoutes from './mercadopago.js';
 
 export async function registerRoutes(app: FastifyInstance) {
   await app.register(authRoutes);
@@ -17,5 +18,6 @@ export async function registerRoutes(app: FastifyInstance) {
   await app.register(planningRoutes);
   await app.register(reportRoutes);
   await app.register(exportRoutes);
+  await app.register(mercadoPagoRoutes);
   app.get('/health', async () => ({ ok: true }));
 }

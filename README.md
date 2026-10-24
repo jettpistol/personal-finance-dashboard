@@ -14,6 +14,7 @@ Scope was decided with [`docs/feature-questionnaire.md`](docs/feature-questionna
 - **Installments (cuotas)**: one purchase becomes N monthly expenses; future months show as committed spending.
 - **Recurring bills**: generated as *pending* so you confirm the real amount.
 - **CSV / XLSX import** with **presets per bank** (column mapping, date format, decimal separator, split debit/credit columns, rows to skip, encoding), rule-based categorisation, duplicate detection, and undo.
+- **Mercado Pago**: each person connects their own account. Payments arrive by polling and webhooks and become transactions (with rules, duplicate detection and undo), the account money report fills the gaps, and the live balance is checked against the app's. See [`docs/mercadopago.md`](docs/mercadopago.md).
 - **Rules**: "description contains X" sets the category, merchant, shared flag, tags, or turns the row into a transfer.
 - **Budgets** per category and month (household or personal) with in-app and **Telegram** alerts at 80% and 100%.
 - **Savings goals** linked to an account or with manual contributions, showing how much to save per month.
@@ -75,6 +76,8 @@ All state lives in `./data`: the SQLite database, receipts and `backups/`. Copyi
 | `TZ_APP` | `America/Argentina/Buenos_Aires` | Household timezone |
 | `BACKUP_KEEP_DAILY` / `BACKUP_KEEP_MONTHLY` | `14` / `12` | Backup rotation |
 | `FX_LATEST_URL`, `FX_HISTORY_URL`, `CPI_URL` | dolarapi.com / argentinadatos.com | Data sources for BNA quotes and CPI |
+| `MP_TOKEN_KEY` | file in `DATA_DIR` | Key that encrypts Mercado Pago tokens (64 hex chars) |
+| `MP_WEBHOOK_BASE_URL` | `PUBLIC_URL` | Public HTTPS base for Mercado Pago webhooks |
 
 ### Telegram
 
@@ -87,6 +90,8 @@ The same `docker compose` setup runs on a free Oracle Cloud Arm VM:
 
 - **Private (recommended)**: install Tailscale on the VM and on your devices. Keep `APP_BIND=127.0.0.1` and run `tailscale serve 3000`.
 - **Public with HTTPS**: point a domain at the VM, set `DOMAIN` and `SECURE_COOKIES=true`, then run `docker compose --profile https up -d --build`. Caddy obtains the certificate automatically.
+
+For Mercado Pago webhooks, publish only the webhook path with Tailscale Funnel on its own port; see [`docs/mercadopago.md`](docs/mercadopago.md#hosting-what-you-need-and-when). Without webhooks, Mercado Pago still syncs every 15 minutes.
 
 Copy `data/` off the VM regularly, for example with a cron job running `rclone` to Google Drive. Backups inside the VM don't help if the VM is lost.
 

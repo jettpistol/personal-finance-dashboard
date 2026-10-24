@@ -5,6 +5,7 @@ import { allocate } from './money.js';
 import { addMonths, isValidDate } from './dates.js';
 import { accountVisible, getTx, loadAccounts, loadCategories, loadUsers, type Account, type Split, type Tx } from './domain.js';
 import { HttpError } from './http.js';
+import type { Converter } from './fx.js';
 
 const dateStr = z.string().refine(isValidDate, 'Fecha inválida');
 
@@ -183,6 +184,70 @@ function writeSplits(id: number, splits: Split[]) {
 export function createTx(input: TxInput, viewer: number, extra: Partial<Normalised> = {}): Tx {
   const id = db().transaction(() => insertTx({ ...normaliseTx(input, viewer), ...extra }))();
   return getTx(id)!;
+}
+
+/** A statement row (CSV import or Mercado Pago) after rules, expressed from the point of view of `account`. */
+export type StatementRow = {
+  type: 'expense' | 'income' | 'transfer';
+  direction: 'out' | 'in';
+  status?: 'confirmed' | 'pending';
+  date: string;
+  /** Positive cents, in `account`'s currency. */
+  amount: number;
+  to_account_id?: number | null;
+  category_id?: number | null;
+  description: string;
+  merchant?: string | null;
+  notes?: string | null;
+  tags: string[];
+  is_shared: boolean;
+};
+
+/**
+ * Turns a statement row into a transaction. A transfer row moves money between `account` and
+ * `to_account_id` in the row's direction, converting at that day's rate when the currencies differ.
+ */
+export function normaliseStatementRow(account: Account, r: StatementRow, accounts: Map<number, Account>, fx: Converter, viewer: number): Normalised {
+  let from = account.id;
+  let to: number | null = null;
+  let amount = r.amount;
+  let toAmount: number | null = null;
+  if (r.type === 'transfer') {
+    if (r.to_account_id == null) throw new Error('Falta la cuenta destino de la transferencia');
+    const other = accounts.get(r.to_account_id);
+    if (!other) throw new Error('Cuenta destino inválida');
+    const converted = other.currency === account.currency ? r.amount : fx.convert(r.amount, account.currency, other.currency, r.date);
+    if (!converted) throw new Error('No hay cotización para convertir la transferencia');
+    if (r.direction === 'out') {
+      to = other.id;
+      if (other.currency !== account.currency) toAmount = converted;
+    } else {
+      // Money coming in is a transfer from the other account into this one.
+      from = other.id;
+      to = account.id;
+      amount = converted;
+      if (other.currency !== account.currency) toAmount = r.amount;
+    }
+  }
+  return normaliseTx(
+    {
+      type: r.type,
+      status: r.status,
+      date: r.date,
+      amount,
+      account_id: from,
+      to_account_id: to,
+      to_amount: toAmount,
+      category_id: r.category_id ?? null,
+      description: r.description,
+      merchant: r.merchant ?? null,
+      notes: r.notes ?? null,
+      tags: r.tags,
+      is_shared: r.is_shared,
+      is_private: false,
+    },
+    viewer,
+  );
 }
 
 export function importHash(accountId: number, date: string, amount: number, description: string): string {

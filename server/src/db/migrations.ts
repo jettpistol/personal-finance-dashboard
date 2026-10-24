@@ -254,4 +254,84 @@ export const migrations: string[] = [
   UPDATE accounts SET color = CASE color WHEN 'red' THEN 'violet' WHEN 'yellow' THEN 'lime' WHEN 'teal' THEN 'blue' ELSE color END;
   UPDATE goals SET color = CASE color WHEN 'red' THEN 'violet' WHEN 'yellow' THEN 'lime' WHEN 'teal' THEN 'blue' ELSE color END;
   `,
+  // Mercado Pago: one connection per person, the raw movements it brings in, webhook deliveries and report files.
+  `
+  CREATE TABLE mp_connections (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    account_id INTEGER NOT NULL REFERENCES accounts(id),
+    mp_user_id TEXT NOT NULL UNIQUE,
+    nickname TEXT,
+    site_id TEXT,
+    test_credentials INTEGER NOT NULL DEFAULT 0,
+    access_token_enc TEXT NOT NULL,
+    webhook_secret_enc TEXT,
+    webhook_key TEXT NOT NULL UNIQUE,
+    sync_from TEXT NOT NULL,
+    sync_cursor TEXT,
+    last_sync_at TEXT,
+    last_sync_error TEXT,
+    balance_json TEXT,
+    balance_at TEXT,
+    balance_error TEXT,
+    report_state TEXT,
+    report_error TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE mp_movements (
+    id INTEGER PRIMARY KEY,
+    connection_id INTEGER NOT NULL REFERENCES mp_connections(id) ON DELETE CASCADE,
+    source TEXT NOT NULL CHECK (source IN ('payment','report')),
+    external_id TEXT NOT NULL,
+    status TEXT,
+    payment_type TEXT,
+    -- report lines: the payment id they refer to (SOURCE_ID), to avoid counting a payment twice
+    payment_ref TEXT,
+    description TEXT NOT NULL DEFAULT '',
+    amount INTEGER NOT NULL,
+    fee INTEGER NOT NULL DEFAULT 0,
+    currency TEXT,
+    date TEXT NOT NULL,
+    date_last_updated TEXT,
+    raw_json TEXT NOT NULL,
+    -- none: no transaction (yet) | created | matched (already in the app) | reversed | skipped | error
+    tx_state TEXT NOT NULL DEFAULT 'none',
+    transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
+    fee_transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL,
+    note TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (connection_id, source, external_id)
+  );
+  CREATE INDEX idx_mp_movements_date ON mp_movements(connection_id, date);
+
+  CREATE TABLE mp_webhook_events (
+    dedupe_key TEXT PRIMARY KEY,
+    connection_id INTEGER NOT NULL REFERENCES mp_connections(id) ON DELETE CASCADE,
+    request_id TEXT,
+    type TEXT,
+    action TEXT,
+    data_id TEXT,
+    live_mode INTEGER,
+    body_json TEXT NOT NULL,
+    status TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    deliveries INTEGER NOT NULL DEFAULT 1,
+    next_attempt_at TEXT,
+    last_error TEXT,
+    received_at TEXT NOT NULL DEFAULT (datetime('now')),
+    processed_at TEXT
+  );
+  CREATE INDEX idx_mp_webhook_pending ON mp_webhook_events(status, next_attempt_at);
+
+  CREATE TABLE mp_report_files (
+    connection_id INTEGER NOT NULL REFERENCES mp_connections(id) ON DELETE CASCADE,
+    file_name TEXT NOT NULL,
+    lines INTEGER NOT NULL DEFAULT 0,
+    error TEXT,
+    processed_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (connection_id, file_name)
+  );
+  `,
 ];

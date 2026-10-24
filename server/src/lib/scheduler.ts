@@ -11,6 +11,7 @@ import { buildReviewDocx, reviewFileName } from './review.js';
 import { notify } from './notify.js';
 import { loadUsers, type Scope } from './domain.js';
 import { indexBudgetsByCpi } from './budgets.js';
+import { mercadoPagoTick } from './mercadopago/sync.js';
 
 const TICK_MS = 15 * 60_000;
 const FX_EVERY_MS = 3 * 3600_000;
@@ -60,6 +61,7 @@ async function sendMonthlyReviews() {
 
 export async function tick() {
   await step('recurring', () => generateDueRecurring());
+  await step('mercado pago', () => mercadoPagoTick());
   if (due('fx_last_refresh', FX_EVERY_MS)) await step('fx', () => refreshRates());
   if (due('cpi_last_refresh', CPI_EVERY_MS)) await step('cpi', () => refreshCpi());
   await step('budget auto-index', async () => {

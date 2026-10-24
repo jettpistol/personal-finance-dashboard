@@ -34,7 +34,8 @@ export async function buildApp(opts: { logger?: boolean; serveWeb?: boolean } = 
     if (!req.url.startsWith('/api/')) return;
     reply.header('cache-control', 'no-store');
     const path = req.url.split('?')[0];
-    if (PUBLIC_API.has(path)) return;
+    // Mercado Pago webhooks carry no session; they are authenticated by their signature instead.
+    if (PUBLIC_API.has(path) || path.startsWith('/api/mp/webhook/')) return;
     const uid = sessionUser(req.cookies[SESSION_COOKIE]);
     if (!uid) {
       reply.code(401).send({ error: 'No autenticado' });

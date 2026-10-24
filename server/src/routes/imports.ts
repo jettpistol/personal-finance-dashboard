@@ -6,7 +6,7 @@ import { HttpError } from '../lib/http.js';
 import { accountVisible, loadAccounts } from '../lib/domain.js';
 import { parseRows, presetConfigSchema, readTable, type Cell } from '../lib/importer.js';
 import { applyRules, loadRules } from '../lib/rules.js';
-import { assertWritable, importHash, insertTx, normaliseTx } from '../lib/transactions.js';
+import { assertWritable, importHash, insertTx, normaliseStatementRow } from '../lib/transactions.js';
 import { loadConverter } from '../lib/fx.js';
 import { idParam, parse } from './util.js';
 
@@ -161,45 +161,7 @@ export default async function importRoutes(app: FastifyInstance) {
       for (const r of rows) {
         try {
           // The row amount is always in this account's currency.
-          let from = account.id;
-          let to: number | null = null;
-          let amount = r.amount;
-          let toAmount: number | null = null;
-          if (r.type === 'transfer') {
-            if (r.to_account_id == null) throw new Error('Falta la cuenta destino de la transferencia');
-            const other = accounts.get(r.to_account_id);
-            if (!other) throw new Error('Cuenta destino inválida');
-            const converted = other.currency === account.currency ? r.amount : fx.convert(r.amount, account.currency, other.currency, r.date);
-            if (!converted) throw new Error('No hay cotización para convertir la transferencia');
-            if (r.direction === 'out') {
-              to = other.id;
-              if (other.currency !== account.currency) toAmount = converted;
-            } else {
-              // Money coming in is a transfer from the other account into this one.
-              from = other.id;
-              to = account.id;
-              amount = converted;
-              if (other.currency !== account.currency) toAmount = r.amount;
-            }
-          }
-          const tx = normaliseTx(
-            {
-              type: r.type,
-              date: r.date,
-              amount,
-              account_id: from,
-              to_account_id: to,
-              to_amount: toAmount,
-              category_id: r.category_id ?? null,
-              description: r.description,
-              merchant: r.merchant ?? null,
-              notes: r.notes ?? null,
-              tags: r.tags,
-              is_shared: r.is_shared,
-              is_private: false,
-            },
-            req.userId,
-          );
+          const tx = normaliseStatementRow(account, r, accounts, fx, req.userId);
           insertTx({ ...tx, import_batch_id: batchId, import_hash: r.import_hash });
           count++;
         } catch (e) {

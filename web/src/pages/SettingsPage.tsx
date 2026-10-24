@@ -35,6 +35,7 @@ import { date, MANTINE_COLORS, monthName, today } from '../lib/format';
 import { notifyError, notifyOk, useCategories, useMe, useSettings, useUsers } from '../lib/queries';
 import type { Category, FxRate, Settings } from '../lib/types';
 import { PageHeader } from '../components/Layout';
+import { MercadoPagoSettings } from '../components/MercadoPagoSettings';
 
 export function SettingsPage() {
   const [tab, setTab] = useState<string | null>('profile');
@@ -47,6 +48,7 @@ export function SettingsPage() {
           <Tabs.Tab value="notifications">Notificaciones</Tabs.Tab>
           <Tabs.Tab value="household">Hogar</Tabs.Tab>
           <Tabs.Tab value="categories">Categorías</Tabs.Tab>
+          <Tabs.Tab value="mercadopago">Mercado Pago</Tabs.Tab>
           <Tabs.Tab value="rates">Cotizaciones e inflación</Tabs.Tab>
           <Tabs.Tab value="data">Datos</Tabs.Tab>
         </Tabs.List>
@@ -61,6 +63,9 @@ export function SettingsPage() {
         </Tabs.Panel>
         <Tabs.Panel value="categories">
           <CategoriesTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="mercadopago">
+          <MercadoPagoSettings />
         </Tabs.Panel>
         <Tabs.Panel value="rates">
           <RatesTab />
