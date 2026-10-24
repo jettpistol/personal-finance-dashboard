@@ -343,7 +343,7 @@ export function PageHeader({ title, actions, badge }: { title: string; descripti
 function AppFooter() {
   return (
     <footer className="pfd-footer">
-      <span>Finanzas · uso privado del hogar</span>
+      <span>Finanzas v{__APP_VERSION__} · uso privado del hogar</span>
       <span>Dólar: BNA · Inflación: IPC INDEC</span>
       <Link to="/ajustes">Ajustes</Link>
       <Link to="/importar">Importar</Link>
