@@ -1,5 +1,5 @@
 // Fills an EMPTY database with two demo users and ~5 months of realistic data.
-// Usage: DATA_DIR=./data-demo npm run seed:demo
+// Usage: npm run demo (seeds server/data-demo once, then starts the app on it)
 // Exchange rates and CPI are synthetic (source "demo"); refresh them from Ajustes once online.
 import { config } from './config.js';
 import { db, openDb, setDb } from './db/index.js';
@@ -10,6 +10,10 @@ import { upsertRate } from './lib/fx.js';
 
 setDb(openDb(config.dbPath));
 if ((db().prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n > 0) {
+  if (process.argv.includes('--if-empty')) {
+    console.log(`Demo ya cargada en ${config.dbPath}.`);
+    process.exit(0);
+  }
   console.error(`La base ${config.dbPath} ya tiene usuarios. Usá un DATA_DIR vacío para la demo.`);
   process.exit(1);
 }

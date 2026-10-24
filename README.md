@@ -38,9 +38,10 @@ On first visit you create your user. Then add your partner in **Ajustes → Hoga
 ### Try it with demo data
 
 ```bash
-DATA_DIR=./data-demo npm run seed:demo        # users ana / beto, password: demo-finanzas
-DATA_DIR=./data-demo npm start
+npm run demo
 ```
+
+This builds the app, loads demo data into `server/data-demo` (only the first time) and starts it on http://localhost:3000. Users `ana` / `beto`, password `demo-finanzas`.
 
 Demo exchange rates and CPI are synthetic. Use **Ajustes → Cotizaciones e inflación → Actualizar** to load real ones.
 

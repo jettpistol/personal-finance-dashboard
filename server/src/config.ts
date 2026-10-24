@@ -5,7 +5,8 @@ function env(name: string, fallback: string): string {
   return v === undefined || v === '' ? fallback : v;
 }
 
-const dataDir = path.resolve(env('DATA_DIR', path.join(process.cwd(), 'data')));
+// `--demo` (used by `npm run demo`) keeps demo data apart from real data without needing env vars.
+const dataDir = path.resolve(env('DATA_DIR', path.join(process.cwd(), process.argv.includes('--demo') ? 'data-demo' : 'data')));
 
 export const config = {
   port: Number(env('PORT', '3000')),
