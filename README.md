@@ -2,7 +2,7 @@
 
 A self-hosted finance dashboard for a couple. Free, one Docker container, SQLite. UI in Spanish (Argentina), ARS and USD.
 
-**User guide:** [`docs/guide/`](docs/guide/README.md) explains every section of the app.
+**User guide:** [`docs/guide/`](docs/guide/README.md) explains every section of the app. Open problems found while writing it are in [`docs/known-issues.md`](docs/known-issues.md).
 
 Scope was decided with [`docs/feature-questionnaire.md`](docs/feature-questionnaire.md); the resulting design is in [`docs/design.md`](docs/design.md).
 
@@ -57,7 +57,7 @@ npm install          # new versions may add dependencies
 npm run demo:reset   # rebuilds and reloads the demo data
 ```
 
-The footer shows the version you're running (`Finanzas v0.3.3 · …`); it's bumped in the root `package.json` with every change.
+The footer shows the version you're running (`Finanzas v0.4.0 · …`); it's bumped in the root `package.json` with every change.
 
 ### Development
 

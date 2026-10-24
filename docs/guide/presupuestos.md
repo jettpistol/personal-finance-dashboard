@@ -6,7 +6,7 @@ Set a monthly spending limit per expense category and see how much of it you hav
 
 ## What you see
 
-The page follows the dashboard chosen in the top bar (**Hogar**, **Mío** or your partner's, see [README.md](README.md)). The subtitle reminds you which one: *Límites mensuales por categoría · Hogar*.
+The page follows the dashboard chosen in the top bar (**Hogar**, **Mío** or your partner's, see [Guide index](README.md)). The subtitle reminds you which one: *Límites mensuales por categoría · Hogar*.
 
 - **Month selector** (top right): pick any month. Budgets are the same every month; only the spending changes.
 - **Gastado del presupuesto (ARS)**: total spent against all budgets in pesos, "de" the sum of those budgets, with a percentage badge and a bar. Budgets in dollars are not part of this total.
@@ -51,7 +51,7 @@ Click **Ajustar por inflación** and confirm. Every peso budget of the dashboard
 
 To do this automatically, turn on **Actualizar presupuestos por inflación automáticamente** in **Ajustes → Hogar**. Then, each time a new monthly CPI is published, all peso budgets of every dashboard (household and both personal ones) go up by it, and you get a notice *Presupuestos actualizados por inflación*. The first CPI after you turn it on is the first one applied; earlier ones are not.
 
-More about CPI in [como-se-calcula.md](como-se-calcula.md).
+More about CPI in [How the numbers are worked out](como-se-calcula.md).
 
 ### Alerts at 80% and 100%
 
@@ -65,7 +65,7 @@ When a movement makes a budget of the current month cross a threshold, you get a
 ## How the numbers are worked out
 
 - **Spent** is the sum of confirmed expenses of that month in the chosen dashboard, in the budget's category or its subcategories. Pending recurring movements are not counted until you confirm them.
-- What counts in each dashboard follows the usual rules: **Hogar** counts joint-account spending plus shared expenses at their full amount; **Mío** counts your own accounts plus only your share of shared expenses. See [gastos-compartidos.md](gastos-compartidos.md).
+- What counts in each dashboard follows the usual rules: **Hogar** counts joint-account spending plus shared expenses at their full amount; **Mío** counts your own accounts plus only your share of shared expenses. See [Gastos compartidos](gastos-compartidos.md).
 - Movements in the other currency are converted to the budget's currency at the BNA quote of each movement's own day.
 - **Percentage** = spent ÷ budget × 100.
 - **Per day** = what is left ÷ days left in the month, counting today.
@@ -80,4 +80,4 @@ When a movement makes a budget of the current month cross a threshold, you get a
 - Alerts are checked when you add, edit or confirm a movement in the app. Rows brought in with **Importar** do not trigger alerts by themselves.
 - If a subcategory has its own budget and so does its parent, the subcategory's spending counts in both.
 
-See also: [README.md](README.md), [inicio.md](inicio.md), [movimientos.md](movimientos.md), [gastos-compartidos.md](gastos-compartidos.md), [metas.md](metas.md), [reportes.md](reportes.md), [cierre-de-mes.md](cierre-de-mes.md), [ajustes.md](ajustes.md), [como-se-calcula.md](como-se-calcula.md)
+See also: [Guide index](README.md) · [Inicio](inicio.md) · [Movimientos](movimientos.md) · [Gastos compartidos](gastos-compartidos.md) · [Metas de ahorro](metas.md) · [Reportes](reportes.md) · [Cierre de mes](cierre-de-mes.md) · [Ajustes](ajustes.md) · [How the numbers are worked out](como-se-calcula.md)

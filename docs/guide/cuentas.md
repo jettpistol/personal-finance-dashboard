@@ -115,4 +115,4 @@ Shared expenses affect only the account they were paid from, at their full amoun
 - Keep dollars in their own **USD** account and buy them with a **Transferencia** from a peso account, so the purchase isn't counted as spending.
 - Credit cards: record purchases as expenses on the card account, and paying the card as a **Transferencia** from the bank to the card.
 
-See also: [README.md](README.md) · [movimientos.md](movimientos.md) · [gastos-compartidos.md](gastos-compartidos.md) · [metas.md](metas.md) · [reportes.md](reportes.md) · [como-se-calcula.md](como-se-calcula.md) · [barra-superior.md](barra-superior.md)
+See also: [Guide index](README.md) · [Movimientos](movimientos.md) · [Gastos compartidos](gastos-compartidos.md) · [Metas de ahorro](metas.md) · [Reportes](reportes.md) · [How the numbers are worked out](como-se-calcula.md) · [Login and top bar](barra-superior.md)

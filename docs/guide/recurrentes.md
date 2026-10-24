@@ -56,7 +56,7 @@ Click **Nuevo recurrente**.
 6. **Frecuencia**: a number and a unit, for example *1 mes*, *2 semanas* or *1 año* (up to 24).
 7. **Próximo vencimiento** (for an expense) or **Próximo cobro** (for income): the date of the next occurrence. For monthly and yearly templates its day of the month is kept: a bill on the 31st falls on the 30th in 30-day months and on the 28th or 29th in February, then back to the 31st.
 8. **Hasta (opcional)**: the last date it can fall on. After that the template turns itself off.
-9. **Gasto compartido** / **Ingreso compartido**: turn it on to split each occurrence between you two. Under **División** choose the household default, **Partes iguales**, **Porcentajes** or **Montos exactos**. With two people, typing one part fills in the other. See [gastos-compartidos.md](gastos-compartidos.md).
+9. **Gasto compartido** / **Ingreso compartido**: turn it on to split each occurrence between you two. Under **División** choose the household default (**Cincuenta-cincuenta** when it is an equal split), **Porcentajes** or **Montos exactos**; **Partes iguales** only appears when your default split is not equal. With two people, typing one part fills in the other. See [Gastos compartidos](gastos-compartidos.md).
 10. **Privado**: only for a personal account and when it is not shared. Your partner will not see the template or its movements.
 11. Optional: **Comercio** (or **Quién paga** for income), **Etiquetas**, **Notas**.
 12. **Activo** is on by default. Click **Guardar**.
@@ -83,4 +83,4 @@ Click the trash icon and confirm. The template and its **pending** movements are
 - For a card subscription in dollars, choose **USD** at the top so the template goes to your dollar card or account.
 - Pending movements wait as long as needed; nothing is confirmed automatically.
 
-See also: [README.md](README.md), [movimientos.md](movimientos.md), [cuentas.md](cuentas.md), [gastos-compartidos.md](gastos-compartidos.md), [presupuestos.md](presupuestos.md), [barra-superior.md](barra-superior.md), [ajustes.md](ajustes.md)
+See also: [Guide index](README.md) · [Movimientos](movimientos.md) · [Cuentas](cuentas.md) · [Gastos compartidos](gastos-compartidos.md) · [Presupuestos](presupuestos.md) · [Login and top bar](barra-superior.md) · [Ajustes](ajustes.md)

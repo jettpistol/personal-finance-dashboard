@@ -59,11 +59,11 @@ For each row you can:
 - tick or untick it (the checkbox on the left);
 - change the **Tipo**: **Gasto**, **Ingreso** or **Transferencia**;
 - choose the **Categoría**, or for a transfer the other account (*Hacia la cuenta…* for money out, *Desde la cuenta…* for money in);
-- turn on **Compartido** (expenses only). Shared rows use the household's default split, see [gastos-compartidos.md](gastos-compartidos.md).
+- turn on **Compartido** (expenses only). Shared rows use the household's default split, see [Gastos compartidos](gastos-compartidos.md).
 
 The **Info** column shows badges:
 
-- **Regla**: a rule filled this row (hover to see which). See [reglas.md](reglas.md).
+- **Regla**: a rule filled this row (hover to see which). See [Reglas](reglas.md).
 - **Duplicado**: this exact row was imported before. Unticked by default.
 - **Posible duplicado**: there is already a movement in this account with the same date and amount (for example one you typed by hand). Still ticked; check it.
 - **Otra moneda**: the row's currency differs from the account's. Unticked by default.
@@ -97,7 +97,7 @@ Every movement that import created and that still exists is deleted, even if you
 
 - Imported movements are never marked private. Mark them afterwards in **Movimientos** if needed.
 - The uploaded file is kept for 30 minutes. After that you see *El archivo expiró. Volvé a subirlo.*
-- Create rules for the descriptions you see every month; the next import comes out categorized. See [reglas.md](reglas.md).
+- Create rules for the descriptions you see every month; the next import comes out categorized. See [Reglas](reglas.md).
 - Import each statement into the right account: the duplicate check is per account.
 
-See also: [README.md](README.md), [reglas.md](reglas.md), [movimientos.md](movimientos.md), [cuentas.md](cuentas.md), [gastos-compartidos.md](gastos-compartidos.md), [recurrentes.md](recurrentes.md)
+See also: [Guide index](README.md) · [Reglas](reglas.md) · [Movimientos](movimientos.md) · [Cuentas](cuentas.md) · [Gastos compartidos](gastos-compartidos.md) · [Recurrentes](recurrentes.md)

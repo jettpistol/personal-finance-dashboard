@@ -255,4 +255,4 @@ If a field is missing or invalid, it's outlined in red and a red message appears
 - For a **Compra en cuotas**, attach the receipt afterwards: open one of the installments and use **Adjuntar comprobante** there.
 - Buying dollars is a **Transferencia**, not a **Gasto**: that way it doesn't inflate your spending and the dollars appear in the USD account.
 
-See also: [README.md](README.md) · [inicio.md](inicio.md) · [cuentas.md](cuentas.md) · [gastos-compartidos.md](gastos-compartidos.md) · [recurrentes.md](recurrentes.md) · [reglas.md](reglas.md) · [importar.md](importar.md) · [como-se-calcula.md](como-se-calcula.md) · [barra-superior.md](barra-superior.md)
+See also: [Guide index](README.md) · [Inicio](inicio.md) · [Cuentas](cuentas.md) · [Gastos compartidos](gastos-compartidos.md) · [Recurrentes](recurrentes.md) · [Reglas](reglas.md) · [Importar](importar.md) · [How the numbers are worked out](como-se-calcula.md) · [Login and top bar](barra-superior.md)

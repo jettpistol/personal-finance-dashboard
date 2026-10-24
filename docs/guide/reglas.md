@@ -74,8 +74,8 @@ Type, shared flag, tags and transfers are not changed this way. Movements that a
 
 ## Where rules apply
 
-- **Importing a file** ([importar.md](importar.md)): every row is checked. The rule can set type, category, merchant, tags, shared and the transfer account. A category is only applied if it fits the row's type. You see a **Regla** badge on the row and can still change anything before importing.
-- **Typing a new movement** ([movimientos.md](movimientos.md)): when you leave the **Descripción** field of a new expense or income, the app fills the category, merchant and tags only if they are still empty, and sets the shared switch if the rule says so. It does not change the type or turn it into a transfer. A line says *Regla aplicada: Supermercado Coto*.
+- **Importing a file** ([Importar](importar.md)): every row is checked. The rule can set type, category, merchant, tags, shared and the transfer account. A category is only applied if it fits the row's type. You see a **Regla** badge on the row and can still change anything before importing.
+- **Typing a new movement** ([Movimientos](movimientos.md)): when you leave the **Descripción** field of a new expense or income, the app fills the category, merchant and tags only if they are still empty, and sets the shared switch if the rule says so. It does not change the type or turn it into a transfer. A line says *Regla aplicada: Supermercado Coto*.
   - If no rule matches, it suggests the category used last time for the same description, ignoring case (*Categoría sugerida según movimientos anteriores*).
 - **Aplicar reglas a movimientos sin categoría**, as above.
 
@@ -88,4 +88,4 @@ Rules never change movements on their own afterwards: adding a rule today does n
 - A rule that only marks a row as **Transferencia** to your card account is handy for card payments in a bank statement.
 - If the first matching rule does not set a category, **Aplicar reglas a movimientos sin categoría** skips the movement, even if a lower rule would set one.
 
-See also: [README.md](README.md), [importar.md](importar.md), [movimientos.md](movimientos.md), [cuentas.md](cuentas.md), [gastos-compartidos.md](gastos-compartidos.md), [ajustes.md](ajustes.md)
+See also: [Guide index](README.md) · [Importar](importar.md) · [Movimientos](movimientos.md) · [Cuentas](cuentas.md) · [Gastos compartidos](gastos-compartidos.md) · [Ajustes](ajustes.md)

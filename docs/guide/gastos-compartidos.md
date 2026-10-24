@@ -114,4 +114,4 @@ The split itself (default ratio, rounding to the cent so the parts add up exactl
 - Partial payments are fine: the card simply shows what's left.
 - A shared expense your partner paid from a private account still appears in **Actividad** and counts here; you just don't see which account it came from.
 
-See also: [README.md](README.md) · [movimientos.md](movimientos.md) · [cuentas.md](cuentas.md) · [inicio.md](inicio.md) · [ajustes.md](ajustes.md) · [como-se-calcula.md](como-se-calcula.md)
+See also: [Guide index](README.md) · [Movimientos](movimientos.md) · [Cuentas](cuentas.md) · [Inicio](inicio.md) · [Ajustes](ajustes.md) · [How the numbers are worked out](como-se-calcula.md)

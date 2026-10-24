@@ -50,7 +50,7 @@ There are two ways, and each goal uses one:
 3. Click **Registrar aporte**. The list below shows every contribution (green) and withdrawal (red).
 4. Use the trash icon on a row to delete it.
 
-Contributions are a record for the goal only. They do not create a movement and do not change any account balance. If you also moved real money, record that movement in [movimientos.md](movimientos.md) as usual.
+Contributions are a record for the goal only. They do not create a movement and do not change any account balance. If you also moved real money, record that movement in [Movimientos](movimientos.md) as usual.
 
 ### Edit, archive or delete
 
@@ -77,4 +77,4 @@ For example: target $ 3.000.000, saved $ 1.200.000, 6 months left: $ 1.800.000 �
 - Changing a manual goal's **Moneda** does not convert the contributions already recorded; their numbers are simply read in the new currency.
 - Inflation is not applied to targets. For a long goal in pesos, consider setting it in dollars or updating the target from time to time.
 
-See also: [README.md](README.md), [cuentas.md](cuentas.md), [movimientos.md](movimientos.md), [presupuestos.md](presupuestos.md), [reportes.md](reportes.md), [como-se-calcula.md](como-se-calcula.md)
+See also: [Guide index](README.md) · [Cuentas](cuentas.md) · [Movimientos](movimientos.md) · [Presupuestos](presupuestos.md) · [Reportes](reportes.md) · [How the numbers are worked out](como-se-calcula.md)

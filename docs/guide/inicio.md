@@ -92,4 +92,4 @@ This list always shows the latest movements, even when you pick an earlier month
 - Early in a month, look at the previous month first: the current one is still filling up, and its CPI is not published yet.
 - If the income column looks empty on **Hogar**, record your transfers into the joint account: they are what the household "earns".
 
-See also: [README](README.md) · [Barra superior](barra-superior.md) · [Movimientos](movimientos.md) · [Presupuestos](presupuestos.md) · [Gastos compartidos](gastos-compartidos.md) · [Metas](metas.md) · [Reportes](reportes.md) · [Cómo se calcula](como-se-calcula.md)
+See also: [Guide index](README.md) · [Login and top bar](barra-superior.md) · [Movimientos](movimientos.md) · [Presupuestos](presupuestos.md) · [Gastos compartidos](gastos-compartidos.md) · [Metas de ahorro](metas.md) · [Reportes](reportes.md) · [How the numbers are worked out](como-se-calcula.md)

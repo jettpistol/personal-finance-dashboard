@@ -43,8 +43,8 @@ How every figure is calculated (currency conversion, inflation, what counts in e
 
 The tabs at the top switch whose money you're looking at:
 
-- **Hogar**: the household. Joint accounts, plus every shared expense at its full amount, wherever it was paid from.
-- **Mío**: you. Your own accounts, plus your share of each shared expense.
+- **Hogar**: the household. Joint accounts, plus every shared expense (or shared income) at its full amount, wherever it was paid from.
+- **Mío**: you. Your own accounts, plus your share of each shared expense or income.
 - **Your partner's name**: their **Mío**, if they chose to share it (**Ajustes**).
 
 A movement in a joint account that isn't marked as shared only counts in **Hogar**. Details: [what counts where](como-se-calcula.md).

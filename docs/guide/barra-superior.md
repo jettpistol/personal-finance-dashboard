@@ -17,7 +17,7 @@ How you get into the app, and the parts of the screen that are there on every pa
 ### The top bar, left to right
 
 - **Dashboard tabs**: **Hogar**, **Mío** and your partner's name (for example **Milagros**). They decide whose money the page shows. Your partner's tab only appears if they share their personal dashboard (**Ajustes → Perfil**). The tabs only appear on pages whose content depends on them: **Inicio**, **Movimientos**, **Presupuestos**, **Metas de ahorro**, **Reportes** and **Cierre de mes**. On the other pages they are hidden.
-- **Profile switcher**: a database icon with the name of the data profile in use, for example **Prueba (demo)**. See [perfil-de-datos.md](perfil-de-datos.md).
+- **Profile switcher**: a database icon with the name of the data profile in use, for example **Prueba (demo)**. See [Perfil de datos](perfil-de-datos.md).
 - **ARS / USD**: the display currency. Hovering shows *Convertir montos al dólar BNA del día de cada movimiento*.
 - **Bell**: your notifications, with a blue badge counting the unread ones.
 - **User menu**: a circle with your initial in your color, and your display name.
@@ -48,7 +48,7 @@ Pages that show one month at a time (**Inicio**, **Presupuestos**, **Cierre de m
 
 At the bottom of every page:
 
-- **Finanzas v0.3.1 · uso privado del hogar**: the version you are running (the number goes up with every change). Check it after installing an update.
+- **Finanzas v… · uso privado del hogar**: the version you are running (the number goes up with every change). Check it after installing an update.
 - **Dólar: BNA · Inflación: IPC INDEC**: where exchange rates and inflation come from.
 - Shortcuts to **Ajustes**, **Importar** and **Cierre de mes**.
 
@@ -73,7 +73,7 @@ This only happens once, on a new installation with no users.
 3. Optionally fill in **Nombre para mostrar**, the name shown in the app (for example *Iván*). If you leave it empty, your username is used.
 4. Choose a **Contraseña** of at least 10 characters and type it again in **Repetir contraseña**.
 5. Click **Crear usuario**. You are logged in straight away.
-6. Add your partner in **Ajustes → Hogar → Agregar persona** (see [ajustes.md](ajustes.md)).
+6. Add your partner in **Ajustes → Hogar → Agregar persona** (see [Ajustes](ajustes.md)).
 
 ### Log in
 
@@ -105,7 +105,7 @@ There is no "forgot my password" link, and the app has no way to reset someone e
 ### Switch dashboard and currency
 
 - Click **Hogar**, **Mío** or your partner's name. The page reloads its figures for that dashboard. Your partner's dashboard is for looking only: you can't change their budgets, goals or monthly notes.
-- Click **ARS** or **USD**. Nothing stored changes: every amount is converted for display at the BNA quote of its own day ([como-se-calcula.md](como-se-calcula.md)).
+- Click **ARS** or **USD**. Nothing stored changes: every amount is converted for display at the BNA quote of its own day ([How the numbers are worked out](como-se-calcula.md)).
 - Both choices are remembered in this browser. If you were on your partner's tab and they stop sharing their dashboard, you go back to **Hogar**.
 
 ### Switch data profile
@@ -132,7 +132,7 @@ Click your name or initial:
 
 ### Record a movement from anywhere
 
-Click **Nuevo movimiento** in the sidebar. The form (**Gasto**, **Ingreso**, **Transferencia** or **Ajuste**) opens on top of the page you're on, and you stay there after saving. See [movimientos.md](movimientos.md).
+Click **Nuevo movimiento** in the sidebar. The form (**Gasto**, **Ingreso**, **Transferencia** or **Ajuste**) opens on top of the page you're on, and you stay there after saving. See [Movimientos](movimientos.md).
 
 ### Pick a month
 
@@ -147,4 +147,4 @@ Each page keeps its own month while you stay on it. When you come back later it 
 - The dashboard tabs, the currency and the color scheme are remembered per browser, so each of you can keep your own on your own computer.
 - When your session ends (after 30 days, or because you changed your password on another device), the app shows the login screen again. Log in and carry on.
 
-See also: [README.md](README.md) · [perfil-de-datos.md](perfil-de-datos.md) · [ajustes.md](ajustes.md) · [movimientos.md](movimientos.md) · [inicio.md](inicio.md) · [como-se-calcula.md](como-se-calcula.md)
+See also: [Guide index](README.md) · [Perfil de datos](perfil-de-datos.md) · [Ajustes](ajustes.md) · [Movimientos](movimientos.md) · [Inicio](inicio.md) · [How the numbers are worked out](como-se-calcula.md)

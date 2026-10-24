@@ -35,13 +35,13 @@ The page has two boxes.
 
 **Nuevo perfil**: a **Nombre** field (placeholder *Ej: Producción, Pruebas de importación*) and the **Crear perfil vacío** button.
 
-The profile in use is also shown in the top bar, next to the **ARS / USD** switch (see [barra-superior.md](barra-superior.md)).
+The profile in use is also shown in the top bar, next to the **ARS / USD** switch (see [Login and top bar](barra-superior.md)).
 
 ## The profiles you start with
 
 - **Vacío**: created automatically on a new installation, marked **Por defecto** and empty (default categories only). It can be renamed but never deleted. It is what the app opens on until you pick something else.
-- **Prueba (demo)**: only exists if the app was started with demo data. It holds about five months of made-up movements for Iván and Milagros. Its exchange rates and CPI are synthetic and marked **demo** in the **Fuente** column; **Actualizar** in **Ajustes → Cotizaciones e inflación** replaces them with real ones.
-- **Principal**: only on installations that existed before profiles were added. It holds the data you had then.
+- **Prueba (demo)**: only exists if the app was started with demo data. It holds about five months of made-up movements for Iván and Milagros. Its exchange rates and CPI are synthetic and marked `demo` in the **Fuente** column; **Actualizar desde BNA** and **Actualizar IPC** in **Ajustes → Cotizaciones e inflación** replace them with real ones (the app also does it by itself when it can reach the internet).
+- **Principal**: only on installations that existed before profiles were added. It holds the data you had then. Those installations also get an empty **Vacío** as the default, so pick **Principal** once in each browser.
 
 ## What you can do
 
@@ -84,7 +84,7 @@ Any of you can create, rename and delete profiles; there is no owner per profile
 - The logins and the list of profiles are backed up once a day in a separate file.
 - The backup list in **Ajustes → Datos** shows the files of all profiles together. File names start with `perfil-` and the profile's number, `core-` for logins, or `finanzas-` for the original **Principal** profile.
 
-See [ajustes.md](ajustes.md#datos) for how long backups are kept.
+See [Ajustes](ajustes.md#datos) for how long backups are kept.
 
 ## Things that happen in every profile
 
@@ -96,4 +96,4 @@ The automatic tasks run for each profile separately: recurring items become pend
 - Before your first real entry, rename **Vacío** to something like *Nuestras finanzas* so it's obvious in the top bar.
 - If the numbers look wrong or empty, check the profile name in the top bar before anything else.
 
-See also: [README.md](README.md) · [barra-superior.md](barra-superior.md) · [ajustes.md](ajustes.md) · [importar.md](importar.md) · [como-se-calcula.md](como-se-calcula.md)
+See also: [Guide index](README.md) · [Login and top bar](barra-superior.md) · [Ajustes](ajustes.md) · [Importar](importar.md) · [How the numbers are worked out](como-se-calcula.md)

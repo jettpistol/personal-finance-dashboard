@@ -118,4 +118,4 @@ On days 1 to 3 of each month, the app sends the previous month's document on its
 - To get the document in dollars, switch to **USD** and use **Descargar DOCX**; **Enviar por Telegram** always sends it in pesos.
 - After editing a closed month, download or send the document again to get the updated figures.
 
-See also: [README](README.md) · [Inicio](inicio.md) · [Reportes](reportes.md) · [Presupuestos](presupuestos.md) · [Gastos compartidos](gastos-compartidos.md) · [Ajustes](ajustes.md) · [Barra superior](barra-superior.md) · [Cómo se calcula](como-se-calcula.md)
+See also: [Guide index](README.md) · [Inicio](inicio.md) · [Reportes](reportes.md) · [Presupuestos](presupuestos.md) · [Gastos compartidos](gastos-compartidos.md) · [Ajustes](ajustes.md) · [Login and top bar](barra-superior.md) · [How the numbers are worked out](como-se-calcula.md)

@@ -114,4 +114,4 @@ More detail on conversion, CPI and scopes: [How the numbers are worked out](como
 - **Tendencia**'s table shows the **Ingresos** row without contributions, while the chart above includes them. On **Hogar**, look at the **Aportes al pozo común** row for the rest.
 - **Patrimonio** on **Hogar** includes personal accounts too; use **Mío** to see only yours.
 
-See also: [Guide index](README.md) · [Inicio](inicio.md) · [Cierre de mes](cierre-de-mes.md) · [Gastos compartidos](gastos-compartidos.md) · [Cuentas](cuentas.md) · [Top bar](barra-superior.md) · [How the numbers are worked out](como-se-calcula.md)
+See also: [Guide index](README.md) · [Inicio](inicio.md) · [Cierre de mes](cierre-de-mes.md) · [Gastos compartidos](gastos-compartidos.md) · [Cuentas](cuentas.md) · [Login and top bar](barra-superior.md) · [How the numbers are worked out](como-se-calcula.md)
