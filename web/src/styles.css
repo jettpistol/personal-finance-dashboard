@@ -619,8 +619,8 @@ a {
 }
 
 .pfd-tag[data-tone='grape'] {
-  --tag-top: #8d5fb5;
-  --tag-bottom: #61397f;
+  --tag-top: #6b6dab;
+  --tag-bottom: #45477f;
 }
 
 .pfd-tag[data-tone='gray'] {
