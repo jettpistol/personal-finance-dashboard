@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+
+# Real bank statements contain personal data (names, tax IDs, card numbers).
+# Keep them out of the repo; tests use the synthetic files in tests/fixtures.
+*.pdf
+*.xlsx
+samples/
+private/

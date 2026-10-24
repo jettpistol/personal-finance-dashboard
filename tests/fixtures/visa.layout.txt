@@ -1,0 +1,93 @@
+            Resumen N° VI00000000000000001
+
+            Tarjeta Crédito VISA
+
+   JUAN PEREZ                                                Consumidor Final                     CUIT Banco: 30-50000173-5
+   CALLE FALSA 123, CIUDAD AUTONOMA BUEN, C1000AAA                N° Cuenta: 9999990001                Sucursal: 139
+
+              171.000,50
+                                                27-Ago-26    04-Sep-26     01-Oct-26         09-Oct-26     29-Oct-26     11-Nov-26
+
+              4,19
+
+PAGO MINIMO                                 LÍMITES
+   En pesos                                     De compras en un pago y en cuotas                 De financiación
+
+   $ 20.000,00                                 $ 5.000.000,00                                    $ 4.500.000,00
+
+                      Nominal Anual                                            Efectiva mensual
+ TASAS
+                         En pesos 80,280%           En dólares 20,000%              En pesos 6,598%                 En dólares 1,644%
+
+CONSOLIDADO                                                                                                   PESOS               DÓLARES
+
+                  SALDO ANTERIOR                                                                           100.000,00                   10,00
+04-09-26          TRANSFERENCIA DEUDA        10,00 TC1500,000                                               15.000,00                  -10,00
+06-09-26          SU PAGO EN PESOS                                                                         -60.000,00
+
+
+DETALLE DEL CONSUMO
+FECHA            REFERENCIA                                                           CUOTA   COMPROBANTE     PESOS               DÓLARES
+
+17-01-26    *   MERPAGO*MERCADOLIBRE                                       09/09     674357                  8.000,00
+
+02-08-26    *   MERPAGO*LEDBASRL                                           02/03     697435                 30.000,00
+
+
+Resumen de tarjeta de credito VISA                                                                                      Página     1/3
+20261001000000001H
+
+              Resumen N° VI00000000000000001
+
+              Tarjeta Crédito VISA
+
+
+DETALLE DEL CONSUMO
+FECHA            REFERENCIA                                        CUOTA   COMPROBANTE     PESOS             DÓLARES
+
+27-08-26        GOOGLE *Google One    USD      2,99               276452                                           2,99
+
+29-08-26    K   PAYU*AR*UBER                                      006840                 20.000,00
+
+03-09-26    F   LinkedIn P308159 LinkedIn USD    1,20             113522                                           1,20
+
+04-09-26    *   PVS*SUPER CORONEL FRANCIS                         006949                 19.280,00
+
+08-09-26    K   MERPAGO*MC20251006082726                          880071                 -9.000,00
+
+12-09-26    K   RAPPI                                             000127                 10.500,50
+
+                 TARJETA 1111 Total Consumos de JUAN PEREZ                               78.780,50                  4,19
+
+05-09-26    K   MERPAGO*FARMACITY                       01/03     943883                  5.000,00
+
+15-09-26    *   CINE HOYTS UNICENTER PREM                         469301                  7.000,00
+
+                 TARJETA 2222 Total Consumos de MARIA GOMEZ                              12.000,00                  0,00
+
+Resumen de tarjeta de credito VISA                                                                                      Página     2/3
+20261001000000001H
+
+                Resumen N° VI00000000000000001
+
+               Tarjeta Crédito VISA
+
+FECHA            REFERENCIA                                                              CUOTA   COMPROBANTE     PESOS             DÓLARES
+
+01-10-26          IMPUESTO DE SELLOS          $                                                                 1.000,00
+
+01-10-26          INTERESES FINANCIACION          $                                                            20.000,00
+
+01-10-26          DB IVA $ 21%                     20.000,00                                                    4.200,00
+
+01-10-26          IIBB PERCEP-BSAS 2,00%(         1000,00)                                                        20,00
+
+    TOTAL A PAGAR                                                                                             171.000,50                  4,19
+
+           Plan V: abonando el pago mínimo de $         20000,00 usted puede cancelar en cuotas
+           Cuotas a vencer:
+             Octubre/26 Noviembre/26 Diciembre/26            Enero/27 Febrero/27    Marzo/27
+             $10.000,00 $5.000,00      $0,00     $0,00   $0,00   $0,00
+
+Resumen de tarjeta de credito VISA                                                                                      Página     3/3
+20261001000000001H
