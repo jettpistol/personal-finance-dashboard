@@ -217,7 +217,7 @@ function ImportWizard() {
               placeholder="Elegí uno o creá uno nuevo"
               value={presetId}
               onChange={pickPreset}
-              data={[{ value: NEW_PRESET, label: '➕ Crear preset nuevo' }, ...(presets.data ?? []).map((p) => ({ value: String(p.id), label: p.name }))]}
+              data={[{ value: NEW_PRESET, label: 'Crear preset nuevo…' }, ...(presets.data ?? []).map((p) => ({ value: String(p.id), label: p.name }))]}
             />
             <Group justify="flex-end">
               <Button disabled={!upload || !accountId || !presetId} variant="default" onClick={() => setStep(1)}>
