@@ -58,7 +58,7 @@ npm run demo:reset   # rebuilds and reloads the demo data
 
 `npm run update` is the same as `git checkout -- package-lock.json && git pull --ff-only && npm ci`. Use `npm ci` rather than `npm install` to install: it never rewrites `package-lock.json`, so the next `git pull` can't be blocked by it.
 
-The footer shows the version you're running (`Finanzas v0.4.1 · …`); it's bumped in the root `package.json` with every change.
+The footer shows the version you're running (`Finanzas v0.4.2 · …`); it's bumped in the root `package.json` with every change.
 
 ### Development
 

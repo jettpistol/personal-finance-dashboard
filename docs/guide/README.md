@@ -83,3 +83,13 @@ npm run demo:reset   # or: npm run build && npm start, for your real data
 If `git pull` ever says *Your local changes to the following files would be overwritten by merge: package-lock.json*, the update didn't happen: `npm run update` avoids that.
 
 Then check the version number in the footer.
+
+### Still seeing an old version?
+
+The footer is the test: no version number at all means the page is older than 0.3.0.
+
+- From 0.4.2 on, a yellow bar says *Esta pantalla es de la versión X, pero la app ya está en la Y* when the page is older than the server. Click **Recargar**.
+- Close every other terminal running the app. If one is still open, a new start now says *El puerto 3000 ya está en uso…*. `lsof -i :3000` shows what holds the port.
+- `docker ps`: an old container from `docker compose up` also serves on port 3000. Stop it with `docker compose down`.
+- Open **http://localhost:3000** (the built app). **http://localhost:5173** is only for development.
+- Force a reload with **Cmd+Shift+R** (Mac) or **Ctrl+Shift+R**.

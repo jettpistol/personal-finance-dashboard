@@ -1,19 +1,22 @@
-import fs from 'node:fs';
 import { config } from './config.js';
 import { initProfiles } from './lib/profiles.js';
 import { buildApp } from './app.js';
 import { startScheduler } from './lib/scheduler.js';
+import { appVersion } from './lib/version.js';
 
 initProfiles();
 const app = await buildApp({ logger: true, serveWeb: true });
-await app.listen({ port: config.port, host: config.host });
-// Root package.json carries the app version (absent in the Docker image, where the footer still shows it).
-let version = '';
 try {
-  version = ` v${JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version}`;
-} catch {
-  /* optional */
+  await app.listen({ port: config.port, host: config.host });
+} catch (e) {
+  // Usually an older copy still running: say so instead of a stack trace.
+  if ((e as NodeJS.ErrnoException).code === 'EADDRINUSE') {
+    console.error(`El puerto ${config.port} ya está en uso: probablemente otra copia de Finanzas sigue abierta. Cerrala (Ctrl+C en esa terminal, o \`lsof -i :${config.port}\` para encontrarla) y volvé a intentar.`);
+    process.exit(1);
+  }
+  throw e;
 }
+const version = appVersion() ? ` v${appVersion()}` : '';
 console.log(`Finanzas${version} lista en http://localhost:${config.port} (datos en ${config.dataDir})`);
 startScheduler();
 

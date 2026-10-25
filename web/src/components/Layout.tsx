@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import {
   ActionIcon,
+  Alert,
   AppShell,
   Avatar,
   Burger,
@@ -37,6 +38,7 @@ import {
   IconPigMoney,
   IconPlus,
   IconRepeat,
+  IconRefresh,
   IconSettings,
   IconSun,
   IconTarget,
@@ -311,6 +313,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <ScopeSelector />
           </div>
         )}
+        <VersionCheck />
         {children}
         <AppFooter />
       </AppShell.Main>
@@ -336,6 +339,28 @@ export function PageHeader({ title, actions, badge }: { title: string; descripti
       </div>
       {actions && <div className="pfd-crumbs-actions">{actions}</div>}
     </nav>
+  );
+}
+
+/**
+ * Warns when this page is older than the server (a cached tab, or an old copy still open),
+ * which otherwise looks like "the update didn't apply".
+ */
+function VersionCheck() {
+  const health = useQuery({ queryKey: ['health'], queryFn: () => api.get<{ version?: string }>('/health'), refetchInterval: 5 * 60_000, refetchOnWindowFocus: true });
+  const server = health.data?.version;
+  if (!server || server === __APP_VERSION__) return null;
+  return (
+    <Alert color="yellow" icon={<IconRefresh size={16} />} mb="md" p="xs">
+      <Group justify="space-between" wrap="nowrap" gap="sm">
+        <Text size="sm">
+          Esta pantalla es de la versión {__APP_VERSION__}, pero la app ya está en la {server}.
+        </Text>
+        <Button size="xs" variant="default" onClick={() => window.location.reload()}>
+          Recargar
+        </Button>
+      </Group>
+    </Alert>
   );
 }
 

@@ -72,11 +72,18 @@ export async function buildApp(opts: { logger?: boolean; serveWeb?: boolean } = 
   await app.register(registerRoutes, { prefix: '/api' });
 
   if (opts.serveWeb && fs.existsSync(config.webDir)) {
-    await app.register(fastifyStatic, { root: config.webDir, wildcard: false });
+    // index.html must never be cached, or a browser keeps showing an old version; the hashed assets can be.
+    await app.register(fastifyStatic, {
+      root: config.webDir,
+      wildcard: false,
+      setHeaders: (res, file) => {
+        if (file.endsWith('.html')) res.header('cache-control', 'no-cache');
+      },
+    });
     // Single-page app: unknown non-API paths serve index.html.
     app.setNotFoundHandler((req: FastifyRequest, reply) => {
       if (req.url.startsWith('/api/')) return reply.code(404).send({ error: 'No encontrado' });
-      return reply.type('text/html').sendFile('index.html');
+      return reply.type('text/html').header('cache-control', 'no-cache').sendFile('index.html');
     });
   }
 
