@@ -76,9 +76,10 @@ The app can hold several independent sets of data, called profiles. The same two
 ## Getting a new version
 
 ```bash
-git pull
-npm install
+npm run update
 npm run demo:reset   # or: npm run build && npm start, for your real data
 ```
+
+If `git pull` ever says *Your local changes to the following files would be overwritten by merge: package-lock.json*, the update didn't happen: `npm run update` avoids that.
 
 Then check the version number in the footer.

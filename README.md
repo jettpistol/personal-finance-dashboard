@@ -30,7 +30,7 @@ Scope was decided with [`docs/feature-questionnaire.md`](docs/feature-questionna
 Requires Node 22+.
 
 ```bash
-npm install
+npm ci
 npm run build            # builds web/ and server/
 npm start                # http://localhost:3000  (data in server/data/)
 ```
@@ -52,12 +52,13 @@ The demo data lives in the **Prueba (demo)** profile; the app opens on the empty
 ### Getting a new version
 
 ```bash
-git pull
-npm install          # new versions may add dependencies
+npm run update       # discards local lockfile changes, pulls, installs exactly what the lockfile says
 npm run demo:reset   # rebuilds and reloads the demo data
 ```
 
-The footer shows the version you're running (`Finanzas v0.4.0 · …`); it's bumped in the root `package.json` with every change.
+`npm run update` is the same as `git checkout -- package-lock.json && git pull --ff-only && npm ci`. Use `npm ci` rather than `npm install` to install: it never rewrites `package-lock.json`, so the next `git pull` can't be blocked by it.
+
+The footer shows the version you're running (`Finanzas v0.4.1 · …`); it's bumped in the root `package.json` with every change.
 
 ### Development
 

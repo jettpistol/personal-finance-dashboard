@@ -1,7 +1,7 @@
 {
   "name": "personal-finance-dashboard",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "workspaces": [
     "server",
     "web"
@@ -14,7 +14,8 @@
     "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
     "seed:demo": "npm run seed:demo --workspace server",
     "demo": "npm run build && npm run demo --workspace server",
-    "demo:reset": "npm run build && npm run demo:reset --workspace server"
+    "demo:reset": "npm run build && npm run demo:reset --workspace server",
+    "update": "git checkout -- package-lock.json && git pull --ff-only && npm ci"
   },
   "overrides": {
     "uuid": "^11.1.1"
