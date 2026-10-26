@@ -51,6 +51,7 @@ At the bottom of every page:
 - **Finanzas v… · uso privado del hogar**: the version you are running (the number goes up with every change). Check it after installing an update.
 - **Dólar: BNA · Inflación: IPC INDEC**: where exchange rates and inflation come from.
 - Shortcuts to **Ajustes**, **Importar** and **Cierre de mes**.
+- **Patch notes**: a simple page listing what changed in each version, newest first, with an index on the left.
 
 ### On a phone
 

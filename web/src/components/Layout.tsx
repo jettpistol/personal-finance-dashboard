@@ -373,6 +373,7 @@ function AppFooter() {
       <Link to="/ajustes">Ajustes</Link>
       <Link to="/importar">Importar</Link>
       <Link to="/cierre">Cierre de mes</Link>
+      <a href="/patch-notes.html">Patch notes</a>
     </footer>
   );
 }
