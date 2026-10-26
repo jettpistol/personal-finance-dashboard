@@ -16,20 +16,20 @@
   a:hover { color: #cc0000; }
   .page { max-width: 980px; margin: 12px auto; background: #fff; border: 2px outset #dfdfdf; }
   .banner { background: #000080; color: #fff; padding: 8px 12px; }
-  .banner b { font-family: Arial, Helvetica, sans-serif; font-size: 22px; letter-spacing: 1px; }
+  .banner h1 { display: inline; margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 26px; letter-spacing: 1px; }
   .banner small { color: #c0c0ff; }
   .menubar { background: #dcdcdc; border-top: 1px solid #fff; border-bottom: 1px solid #808080; padding: 3px 12px; font-size: 12px; }
   .layout { width: 100%; border-collapse: collapse; }
   .side { width: 190px; vertical-align: top; background: #eeeeee; border-right: 1px solid #808080; padding: 10px; }
-  .side h3 { margin: 0 0 6px; font-size: 13px; background: #000080; color: #fff; padding: 2px 4px; }
+  .side h2 { margin: 0 0 6px; border: 0; font-size: 13px; background: #000080; color: #fff; padding: 2px 4px; }
   .side ul { margin: 0 0 12px; padding-left: 16px; }
   .side li { margin: 3px 0; font-size: 13px; }
   .side .date { color: #555; font-size: 12px; }
   .main { vertical-align: top; padding: 10px 16px 16px; }
-  h1 { font-family: Arial, Helvetica, sans-serif; font-size: 18px; margin: 4px 0 8px; }
-  h2 { font-family: Arial, Helvetica, sans-serif; font-size: 15px; background: #dddddd; border: 1px solid #a0a0a0; padding: 3px 6px; margin: 22px 0 6px; }
+  .lead { font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: bold; margin: 4px 0 8px; }
+  .main h2 { font-family: Arial, Helvetica, sans-serif; font-size: 18px; background: #dddddd; border: 1px solid #a0a0a0; padding: 3px 6px; margin: 22px 0 6px; }
   h2 .date { font-weight: normal; font-size: 13px; color: #444; }
-  h4 { font-size: 14px; margin: 12px 0 2px; color: #000080; }
+  h3 { font-size: 14px; margin: 12px 0 2px; color: #000080; }
   ul { margin-top: 4px; }
   li { margin: 3px 0; line-height: 1.4; }
   .note { background: #ffffcc; border: 1px solid #c0c000; padding: 5px 7px; font-size: 13px; }
@@ -46,14 +46,15 @@
 <body>
 <a name="arriba"></a>
 <div class="page">
-  <div class="banner"><b>FINANZAS</b> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Volver a Finanzas</a> &nbsp;|&nbsp; Versión más nueva: <b>0.4.3</b></div>
+  <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
+  <div class="menubar"><a href="/">&laquo; Volver a Finanzas</a> &nbsp;|&nbsp; Versión más nueva: <b>0.4.4</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
-        <h3>Índice</h3>
+        <h2>Índice</h2>
         <ul>
+          <li><a href="#v0.4.4">0.4.4</a> <span class="date">26/10/2026</span></li>
           <li><a href="#v0.4.3">0.4.3</a> <span class="date">26/10/2026</span></li>
           <li><a href="#v0.4.2">0.4.2</a> <span class="date">25/10/2026</span></li>
           <li><a href="#v0.4.1">0.4.1</a> <span class="date">25/10/2026</span></li>
@@ -63,13 +64,20 @@
           <li><a href="#v0.2.0">0.2.0</a> <span class="date">24/10/2026</span></li>
           <li><a href="#v0.1.0">0.1.0</a> <span class="date">24/10/2026</span></li>
         </ul>
-        <h3>Ver tu versión</h3>
+        <h2>Ver tu versión</h2>
         <p style="font-size:12px;margin:0">El pie de cada pantalla de Finanzas dice qué versión estás usando.</p>
       </td>
 
       <td class="main">
-        <h1>Novedades de cada versión</h1>
+        <p class="lead">Novedades de cada versión</p>
         <p class="note">Para actualizar: <code>npm run update</code> y después <code>npm run demo:reset</code> (o <code>npm run build &amp;&amp; npm start</code> con tus datos reales).</p>
+
+        <a name="v0.4.4"></a>
+        <h2>0.4.4 <span class="date">&middot; 26/10/2026</span></h2>
+        <ul>
+          <li>Patch notes: títulos más grandes y en orden, para que se lean mejor y funcionen con lectores de pantalla.</li>
+        </ul>
+        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
 
         <a name="v0.4.3"></a>
         <h2>0.4.3 <span class="date">&middot; 26/10/2026</span></h2>
@@ -116,33 +124,33 @@
 
         <a name="v0.3.0"></a>
         <h2>0.3.0 <span class="date">&middot; 24/10/2026</span></h2>
-        <h4>General</h4>
+        <h3>General</h3>
         <ul>
           <li>La barra de título mide lo mismo en todas las secciones (44 px, controles de 30 px): no se mueve nada al cambiar de sección.</li>
           <li>Los interruptores tienen la forma redondeada de siempre; el texto al lado ya no los activa, solo la palanca.</li>
           <li>Número de versión en el pie de página.</li>
         </ul>
-        <h4>Perfil de datos</h4>
+        <h3>Perfil de datos</h3>
         <ul>
           <li>Nueva sección <b>Perfil de datos</b> en la barra lateral y un botón con el perfil en uso arriba a la derecha.</li>
           <li>Perfiles ilimitados, cada uno con datos propios y los mismos usuarios. Uno nuevo arranca vacío.</li>
           <li>Sin elección previa se abre <b>Vacío</b>; después se recuerda el último elegido. Los datos de prueba están en <b>Prueba (demo)</b>.</li>
         </ul>
-        <h4>Formularios</h4>
+        <h3>Formularios</h3>
         <ul>
           <li>Ante un error, los campos con problema se marcan en rojo (Nuevo movimiento, Nuevo recurrente, Reglas, Cambiar contraseña).</li>
           <li>En el desplegable de categorías, los grupos se ven como títulos en azul.</li>
           <li>Nuevo <b>Ingreso compartido</b>, en movimientos y recurrentes.</li>
           <li>División: los nombres van uno debajo del otro, con casillas chicas. La opción por defecto se llama <b>Cincuenta-cincuenta</b>; <b>Partes iguales</b> solo aparece si la división por defecto no es pareja.</li>
         </ul>
-        <h4>Nuevo recurrente</h4>
+        <h3>Nuevo recurrente</h3>
         <ul>
           <li>El monto estimado va grande y arriba, en letra de terminal: rojo con <b>&minus;</b> para gastos, verde con <b>+</b> para ingresos. Se mantiene al cambiar de tipo.</li>
           <li><b>ARS / USD</b> al lado del monto abre un menú; la lista de cuentas muestra solo las de esa moneda.</li>
           <li>Para ingresos: ejemplos propios en Descripción, <b>Próximo cobro</b> en lugar de <i>Próximo vencimiento</i> y <b>Quién paga</b> en lugar de <i>Comercio</i>.</li>
           <li>Frecuencia sin flechitas.</li>
         </ul>
-        <h4>Recurrentes</h4>
+        <h3>Recurrentes</h3>
         <ul>
           <li><b>Para confirmar</b> ya no es una sección fija: aparece una alerta amarilla con <b>Revisar</b> solo cuando hay algo vencido.</li>
           <li>Sin títulos de sección: la tabla es la página.</li>
@@ -152,12 +160,12 @@
 
         <a name="v0.2.0"></a>
         <h2>0.2.0 <span class="date">&middot; 24/10/2026</span></h2>
-        <h4>Nuevo diseño: Informe del mes</h4>
+        <h3>Nuevo diseño: Informe del mes</h3>
         <ul>
           <li>Estilo de principios de los 2010: barra lateral azul marino, barra superior oscura con pestañas, paneles con bordes rectos y títulos con degradé.</li>
           <li>Inicio como informe mensual: gastos, ingresos y ahorro con variación mensual y real (ajustada por IPC), y gasto por rubro con <b>Nominal / Real (IPC)</b>.</li>
         </ul>
-        <h4>Ajustes pedidos</h4>
+        <h3>Ajustes pedidos</h3>
         <ul>
           <li>Los datos de prueba son de <b>Iván</b> y <b>Milagros</b>.</li>
           <li>Sin ícono de casita, sin subtítulos ni recuadros explicativos.</li>
