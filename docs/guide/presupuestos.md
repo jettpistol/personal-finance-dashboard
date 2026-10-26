@@ -9,13 +9,15 @@ Set a monthly spending limit per expense category and see how much of it you hav
 The page follows the dashboard chosen in the top bar (**Hogar**, **Mío** or your partner's, see [Guide index](README.md)). The subtitle reminds you which one: *Límites mensuales por categoría · Hogar*.
 
 - **Month selector** (top right): pick any month. Budgets are the same every month; only the spending changes.
+- **Ajustar por inflación** (checkbox, top right): when ticked, peso budgets are shown adjusted by the inflation published since you set them. See [Adjust for inflation](#adjust-for-inflation).
 - **Gastado del presupuesto (ARS)**: total spent against all budgets in pesos, "de" the sum of those budgets, with a percentage badge and a bar. Budgets in dollars are not part of this total.
-  - In the current month a line below adds how far through the month you are and what is left per day, for example *Pasó el 77% del mes. Quedan $ 120.000 para 8 días ($ 15.000 por día).*
+- **Disponible (ARS)**: what is left of all peso budgets together, in large type. When you've spent more than the total it reads **Excedido (ARS)** in red. Below it, one row per budget with what is left in that category, or **Excedido $ X** in red.
 - **One card per budget**, sorted from most used to least used:
   - category name, *spent de budget*, a percentage badge and a bar;
-  - **Quedan $ X** (with **$ Y por día** in the current month) or, in red, **Excedido por $ X**;
+  - with inflation adjustment on, *· incluye +7,4% de inflación* after the amounts;
+  - **Quedan $ X** or, in red, **Excedido por $ X**;
   - **vas más rápido que el mes** when you are more than 10 points ahead of the share of the month that has passed (and not yet at 100%).
-- **Colors**: green below 80%, yellow from 80%, red from 100%. These color steps are fixed and do not follow the alert settings.
+- **Colors**: green below 80%, yellow from 80%, red above 95%. These color steps are fixed and do not follow the alert settings. The same colors are used in the **Presupuestos** panel on **Inicio**.
 - **Gastos sin presupuesto este mes**: main categories with spending this month that no budget covers, with a **Presupuestar** button next to each.
 
 When you look at your partner's dashboard, a grey note says *Estás viendo los presupuestos de tu pareja. Solo podés editar los del hogar y los tuyos.* and the buttons are hidden.
@@ -47,9 +49,11 @@ Use the pencil icon on a card to change the amount or currency (the category can
 
 ### Adjust for inflation
 
-Click **Ajustar por inflación** and confirm. Every peso budget of the dashboard you are viewing goes up by the latest monthly CPI that has been loaded. A message tells you the percentage, which CPI month was used and how many budgets changed. Dollar budgets stay as they are.
+Tick **Ajustar por inflación**. Each peso budget is then shown raised by the inflation (CPI) published since you set it, and the cards say how much, for example *incluye +7,4% de inflación*. Untick it to see the amounts as you entered them. Dollar budgets never change.
 
-To do this automatically, turn on **Actualizar presupuestos por inflación automáticamente** in **Ajustes → Hogar**. Then, each time a new monthly CPI is published, all peso budgets of every dashboard (household and both personal ones) go up by it, and you get a notice *Presupuestos actualizados por inflación*. The first CPI after you turn it on is the first one applied; earlier ones are not.
+It's a switch, not an action: nothing is overwritten, so ticking it again never adds inflation twice. It applies to every dashboard (household and personal), and it's the same setting as **Ajustes → Hogar → Ajustar presupuestos por inflación**.
+
+Editing a budget's amount starts it again from that month: the amount you type is what it's worth now, and only later inflation is added.
 
 More about CPI in [How the numbers are worked out](como-se-calcula.md).
 
@@ -76,7 +80,6 @@ When a movement makes a budget of the current month cross a threshold, you get a
 ## Tips
 
 - There is nothing to copy from one month to the next: a budget keeps applying every month until you change or delete it.
-- **Ajustar por inflación** applies the latest CPI each time you click it. Click it once per CPI publication, or leave it to the automatic option, but not both for the same month.
 - Alerts are checked when you add, edit or confirm a movement in the app. Rows brought in with **Importar** do not trigger alerts by themselves.
 - If a subcategory has its own budget and so does its parent, the subcategory's spending counts in both.
 

@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.4.5</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.5.0</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.5.0"><b>0.5.0</b><span class="date">Oct 26, 2026</span></a>
         <a class="idx" href="#v0.4.5"><b>0.4.5</b><span class="date">Oct 26, 2026</span></a>
         <a class="idx" href="#v0.4.4"><b>0.4.4</b><span class="date">Oct 26, 2026</span></a>
         <a class="idx" href="#v0.4.3"><b>0.4.3</b><span class="date">Oct 26, 2026</span></a>
@@ -69,6 +70,34 @@
 
       <td class="main">
         <p class="lead">What changed in each version</p>
+
+        <a name="v0.5.0"></a>
+        <h2>0.5.0 <span class="date">&middot; Oct 26, 2026</span></h2>
+        <h3>Presupuestos</h3>
+        <ul>
+          <li><b>Ajustar por inflación</b> is now a checkbox instead of a button. Ticked, peso budgets are shown adjusted by the inflation published since you set them; unticked, as you entered them. Ticking it again never adds inflation twice.</li>
+          <li>The same checkbox replaces the automatic option in <b>Ajustes &rarr; Hogar</b>, which also compounded.</li>
+          <li>Each budget card says how much inflation it includes, e.g. "incluye +7,4% de inflación".</li>
+          <li>Budgets turn red above 95% (before: at 100%), here and on Inicio.</li>
+          <li>Removed the "por día" amounts and the "Pasó el …% del mes" line.</li>
+          <li>New <b>Disponible</b> card: what's left of all budgets in large type (<b>Excedido</b> in red when over), and below it what's left per category.</li>
+        </ul>
+        <h3>Movimientos</h3>
+        <ul>
+          <li>Every movement has a tag saying whose it is: <b>Compartido</b>, <b>Iván</b> or <b>Milagros</b>. Shared movements and anything in a joint account are Compartido.</li>
+          <li>The <b>Hogar / Mío / Milagros</b> tabs now filter the list by that tag: Hogar shows the shared ones, each person's tab shows their own. Turn off <b>Solo del tablero seleccionado</b> to see everything.</li>
+          <li>For shared income, the tooltip says who received it instead of "Pagó".</li>
+        </ul>
+        <h3>Reportes</h3>
+        <ul>
+          <li>"IPC últimos 12 meses" is now <b>Inflación interanual</b>.</li>
+        </ul>
+        <h3>Perfil de datos</h3>
+        <ul>
+          <li>Changing profile keeps you on the page you're on and reloads its data, from both the top bar and the Perfil de datos page.</li>
+          <li>The "En uso" column header is gone; the column stays.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.4.5"></a>
         <h2>0.4.5 <span class="date">&middot; Oct 26, 2026</span></h2>

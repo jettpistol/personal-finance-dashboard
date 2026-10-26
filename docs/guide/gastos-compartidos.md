@@ -34,7 +34,7 @@ The latest 100 shared movements and debt payments dated today or earlier, newest
 | --- | --- |
 | **Fecha** | Day, as DD/MM/YY. |
 | **Descripción** | A people icon and the description for shared expenses and income. An arrow and "Milagros le pagó a Iván" for a debt payment. |
-| **Pagó** | Whose account it came from (for shared income, whose account it entered). **Cuenta común** when it was a joint account. |
+| **Pagó / recibió** | Whose account it came from (for shared income, whose account it entered). **Cuenta común** when it was a joint account. |
 | **Total** | The full amount. |
 | **Tu parte** / **Parte de Milagros** | Each person's share. A dash for debt payments. |
 

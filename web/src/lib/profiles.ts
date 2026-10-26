@@ -1,5 +1,4 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import { api } from './api';
 import { notifyOk } from './queries';
 
@@ -8,15 +7,16 @@ export type ProfilesResponse = { profiles: ProfileInfo[]; current: number | null
 
 export const useProfiles = () => useQuery({ queryKey: ['profiles'], queryFn: () => api.get<ProfilesResponse>('/profiles'), staleTime: 60_000 });
 
-/** Switching profile changes every number on screen, so everything is reloaded from scratch. */
+/**
+ * Switching profile changes every number on screen: you stay on the same page, what it shows is
+ * refetched from the new profile, and cached data from other pages is dropped so it can't show up.
+ */
 export function useSelectProfile() {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   return async (id: number, name: string) => {
     await api.post('/profiles/select', { id });
-    qc.clear();
-    await qc.invalidateQueries();
-    navigate('/');
+    qc.removeQueries({ type: 'inactive' });
+    await qc.invalidateQueries({ type: 'active' });
     notifyOk(`Perfil «${name}» en uso`);
   };
 }

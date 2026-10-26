@@ -31,7 +31,8 @@ export function TransactionsPage() {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [tag, setTag] = useState<string | null>(null);
   const [flags, setFlags] = useState<string[]>([]);
-  const [onlyScope, setOnlyScope] = useState(false);
+  // On by default: the dashboard tabs pick whose movements show (Hogar: shared; a person: their own).
+  const [onlyScope, setOnlyScope] = useState(true);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const accountId = params.get('account_id') ? Number(params.get('account_id')) : null;
@@ -50,7 +51,7 @@ export function TransactionsPage() {
     status: flags.includes('pending') ? 'pending' : undefined,
     uncategorized: flags.includes('uncategorized') ? 'true' : undefined,
     installments: flags.includes('installments') ? 'true' : undefined,
-    scope: onlyScope ? scope : undefined,
+    owner: onlyScope ? (scope === 'household' ? 'shared' : scope.slice(5)) : undefined,
   };
   const q = useQuery({
     queryKey: ['transactions', filters, page],

@@ -628,7 +628,7 @@ export function InflationTab({ scope }: { scope: Scope }) {
           )}
           <SimpleGrid cols={{ base: 2, sm: 4 }}>
             <Kpi label={`IPC de ${monthName(month, true)}`} value={pct(d.cpi_month)} hint="Inflación mensual oficial (INDEC)." />
-            <Kpi label="IPC últimos 12 meses" value={pct(d.cpi_vs_year)} hint="Inflación acumulada entre el mismo mes del año pasado y este." />
+            <Kpi label="Inflación interanual" value={pct(d.cpi_vs_year)} hint="Inflación acumulada entre el mismo mes del año pasado y este." />
             <Kpi label="Tu gasto vs mes anterior" value={pct(d.total.nominal_vs_prev, 1, true)}>
               <Group gap={4}>
                 <Text size="xs" c="dimmed">

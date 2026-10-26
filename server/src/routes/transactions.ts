@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { db } from '../db/index.js';
 import { config } from '../config.js';
 import { HttpError } from '../lib/http.js';
-import { fetchTxs, getTx, loadAccounts, loadCategories, parseScope, presentTx, scopeEntry, txVisibility, type Tx } from '../lib/domain.js';
+import { fetchTxs, getTx, loadAccounts, loadCategories, ownerOf, parseScope, presentTx, scopeEntry, txVisibility, type Tx } from '../lib/domain.js';
 import {
   assertWritable,
   createInstallmentPlan,
@@ -33,6 +33,8 @@ const listQuery = z.object({
   tag: z.string().max(40).optional(),
   shared: z.string().optional(),
   scope: z.string().optional(),
+  // Whose movement it is: 'shared' (shared, or in a joint account) or a user id (their own, not shared).
+  owner: z.string().regex(/^(shared|\d+)$/).optional(),
   installments: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(500).default(50),
@@ -70,6 +72,7 @@ export default async function transactionRoutes(app: FastifyInstance) {
       if (q.tag && !(JSON.parse(t.tags) as string[]).includes(q.tag)) return false;
       if (needle && ![t.description, t.merchant, t.notes].some((f) => f?.toLowerCase().includes(needle))) return false;
       if (scope && !scopeEntry({ ...t, status: 'confirmed' }, scope, accounts)) return false;
+      if (q.owner && ownerOf(t, accounts) !== (q.owner === 'shared' ? 'shared' : Number(q.owner))) return false;
       return true;
     });
     const total = rows.length;

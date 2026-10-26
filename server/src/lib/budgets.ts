@@ -1,13 +1,12 @@
 import { db, getSetting } from '../db/index.js';
-import { monthEnd, monthStart, monthOf, currentMonth } from './dates.js';
+import { addMonthsToMonth, monthEnd, monthStart, monthOf, currentMonth } from './dates.js';
 import { fetchTxs, loadAccounts, loadCategories, loadUsers, scopeEntry, txVisibility, type Scope, type Tx } from './domain.js';
 import { loadConverter } from './fx.js';
 import { formatMoney, type Currency } from './money.js';
 import { notify } from './notify.js';
-import { loadCpi } from './cpi.js';
-import { HttpError } from './http.js';
+import { loadCpi, type CpiIndex } from './cpi.js';
 
-export type Budget = { id: number; category_id: number; scope: Scope; amount: number; currency: Currency };
+export type Budget = { id: number; category_id: number; scope: Scope; amount: number; currency: Currency; base_month: string | null };
 
 export type BudgetStatus = Budget & {
   category_name: string;
@@ -15,7 +14,23 @@ export type BudgetStatus = Budget & {
   color: string | null;
   spent: number;
   pct: number;
+  /** The amount as entered; `amount` is this adjusted by inflation when the switch is on. */
+  base_amount: number;
+  /** Inflation applied to the entered amount, as a percentage (0 when not adjusted). */
+  indexed_pct: number;
 };
+
+/**
+ * The CPI factor for a budget in `month`: inflation published from the month it was set up to the
+ * month before `month` (the latest data available while that month runs). Never below 1.
+ */
+function indexFactor(b: Budget, month: string, cpi: CpiIndex, on: boolean): number {
+  if (!on || b.currency !== 'ARS' || !b.base_month || !cpi.latestMonth) return 1;
+  const prev = addMonthsToMonth(month, -1);
+  const target = prev < cpi.latestMonth ? prev : cpi.latestMonth;
+  if (target <= b.base_month) return 1;
+  return cpi.factor(b.base_month, target);
+}
 
 /** Spending of a scope in a month, per budget. Budgets on a parent category include its subcategories. */
 export function budgetStatus(month: string, scope: Scope, viewer?: number): BudgetStatus[] {
@@ -24,6 +39,8 @@ export function budgetStatus(month: string, scope: Scope, viewer?: number): Budg
   const accounts = loadAccounts();
   const cats = loadCategories();
   const fx = loadConverter();
+  const cpi = loadCpi();
+  const indexing = !!getSetting<boolean>('budget_indexing');
   const txs = fetchTxs({ from: monthStart(month), to: monthEnd(month), status: 'confirmed' }).filter(
     (t) => viewer === undefined || txVisibility(t, viewer, accounts) !== 'hidden',
   );
@@ -39,13 +56,18 @@ export function budgetStatus(month: string, scope: Scope, viewer?: number): Budg
           spent += fx.convertOrZero(e.amount, e.currency, b.currency, e.date);
         }
       }
+      const factor = indexFactor(b, month, cpi, indexing);
+      const amount = factor === 1 ? b.amount : Math.round((b.amount * factor) / 100) * 100;
       return {
         ...b,
+        amount,
+        base_amount: b.amount,
+        indexed_pct: Math.round((factor - 1) * 1000) / 10,
         category_name: cat?.name ?? '?',
         parent_id: cat?.parent_id ?? null,
         color: cat?.color ?? null,
         spent,
-        pct: b.amount > 0 ? Math.round((spent / b.amount) * 1000) / 10 : 0,
+        pct: amount > 0 ? Math.round((spent / amount) * 1000) / 10 : 0,
       };
     })
     .sort((a, b) => b.pct - a.pct);
@@ -80,15 +102,7 @@ export async function checkBudgetAlerts(tx: Tx) {
   }
 }
 
-/** Raises every ARS budget of a scope by the last published monthly CPI. */
-export function indexBudgetsByCpi(scope: Scope | null): { pct: number; month: string; updated: number } {
-  const cpi = loadCpi();
-  const month = cpi.latestMonth;
-  if (!month) throw new HttpError(400, 'Todavía no hay datos de inflación cargados.');
-  const pct = cpi.pct.get(month)!;
-  const factor = 1 + pct / 100;
-  const res = scope
-    ? db().prepare(`UPDATE budgets SET amount = CAST(ROUND(amount * ? / 100.0) * 100 AS INTEGER) WHERE currency = 'ARS' AND scope = ?`).run(factor, scope)
-    : db().prepare(`UPDATE budgets SET amount = CAST(ROUND(amount * ? / 100.0) * 100 AS INTEGER) WHERE currency = 'ARS'`).run(factor);
-  return { pct, month, updated: res.changes };
+/** The CPI month a budget's amount refers to: the latest published when it is saved. */
+export function currentBaseMonth(): string | null {
+  return loadCpi().latestMonth;
 }

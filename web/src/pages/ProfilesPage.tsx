@@ -79,7 +79,7 @@ export function ProfilesPage() {
             <Table verticalSpacing={8}>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th w={40}>En uso</Table.Th>
+                  <Table.Th w={40} aria-label="En uso" />
                   <Table.Th>Nombre</Table.Th>
                   <Table.Th ta="right">Cuentas</Table.Th>
                   <Table.Th ta="right">Movimientos</Table.Th>

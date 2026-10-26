@@ -28,7 +28,7 @@ The page has two boxes.
 
 **Perfiles**: a table with one row per profile.
 
-- **En uso**: a round button, filled for the profile you are using.
+- First column (no title): a round button, filled for the profile you are using.
 - **Nombre**: the profile's name. The one in use is in bold with an **En uso** label. The default profile carries a grey **Por defecto** label.
 - **Cuentas** and **Movimientos**: how many accounts and movements it holds, so you can tell an empty profile from a full one.
 - On the right, a pencil button (rename) and, except on the default profile, a bin button (delete).
@@ -47,8 +47,8 @@ The profile in use is also shown in the top bar, next to the **ARS / USD** switc
 
 ### Switch to another profile
 
-1. Click the round button in the **En uso** column of the profile you want. (Or use the profile menu in the top bar.)
-2. The app reloads everything, takes you to **Inicio** and shows *Perfil «name» en uso*.
+1. Click the round button in the first column of the profile you want. (Or use the profile menu in the top bar.)
+2. You stay on the page you're on; everything it shows is reloaded from the new profile, and *Perfil «name» en uso* appears.
 
 The choice is remembered **in this browser** for a year, even after **Cerrar sesión**. It is not shared between devices: if Iván switches to **Prueba (demo)** on his computer, Milagros keeps seeing whatever profile her browser had. A browser that never picked a profile (or a private window) opens on the default one.
 

@@ -6,6 +6,7 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   CheckIcon,
   Code,
   ColorSwatch,
@@ -337,7 +338,7 @@ function HouseholdTab() {
         default_split: splitMode === 'equal' ? {} : Object.fromEntries(users.data.map((u) => [String(u.id), Number(form.default_split[u.id] ?? 0)])),
         fx_side: form.fx_side,
         budget_thresholds: [...new Set(form.budget_thresholds.map(Number).filter((n) => n > 0))].sort((a, b) => a - b),
-        budget_auto_index: form.budget_auto_index,
+        budget_indexing: form.budget_indexing,
       });
       qc.invalidateQueries({ queryKey: ['settings'] });
       for (const k of ['dashboard', 'reports', 'accounts', 'balances']) qc.invalidateQueries({ queryKey: [k] });
@@ -440,11 +441,11 @@ function HouseholdTab() {
               onChange={(v) => setForm({ ...form, budget_thresholds: [thresholds[0] ?? 80, Number(v || 0)] })}
             />
           </SimpleGrid>
-          <Switch
-            label="Actualizar presupuestos por inflación automáticamente"
-            description="Cuando se publica un nuevo IPC, sube los presupuestos en pesos ese porcentaje."
-            checked={form.budget_auto_index}
-            onChange={(e) => setForm({ ...form, budget_auto_index: e.currentTarget.checked })}
+          <Checkbox
+            label="Ajustar presupuestos por inflación"
+            description="Los presupuestos en pesos se muestran actualizados por el IPC publicado desde que los cargaste. Es lo mismo que la casilla de Presupuestos."
+            checked={form.budget_indexing}
+            onChange={(e) => setForm({ ...form, budget_indexing: e.currentTarget.checked })}
           />
           <Group justify="flex-end">
             <Button onClick={save} loading={saving}>

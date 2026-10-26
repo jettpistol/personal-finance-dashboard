@@ -80,6 +80,8 @@ export type Tx = {
   has_receipt: boolean;
   masked: boolean;
   owner_id: number | null;
+  /** Whose movement it is: shared (or in a joint account), or a user id. */
+  owner: 'shared' | number;
   can_edit: boolean;
   created_by: number;
   splits: Split[];
@@ -115,6 +117,9 @@ export type BudgetStatus = {
   color: string | null;
   spent: number;
   pct: number;
+  /** As entered; `amount` includes the inflation adjustment when it is on. */
+  base_amount: number;
+  indexed_pct: number;
 };
 
 export type BalanceSummary = {
@@ -252,5 +257,5 @@ export type Settings = {
   default_split: Record<string, number>;
   fx_side: 'sell' | 'buy' | 'avg';
   budget_thresholds: number[];
-  budget_auto_index: boolean;
+  budget_indexing: boolean;
 };

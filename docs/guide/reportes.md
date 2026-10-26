@@ -78,7 +78,7 @@ A "place" is the movement's merchant, or its description when there is no mercha
 - If INDEC has not published the month's CPI yet, a yellow note says the latest available figure is used.
 - Four figures:
   - **IPC de** (month): the official monthly inflation.
-  - **IPC últimos 12 meses**: accumulated inflation from the same month last year.
+  - **Inflación interanual**: accumulated inflation from the same month last year.
   - **Tu gasto vs mes anterior**: nominal change of total spending, with **Real:** underneath.
   - **Tu gasto vs hace un año**: the same against the same month a year earlier.
 - **Cómo leerlo**: a short reminder. A positive real change (red) means spending grew faster than prices; negative (green) means it grew less.

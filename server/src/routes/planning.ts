@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { db } from '../db/index.js';
 import { HttpError } from '../lib/http.js';
-import { budgetStatus, indexBudgetsByCpi } from '../lib/budgets.js';
+import { budgetStatus, currentBaseMonth } from '../lib/budgets.js';
 import { accountBalances, loadAccounts, loadUsers, parseScope, scopeVisible, type Scope } from '../lib/domain.js';
 import { addMonthsToMonth, currentMonth, isValidDate, monthsBetween, today } from '../lib/dates.js';
 import { loadConverter } from '../lib/fx.js';
@@ -48,10 +48,10 @@ export default async function planningRoutes(app: FastifyInstance) {
     if (cat?.kind !== 'expense') throw new HttpError(400, 'Solo se presupuestan categorías de gasto.');
     db()
       .prepare(
-        `INSERT INTO budgets (category_id, scope, amount, currency) VALUES (?, ?, ?, ?)
-         ON CONFLICT(category_id, scope) DO UPDATE SET amount = excluded.amount, currency = excluded.currency`,
+        `INSERT INTO budgets (category_id, scope, amount, currency, base_month) VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(category_id, scope) DO UPDATE SET amount = excluded.amount, currency = excluded.currency, base_month = excluded.base_month`,
       )
-      .run(b.category_id, b.scope, b.amount, b.currency);
+      .run(b.category_id, b.scope, b.amount, b.currency, currentBaseMonth());
     return { ok: true };
   });
 
@@ -64,13 +64,7 @@ export default async function planningRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.post('/budgets/index-cpi', async (req) => {
-    const { scope } = parse(z.object({ scope: scopeField }), req.body);
-    assertScopeWritable(scope as Scope, req.userId);
-    return indexBudgetsByCpi(scope as Scope);
-  });
-
-  // Copies spending of the previous month as a starting point for budgets with no amount yet.
+  // Averages spending of the last three months as a starting point for budgets.
   app.post('/budgets/suggest', async (req) => {
     const { scope } = parse(z.object({ scope: scopeField }), req.body);
     assertScopeWritable(scope as Scope, req.userId);

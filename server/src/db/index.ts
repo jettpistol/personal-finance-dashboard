@@ -92,8 +92,8 @@ export const DEFAULT_SETTINGS: Record<string, unknown> = {
   // Which BNA quote to use when converting: 'sell' (vendedor), 'buy' (comprador) or 'avg'.
   fx_side: 'sell',
   budget_thresholds: [80, 100],
-  // Apply last month's CPI to every ARS budget automatically on the 1st of each month.
-  budget_auto_index: false,
+  // Show ARS budgets adjusted by the CPI published since each one was set.
+  budget_indexing: false,
 };
 
 function seedDefaults(db: DB) {

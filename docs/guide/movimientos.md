@@ -30,7 +30,7 @@ Toggle buttons (click to turn on, click again to turn off):
 - **Pendientes**: only pending movements (recurring items waiting for confirmation).
 - **Sin categoría**: expenses and income with no category. Transfers and adjustments never have one, so they don't appear.
 - **En cuotas**: only installments from a **Compra en cuotas**.
-- **Solo del tablero seleccionado**: keeps only the expenses and income that count in the dashboard chosen in the top bar (**Hogar**, **Mío** or your partner's). Transfers and adjustments disappear while this is on, because they never count as income or spending. Without this toggle the list shows everything you're allowed to see, whatever tab is selected. See [what counts where](como-se-calcula.md).
+- **Solo del tablero seleccionado** (on by default): the dashboard tabs in the top bar pick whose movements you see. **Hogar** shows the **Compartido** ones; **Mío** shows yours (tag with your name); your partner's tab shows theirs. Turn it off to see everything you're allowed to see, whatever tab is selected.
 
 Coming from **Cuentas → Ver movimientos** opens this page already filtered to that account.
 
@@ -50,10 +50,15 @@ Newest first, 50 rows per page, with page numbers at the bottom when there are m
 | --- | --- |
 | Checkbox | Selects the row for [bulk actions](#change-or-delete-many-at-once). The box in the header selects every row on this page that you can edit. |
 | **Fecha** | Day, as DD/MM/YY. |
-| **Descripción** | The description (or the merchant if there's no description, or **(sin descripción)**), followed by labels: **Pendiente**, **Compartido** (hover it to see who paid), **Privado**, **Recurrente**, and a paperclip if a receipt is attached. Tags appear underneath. |
+| **Descripción** | The description (or the merchant if there's no description, or **(sin descripción)**), followed by labels: **Pendiente**; whose it is (**Compartido**, or the person's name, see below); **Privado**; **Recurrente**; and a paperclip if a receipt is attached. Tags appear underneath. |
 | **Categoría** | For expenses and income, the category as **Main › Sub**. Otherwise **Transferencia**, **Pago de deuda** (a settlement between you two) or **Ajuste**. |
 | **Cuenta** | The account. Transfers show **origin → destination**. **Cuenta privada** means the account belongs to your partner and is private: you see the movement only because it's a shared expense or a payment to you. |
 | **Monto** | In the account's own currency (`$` or `US$`). Expenses carry a minus sign, income a plus sign in green, transfers no sign in grey (the amount that left the origin), adjustments their own sign. |
+
+**Whose a movement is.** Every movement carries one tag:
+
+- **Compartido**: marked as a shared expense or income, or made in a joint account. Hover it to see who paid (or received it), or *Cuenta común*.
+- **Iván** / **Milagros**: made in that person's own account and not shared.
 
 Pending rows are shown faded. Click any row to open it in the form.
 
@@ -250,7 +255,7 @@ If a field is missing or invalid, it's outlined in red and a red message appears
 
 ## Tips
 
-- The list shows everything you're allowed to see; switch on **Solo del tablero seleccionado** when you want it to match the dashboard tab.
+- Turn off **Solo del tablero seleccionado** to see everyone's movements together.
 - To review last month's uncategorised spending: set the date range, turn on **Sin categoría**, tick the rows and use **Asignar categoría**. A [rule](reglas.md) saves doing it again next month.
 - For a **Compra en cuotas**, attach the receipt afterwards: open one of the installments and use **Adjuntar comprobante** there.
 - Buying dollars is a **Transferencia**, not a **Gasto**: that way it doesn't inflate your spending and the dollars appear in the USD account.

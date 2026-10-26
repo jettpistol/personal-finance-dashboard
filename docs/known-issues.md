@@ -15,7 +15,7 @@ Found while writing the [user guide](guide/README.md) (v0.3.3), by reading the c
 
 ## Wrong numbers
 
-9. **Presupuestos:** **Ajustar por inflación** applies the latest CPI again on every click, and again after the automatic adjustment. Budgets compound.
+9. ~~**Presupuestos:** **Ajustar por inflación** applies the latest CPI again on every click, and again after the automatic adjustment. Budgets compound.~~ **Fixed in 0.5.0.**
 10. **Presupuestos:** if a parent category and one of its subcategories both have budgets, that subcategory's spending is counted in both, and twice in the page total. A budget on a subcategory also hides the parent's other spending from "Gastos sin presupuesto este mes".
 11. **Importar:** imports never trigger budget alerts. Only movements entered in the app do.
 12. **Importar:** "Seleccionar todos (sin duplicados)" also re-ticks rows flagged **Otra moneda**, which are then imported as if in the account's currency.
@@ -42,7 +42,7 @@ Found while writing the [user guide](guide/README.md) (v0.3.3), by reading the c
 27. **Inicio:** the source line always says "dólar BNA vendedor" with the sell quote, even when **Ajustes → Hogar** uses buy or average.
 28. **Reportes → Inflación:** the empty state points to "Ajustes → Inflación", but the tab is **Cotizaciones e inflación**.
 29. **Ajustes → Notificaciones:** the label says "Presupuestos al 80% y superados", and the bar colors are fixed at 80/100, even when the thresholds are changed.
-30. **Movimientos and Gastos compartidos:** for shared income, the tooltip and the **Pagó** column say "Pagó X" when X received the money.
+30. ~~**Movimientos and Gastos compartidos:** for shared income, the tooltip and the **Pagó** column say "Pagó X" when X received the money.~~ **Fixed in 0.5.0.**
 31. **Inicio, Mío:** a person who took more out of the joint account than they put in sees the household labels **Ingresos y aportes** and **De aportes al pozo**.
 32. **Saldar:** the notice asks for a "(no privada)" account, but the payer's own private accounts are offered.
 33. **After Compra en cuotas then Ingreso,** the labels still say **Monto total de la compra** and **Fecha de compra**.

@@ -183,7 +183,7 @@ export function BalancesPage() {
                 <Table.Tr>
                   <Table.Th w={90}>Fecha</Table.Th>
                   <Table.Th>Descripción</Table.Th>
-                  <Table.Th>Pagó</Table.Th>
+                  <Table.Th>Pagó / recibió</Table.Th>
                   <Table.Th ta="right">Total</Table.Th>
                   {users.map((u) => (
                     <Table.Th key={u.id} ta="right">

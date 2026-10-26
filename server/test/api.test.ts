@@ -202,6 +202,18 @@ describe('money flows', () => {
     expect(usd.summary.missing_rates).toBe(false);
   });
 
+  it('adjusts budgets for inflation with a switch that never compounds', async () => {
+    // As if the budget had been set two months ago; CPI for last month is 5%.
+    db().prepare('UPDATE budgets SET base_month = ? WHERE category_id = ?').run(addMonthsToMonth(M, -2), cat['Supermercado']);
+    const get = async () => (await call('ana', 'GET', `/api/budgets?scope=household&month=${M}`)).body.find((b: { category_id: number }) => b.category_id === cat['Supermercado']);
+    expect(await get()).toMatchObject({ amount: 20_000_00, indexed_pct: 0 });
+    for (let i = 0; i < 3; i++) expect((await call('ana', 'PATCH', '/api/settings', { budget_indexing: true })).status).toBe(200);
+    expect(await get()).toMatchObject({ amount: 21_000_00, base_amount: 20_000_00, indexed_pct: 5 });
+    await call('ana', 'PATCH', '/api/settings', { budget_indexing: false });
+    expect(await get()).toMatchObject({ amount: 20_000_00, indexed_pct: 0 });
+    expect((await call('ana', 'POST', '/api/budgets/index-cpi', { scope: 'household' })).status).toBe(404);
+  });
+
   it('builds the monthly review docx and exports', async () => {
     const r = await app.inject({ method: 'GET', url: `/api/reviews/${M}/docx?scope=household`, headers: { cookie: cookies.ana } });
     expect(r.statusCode).toBe(200);

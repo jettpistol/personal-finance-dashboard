@@ -167,8 +167,15 @@ export function presentTx(tx: Tx, viewer: number, accounts: Map<number, Account>
     tags: JSON.parse(tx.tags) as string[],
     masked: vis === 'masked',
     owner_id: account?.owner_id ?? null,
+    owner: ownerOf(tx, accounts),
     can_edit: vis === 'full' && !!account && (account.owner_id === null || account.owner_id === viewer || !account.is_private),
   };
+}
+
+/** Whose a movement is: 'shared' when it is shared or in a joint account, else the account owner's id. */
+export function ownerOf(tx: Tx, accounts: Map<number, Account>): 'shared' | number {
+  const owner = accounts.get(tx.account_id)?.owner_id ?? null;
+  return tx.is_shared || owner === null ? 'shared' : owner;
 }
 
 /** The user a transaction is attributed to as payer (explicit paid_by, else the account owner). */

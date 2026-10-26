@@ -106,12 +106,14 @@ export function TxTable({
                         Pendiente
                       </span>
                     )}
-                    {!!t.is_shared && (
-                      <Tooltip label={`Pagó ${payer?.display_name ?? 'la cuenta común'}`}>
+                    {t.owner === 'shared' ? (
+                      <Tooltip label={!t.is_shared ? 'Cuenta común' : `${t.type === 'income' ? 'Lo recibió' : 'Pagó'} ${payer?.display_name ?? 'la cuenta común'}`}>
                         <span className="pfd-tag" data-tone="grape">
                           Compartido
                         </span>
                       </Tooltip>
+                    ) : (
+                      <span className="pfd-tag">{users.find((u) => u.id === t.owner)?.display_name ?? '—'}</span>
                     )}
                     {!!t.is_private && (
                       <span className="pfd-tag" data-tone="gray">

@@ -3,13 +3,12 @@ import { db, getSetting, setSetting, withDb } from '../db/index.js';
 import { addMonthsToMonth, currentMonth, monthLabel, today } from './dates.js';
 import { generateDueRecurring } from './recurring.js';
 import { refreshRates } from './fx.js';
-import { loadCpi, refreshCpi } from './cpi.js';
+import { refreshCpi } from './cpi.js';
 import { runBackup, todaysBackupExists } from './backup.js';
 import { listProfiles, profileDb, profilesEnabled } from './profiles.js';
 import { buildReviewDocx, reviewFileName } from './review.js';
 import { notify } from './notify.js';
 import { loadUsers, type Scope } from './domain.js';
-import { indexBudgetsByCpi } from './budgets.js';
 
 const TICK_MS = 15 * 60_000;
 const FX_EVERY_MS = 3 * 3600_000;
@@ -61,18 +60,6 @@ async function tickProfile() {
   await step('recurring', () => generateDueRecurring());
   if (due('fx_last_refresh', FX_EVERY_MS)) await step('fx', () => refreshRates());
   if (due('cpi_last_refresh', CPI_EVERY_MS)) await step('cpi', () => refreshCpi());
-  await step('budget auto-index', async () => {
-    if (!getSetting<boolean>('budget_auto_index')) return;
-    const latest = loadCpi().latestMonth;
-    const done = getSetting<string | undefined>('budget_indexed_cpi_month');
-    if (!latest) return;
-    if (!done) return setSetting('budget_indexed_cpi_month', latest); // start from the next publication
-    if (latest > done) {
-      const r = indexBudgetsByCpi(null);
-      setSetting('budget_indexed_cpi_month', latest);
-      await notify({ kind: 'system', users: null, title: 'Presupuestos actualizados por inflación', body: `Se aplicó el IPC de ${monthLabel(r.month)} (${r.pct}%) a ${r.updated} presupuestos.`, link: '/presupuestos' });
-    }
-  });
   await step('backup', async () => {
     if (!todaysBackupExists()) await runBackup();
   });

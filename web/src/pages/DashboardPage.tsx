@@ -174,11 +174,11 @@ function BudgetsPanel({ d }: { d: Dashboard }) {
                 <Text size="sm" truncate>
                   {b.category_name}
                 </Text>
-                <Text size="xs" className="num" fw={600} c={b.pct >= 100 ? 'red.8' : b.pct >= 80 ? 'ocre.8' : 'var(--pfd-ink-2)'}>
+                <Text size="xs" className="num" fw={600} c={b.pct > 95 ? 'red.8' : b.pct >= 80 ? 'ocre.8' : 'var(--pfd-ink-2)'}>
                   {money(b.spent, b.currency, { compact: true })} / {money(b.amount, b.currency, { compact: true })}
                 </Text>
               </Group>
-              <Progress value={Math.min(100, b.pct)} color={b.pct >= 100 ? 'red.7' : b.pct >= 80 ? 'ocre.5' : 'teal.7'} size={8} aria-label={`${b.category_name}: ${pct(b.pct, 0)}`} />
+              <Progress value={Math.min(100, b.pct)} color={b.pct > 95 ? 'red.7' : b.pct >= 80 ? 'ocre.5' : 'teal.7'} size={8} aria-label={`${b.category_name}: ${pct(b.pct, 0)}`} />
             </div>
           ))}
         </Stack>

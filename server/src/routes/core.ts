@@ -38,7 +38,7 @@ const settingsSchema = z
     default_split: z.record(z.string(), z.number().min(0).max(100)),
     fx_side: z.enum(['sell', 'buy', 'avg']),
     budget_thresholds: z.array(z.number().int().min(1).max(200)).max(5),
-    budget_auto_index: z.boolean(),
+    budget_indexing: z.boolean(),
   })
   .partial();
 
@@ -112,7 +112,7 @@ export default async function coreRoutes(app: FastifyInstance) {
     default_split: getSetting('default_split'),
     fx_side: getSetting('fx_side'),
     budget_thresholds: getSetting('budget_thresholds'),
-    budget_auto_index: getSetting('budget_auto_index'),
+    budget_indexing: getSetting('budget_indexing'),
   }));
 
   app.patch('/settings', async (req) => {

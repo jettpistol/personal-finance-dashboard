@@ -131,6 +131,8 @@ for (const [name, amount] of [['Supermercado', 420_000], ['Salidas', 120_000], [
 }
 budget.run(cat['Transporte'], `user:${ivan}`, $(30_000), 'ARS');
 budget.run(cat['Compras'], `user:${ivan}`, $(60_000), 'ARS');
+// Set three CPI months ago, so the inflation switch on Presupuestos has something to show.
+db().prepare('UPDATE budgets SET base_month = (SELECT month FROM cpi_monthly ORDER BY month DESC LIMIT 1 OFFSET 3)').run();
 
 // Goals.
 db().prepare('INSERT INTO goals (name, target_amount, currency, deadline, account_id, scope, color) VALUES (?, ?, ?, ?, ?, ?, ?)').run('Viaje a Brasil', $(3_000), 'USD', addMonths(today(), 8), jointUsd, 'household', 'cyan');

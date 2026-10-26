@@ -86,16 +86,17 @@ INDEC publishes each month's CPI some weeks after it ends, so the current month 
 
 ## Budget indexing
 
-**Ajustar por inflación** (on **Presupuestos**) and the automatic option (**Ajustes → Hogar**) raise budgets in pesos by the **latest published monthly CPI**, rounded to whole pesos:
+Each budget remembers the latest published CPI month at the moment you saved it. With **Ajustar por inflación** ticked (on **Presupuestos**, or in **Ajustes → Hogar**), a peso budget is shown multiplied by the inflation published since then, up to the month before the one you're viewing, rounded to whole pesos:
 
-- A $ 200.000 budget with a 2,7% CPI becomes $ 205.400.
-- A $ 150.333 budget becomes 150.333 × 1,027 = 154.391,99 → **$ 154.392**.
+- A $ 200.000 budget set when August was the latest CPI, viewed in November with September 2,7% and October 2,0%: 200.000 × 1,027 × 1,020 = 209.508,00 → **$ 209.508**.
+- The same budget viewed in September: no CPI after August yet, so **$ 200.000**.
 
 Rules:
 
 - Dollar budgets never change.
-- The button applies to the budgets of the dashboard you're viewing (**Hogar** or **Mío**), and it applies again every time you click it, compounding. Click it once per new CPI.
-- The automatic option applies to every peso budget of every dashboard, once for each newly published CPI month, starting with the first one published after you turn it on. A notification says what was applied.
+- Nothing is stored: unticking shows the entered amounts again, and ticking twice gives the same result, never compounding.
+- Saving a new amount resets its starting month to the latest CPI.
+- The adjustment never lowers a budget.
 
 **How much of a budget is used**: the confirmed expenses of that month that count in the budget's dashboard, in the budget's category or its subcategories, converted to the budget's currency at each expense's own day quote. Example: a $ 300.000 **Supermercado** budget with $ 250.000 in peso expenses plus a US$ 20 expense on a day quoted 1.450 ($ 29.000) is at $ 279.000, **93%**. Percentages are shown with one decimal.
 

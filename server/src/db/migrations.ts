@@ -265,4 +265,13 @@ export const migrations: string[] = [
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   `,
+  // Inflation adjustment of budgets becomes a switch: each budget remembers the CPI month it was
+  // set at, and while the switch is on its amount is shown scaled by the CPI since then.
+  // Nothing is multiplied in place any more, so it can't compound.
+  `
+  ALTER TABLE budgets ADD COLUMN base_month TEXT;
+  UPDATE budgets SET base_month = (SELECT MAX(month) FROM cpi_monthly);
+  UPDATE settings SET key = 'budget_indexing' WHERE key = 'budget_auto_index';
+  DELETE FROM settings WHERE key = 'budget_indexed_cpi_month';
+  `,
 ];

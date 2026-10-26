@@ -84,7 +84,7 @@ Each switch saves as soon as you flip it. The notice that budgets were raised by
   - **Promedio** of the two.
   Changing it recalculates all conversions at once, past ones included.
 - **Primer aviso de presupuesto** and **Segundo aviso**: the percentages of a budget (1 to 200) at which you get an alert. Defaults: 80% and 100%. See [Presupuestos](presupuestos.md).
-- **Actualizar presupuestos por inflación automáticamente**: when a new monthly CPI is published, every budget in pesos (household and personal) goes up by that percentage. It starts with the first CPI published after you turn it on. Details in [How the numbers are worked out](como-se-calcula.md#budget-indexing).
+- **Ajustar presupuestos por inflación** (checkbox): shows every budget in pesos (household and personal) adjusted by the CPI published since it was set. Same setting as the checkbox on **Presupuestos**; it never compounds. Details in [How the numbers are worked out](como-se-calcula.md#budget-indexing).
 
 **Personas** card
 
