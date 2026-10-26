@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,7 @@
 <!--
   Patch notes, one <a name> block per version, newest first.
   Every push that bumps the version in the root package.json adds an entry here
-  and a line in the sidebar index.
+  and a box in the sidebar index.
 -->
 <style>
   body { margin: 0; background: #c0c0c0; font-family: Verdana, Tahoma, Arial, sans-serif; font-size: 14px; color: #000; }
@@ -22,9 +22,13 @@
   .layout { width: 100%; border-collapse: collapse; }
   .side { width: 190px; vertical-align: top; background: #eeeeee; border-right: 1px solid #808080; padding: 10px; }
   .side h2 { margin: 0 0 6px; border: 0; font-size: 13px; background: #000080; color: #fff; padding: 2px 4px; }
-  .side ul { margin: 0 0 12px; padding-left: 16px; }
-  .side li { margin: 3px 0; font-size: 13px; }
-  .side .date { color: #555; font-size: 12px; }
+  /* Each index entry is a whole clickable box, like an old-school button. */
+  .idx { display: block; margin: 0 0 5px; padding: 5px 7px; background: #dcdcdc; border: 2px outset #f4f4f4; color: #000; text-decoration: none; font-size: 13px; }
+  .idx:visited { color: #000; }
+  .idx:hover { background: #ffffcc; color: #000; }
+  .idx:active { border-style: inset; }
+  .idx b { color: #0000cc; text-decoration: underline; }
+  .idx .date { display: block; color: #444; font-size: 12px; }
   .main { vertical-align: top; padding: 10px 16px 16px; }
   .lead { font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: bold; margin: 4px 0 8px; }
   .main h2 { font-family: Arial, Helvetica, sans-serif; font-size: 18px; background: #dddddd; border: 1px solid #a0a0a0; padding: 3px 6px; margin: 22px 0 6px; }
@@ -32,9 +36,7 @@
   h3 { font-size: 14px; margin: 12px 0 2px; color: #000080; }
   ul { margin-top: 4px; }
   li { margin: 3px 0; line-height: 1.4; }
-  .note { background: #ffffcc; border: 1px solid #c0c000; padding: 5px 7px; font-size: 13px; }
   .top { font-size: 12px; text-align: right; }
-  hr { border: 0; border-top: 1px solid #808080; border-bottom: 1px solid #fff; }
   .foot { font-size: 12px; color: #444; text-align: center; padding: 6px; background: #dcdcdc; border-top: 1px solid #808080; }
   code { font-family: "Courier New", Courier, monospace; font-size: 13px; }
   @media (max-width: 640px) {
@@ -44,158 +46,163 @@
 </style>
 </head>
 <body>
-<a name="arriba"></a>
+<a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Volver a Finanzas</a> &nbsp;|&nbsp; Versión más nueva: <b>0.4.4</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.4.5</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
-        <h2>Índice</h2>
-        <ul>
-          <li><a href="#v0.4.4">0.4.4</a> <span class="date">26/10/2026</span></li>
-          <li><a href="#v0.4.3">0.4.3</a> <span class="date">26/10/2026</span></li>
-          <li><a href="#v0.4.2">0.4.2</a> <span class="date">25/10/2026</span></li>
-          <li><a href="#v0.4.1">0.4.1</a> <span class="date">25/10/2026</span></li>
-          <li><a href="#v0.4.0">0.4.0</a> <span class="date">24/10/2026</span></li>
-          <li><a href="#v0.3.3">0.3.1 a 0.3.3</a> <span class="date">24/10/2026</span></li>
-          <li><a href="#v0.3.0">0.3.0</a> <span class="date">24/10/2026</span></li>
-          <li><a href="#v0.2.0">0.2.0</a> <span class="date">24/10/2026</span></li>
-          <li><a href="#v0.1.0">0.1.0</a> <span class="date">24/10/2026</span></li>
-        </ul>
-        <h2>Ver tu versión</h2>
-        <p style="font-size:12px;margin:0">El pie de cada pantalla de Finanzas dice qué versión estás usando.</p>
+        <h2>Index</h2>
+        <a class="idx" href="#v0.4.5"><b>0.4.5</b><span class="date">Oct 26, 2026</span></a>
+        <a class="idx" href="#v0.4.4"><b>0.4.4</b><span class="date">Oct 26, 2026</span></a>
+        <a class="idx" href="#v0.4.3"><b>0.4.3</b><span class="date">Oct 26, 2026</span></a>
+        <a class="idx" href="#v0.4.2"><b>0.4.2</b><span class="date">Oct 25, 2026</span></a>
+        <a class="idx" href="#v0.4.1"><b>0.4.1</b><span class="date">Oct 25, 2026</span></a>
+        <a class="idx" href="#v0.4.0"><b>0.4.0</b><span class="date">Oct 24, 2026</span></a>
+        <a class="idx" href="#v0.3.3"><b>0.3.1 to 0.3.3</b><span class="date">Oct 24, 2026</span></a>
+        <a class="idx" href="#v0.3.0"><b>0.3.0</b><span class="date">Oct 24, 2026</span></a>
+        <a class="idx" href="#v0.2.0"><b>0.2.0</b><span class="date">Oct 24, 2026</span></a>
+        <a class="idx" href="#v0.1.0"><b>0.1.0</b><span class="date">Oct 24, 2026</span></a>
       </td>
 
       <td class="main">
-        <p class="lead">Novedades de cada versión</p>
-        <p class="note">Para actualizar: <code>npm run update</code> y después <code>npm run demo:reset</code> (o <code>npm run build &amp;&amp; npm start</code> con tus datos reales).</p>
+        <p class="lead">What changed in each version</p>
+
+        <a name="v0.4.5"></a>
+        <h2>0.4.5 <span class="date">&middot; Oct 26, 2026</span></h2>
+        <ul>
+          <li>Patch notes are now in English only.</li>
+          <li>Each entry in the index is a whole clickable box, not just the version number.</li>
+          <li>Removed the "how to update" note and the "see your version" note.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.4.4"></a>
-        <h2>0.4.4 <span class="date">&middot; 26/10/2026</span></h2>
+        <h2>0.4.4 <span class="date">&middot; Oct 26, 2026</span></h2>
         <ul>
-          <li>Patch notes: títulos más grandes y en orden, para que se lean mejor y funcionen con lectores de pantalla.</li>
+          <li>Patch notes: larger titles in the right order, easier to read and to navigate with a screen reader.</li>
         </ul>
-        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.4.3"></a>
-        <h2>0.4.3 <span class="date">&middot; 26/10/2026</span></h2>
+        <h2>0.4.3 <span class="date">&middot; Oct 26, 2026</span></h2>
         <ul>
-          <li>Nueva página <b>Patch notes</b> (esta), con un índice de versiones a la izquierda.</li>
-          <li>El pie de todas las pantallas tiene el enlace <b>Patch notes</b>.</li>
+          <li>New <b>Patch notes</b> page (this one), with an index of versions on the left.</li>
+          <li>Every screen's footer links to it.</li>
         </ul>
-        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.4.2"></a>
-        <h2>0.4.2 <span class="date">&middot; 25/10/2026</span></h2>
+        <h2>0.4.2 <span class="date">&middot; Oct 25, 2026</span></h2>
         <ul>
-          <li>Si la pantalla abierta es más vieja que la app, aparece una barra amarilla: <i>Esta pantalla es de la versión X, pero la app ya está en la Y</i>, con el botón <b>Recargar</b>.</li>
-          <li>El navegador ya no guarda una copia vieja de la página.</li>
-          <li>Si abrís la app cuando otra copia sigue corriendo, la terminal lo dice claro: <i>El puerto 3000 ya está en uso…</i></li>
-          <li>La guía tiene una sección <i>¿Seguís viendo una versión vieja?</i></li>
+          <li>If the open page is older than the app, a yellow bar says so, with a <b>Recargar</b> (reload) button.</li>
+          <li>The browser no longer keeps an old copy of the page.</li>
+          <li>Starting the app while another copy is still running now prints a clear message: <i>El puerto 3000 ya está en uso…</i></li>
+          <li>The user guide has a "Still seeing an old version?" section.</li>
         </ul>
-        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.4.1"></a>
-        <h2>0.4.1 <span class="date">&middot; 25/10/2026</span></h2>
+        <h2>0.4.1 <span class="date">&middot; Oct 25, 2026</span></h2>
         <ul>
-          <li>Nuevo comando <code>npm run update</code>: descarta cambios locales de <code>package-lock.json</code>, baja la versión nueva e instala. Así <code>git pull</code> no se traba.</li>
-          <li>Las instrucciones usan <code>npm ci</code> en lugar de <code>npm install</code>.</li>
+          <li>New <code>npm run update</code> command: discards local changes to <code>package-lock.json</code>, pulls the new version and installs it, so <code>git pull</code> can't get stuck.</li>
+          <li>Instructions use <code>npm ci</code> instead of <code>npm install</code>.</li>
         </ul>
-        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.4.0"></a>
-        <h2>0.4.0 <span class="date">&middot; 24/10/2026</span></h2>
+        <h2>0.4.0 <span class="date">&middot; Oct 24, 2026</span></h2>
         <ul>
-          <li>Guía de uso completa en <code>docs/guide/</code>: una página por sección, con captura, paso a paso y cómo se calcula cada número.</li>
-          <li>Página de referencia <i>How the numbers are worked out</i>: conversión ARS/USD, IPC, qué cuenta en cada tablero, divisiones.</li>
-          <li>Lista de 51 problemas encontrados al revisar las pantallas contra el código (<code>docs/known-issues.md</code>), sin corregir todavía.</li>
+          <li>Complete user guide in <code>docs/guide/</code>: one page per section, with a screenshot, step-by-step instructions and how each number is calculated.</li>
+          <li>Reference page "How the numbers are worked out": ARS/USD conversion, inflation (IPC), what counts in each dashboard, splits.</li>
+          <li>List of 51 problems found while checking the screens against the code (<code>docs/known-issues.md</code>), not fixed yet.</li>
         </ul>
-        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.3.3"></a>
-        <h2>0.3.1 a 0.3.3 <span class="date">&middot; 24/10/2026</span></h2>
+        <h2>0.3.1 to 0.3.3 <span class="date">&middot; Oct 24, 2026</span></h2>
         <ul>
-          <li>La guía de uso se subió por partes mientras se escribía: índice y capturas (0.3.1), primeras secciones (0.3.2), Perfil de datos (0.3.3).</li>
-          <li>Sin cambios en la app.</li>
+          <li>The user guide was uploaded in parts while it was being written: index and screenshots (0.3.1), first sections (0.3.2), Perfil de datos (0.3.3).</li>
+          <li>No changes to the app.</li>
         </ul>
-        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.3.0"></a>
-        <h2>0.3.0 <span class="date">&middot; 24/10/2026</span></h2>
+        <h2>0.3.0 <span class="date">&middot; Oct 24, 2026</span></h2>
         <h3>General</h3>
         <ul>
-          <li>La barra de título mide lo mismo en todas las secciones (44 px, controles de 30 px): no se mueve nada al cambiar de sección.</li>
-          <li>Los interruptores tienen la forma redondeada de siempre; el texto al lado ya no los activa, solo la palanca.</li>
-          <li>Número de versión en el pie de página.</li>
+          <li>The title strip is the same height in every section (44px, with 30px controls), so nothing moves when you switch sections.</li>
+          <li>Switches have the familiar rounded shape; the text next to them no longer toggles them, only the lever does.</li>
+          <li>Version number in the footer.</li>
         </ul>
-        <h3>Perfil de datos</h3>
+        <h3>Data profiles</h3>
         <ul>
-          <li>Nueva sección <b>Perfil de datos</b> en la barra lateral y un botón con el perfil en uso arriba a la derecha.</li>
-          <li>Perfiles ilimitados, cada uno con datos propios y los mismos usuarios. Uno nuevo arranca vacío.</li>
-          <li>Sin elección previa se abre <b>Vacío</b>; después se recuerda el último elegido. Los datos de prueba están en <b>Prueba (demo)</b>.</li>
+          <li>New <b>Perfil de datos</b> section in the sidebar, and a button with the current profile at the top right.</li>
+          <li>Unlimited profiles, each with its own data and the same users. A new one starts empty.</li>
+          <li>With no previous choice the app opens on <b>Vacío</b> (empty); after that it remembers the last one picked. The test data is in <b>Prueba (demo)</b>.</li>
         </ul>
-        <h3>Formularios</h3>
+        <h3>Forms</h3>
         <ul>
-          <li>Ante un error, los campos con problema se marcan en rojo (Nuevo movimiento, Nuevo recurrente, Reglas, Cambiar contraseña).</li>
-          <li>En el desplegable de categorías, los grupos se ven como títulos en azul.</li>
-          <li>Nuevo <b>Ingreso compartido</b>, en movimientos y recurrentes.</li>
-          <li>División: los nombres van uno debajo del otro, con casillas chicas. La opción por defecto se llama <b>Cincuenta-cincuenta</b>; <b>Partes iguales</b> solo aparece si la división por defecto no es pareja.</li>
+          <li>On an error, the fields at fault turn red (Nuevo movimiento, Nuevo recurrente, Reglas, Cambiar contraseña).</li>
+          <li>In the category dropdown, group names show as blue headings.</li>
+          <li>New <b>Ingreso compartido</b> (shared income), for movements and recurring items.</li>
+          <li>Split editor: names stacked one below the other with small boxes. The default option is called <b>Cincuenta-cincuenta</b>; <b>Partes iguales</b> only appears when the default split isn't equal.</li>
         </ul>
         <h3>Nuevo recurrente</h3>
         <ul>
-          <li>El monto estimado va grande y arriba, en letra de terminal: rojo con <b>&minus;</b> para gastos, verde con <b>+</b> para ingresos. Se mantiene al cambiar de tipo.</li>
-          <li><b>ARS / USD</b> al lado del monto abre un menú; la lista de cuentas muestra solo las de esa moneda.</li>
-          <li>Para ingresos: ejemplos propios en Descripción, <b>Próximo cobro</b> en lugar de <i>Próximo vencimiento</i> y <b>Quién paga</b> en lugar de <i>Comercio</i>.</li>
-          <li>Frecuencia sin flechitas.</li>
+          <li>The estimated amount is large and at the top, in a terminal-style font: red with <b>&minus;</b> for expenses, green with <b>+</b> for income. It stays when you switch type.</li>
+          <li><b>ARS / USD</b> next to the amount opens a menu; the account list then shows only accounts in that currency.</li>
+          <li>For income: income examples in Descripción, <b>Próximo cobro</b> instead of <i>Próximo vencimiento</i>, and <b>Quién paga</b> instead of <i>Comercio</i>.</li>
+          <li>Frecuencia without the up/down arrows.</li>
         </ul>
         <h3>Recurrentes</h3>
         <ul>
-          <li><b>Para confirmar</b> ya no es una sección fija: aparece una alerta amarilla con <b>Revisar</b> solo cuando hay algo vencido.</li>
-          <li>Sin títulos de sección: la tabla es la página.</li>
-          <li>Activar o pausar un recurrente ya no corre las columnas.</li>
+          <li><b>Para confirmar</b> is no longer a permanent section: a yellow alert with <b>Revisar</b> appears only when something is due.</li>
+          <li>No section titles: the table is the page.</li>
+          <li>Pausing or resuming a recurring item no longer shifts the columns.</li>
         </ul>
-        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.2.0"></a>
-        <h2>0.2.0 <span class="date">&middot; 24/10/2026</span></h2>
-        <h3>Nuevo diseño: Informe del mes</h3>
+        <h2>0.2.0 <span class="date">&middot; Oct 24, 2026</span></h2>
+        <h3>New design: "Informe del mes"</h3>
         <ul>
-          <li>Estilo de principios de los 2010: barra lateral azul marino, barra superior oscura con pestañas, paneles con bordes rectos y títulos con degradé.</li>
-          <li>Inicio como informe mensual: gastos, ingresos y ahorro con variación mensual y real (ajustada por IPC), y gasto por rubro con <b>Nominal / Real (IPC)</b>.</li>
+          <li>Early-2010s style: navy sidebar, dark top bar with tabs, square-cornered panels with gradient title bars.</li>
+          <li>Inicio as a monthly report: spending, income and savings with monthly and real (inflation-adjusted) change, and spending by category with <b>Nominal / Real (IPC)</b>.</li>
         </ul>
-        <h3>Ajustes pedidos</h3>
+        <h3>Requested fixes</h3>
         <ul>
-          <li>Los datos de prueba son de <b>Iván</b> y <b>Milagros</b>.</li>
-          <li>Sin ícono de casita, sin subtítulos ni recuadros explicativos.</li>
-          <li>Selector de mes con flechas y un desplegable de mes y año.</li>
-          <li>Inicio: <b>Agregar</b> con el color de la barra lateral, <b>Saldo compartido</b>, la variación del ahorro en dinero.</li>
-          <li>Las ayudas de los campos pasan a un <b>(i)</b> que se ve al pasar el mouse.</li>
-          <li>División 50/50 ya completada; al escribir una parte, la otra se completa sola.</li>
-          <li>Recurrentes: una sola <b>Frecuencia</b> (número + semanas/meses/años).</li>
-          <li>Los errores del servidor se muestran como frases en castellano.</li>
+          <li>Test data belongs to <b>Iván</b> and <b>Milagros</b>.</li>
+          <li>No house icon, no subtitles, no explainer boxes.</li>
+          <li>Month picker with arrows and a month + year dropdown.</li>
+          <li>Inicio: <b>Agregar</b> in the sidebar color, <b>Saldo compartido</b>, savings change shown as money.</li>
+          <li>Field help moves behind an <b>(i)</b> shown on hover.</li>
+          <li>Split pre-filled 50/50; typing one share fills in the other.</li>
+          <li>Recurrentes: a single <b>Frecuencia</b> field (number + weeks/months/years).</li>
+          <li>Server errors appear as plain sentences.</li>
         </ul>
-        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.1.0"></a>
-        <h2>0.1.0 <span class="date">&middot; 24/10/2026</span></h2>
+        <h2>0.1.0 <span class="date">&middot; Oct 24, 2026</span></h2>
         <ul>
-          <li>Primera versión: dos usuarios con contraseña; bloqueo después de 3 intentos fallidos.</li>
-          <li>Tableros <b>Hogar</b>, <b>Mío</b> y el de tu pareja (si lo comparte).</li>
-          <li>Cuentas en ARS y USD; conversión al dólar BNA del día de cada movimiento.</li>
-          <li>Inflación (IPC INDEC): pesos constantes, variación real, presupuestos indexados.</li>
-          <li>Gastos compartidos al estilo Splitwise, compras en cuotas y recurrentes que se confirman con el monto real.</li>
-          <li>Importación de CSV / Excel con configuración por banco y reglas automáticas.</li>
-          <li>Presupuestos con alertas (en la app y por Telegram) y metas de ahorro.</li>
-          <li>Reportes, cierre de mes con informe .docx, movimientos privados, exportación, copias de seguridad diarias y Docker.</li>
+          <li>First version: two password-protected users; lockout after 3 failed attempts.</li>
+          <li><b>Hogar</b> and <b>Mío</b> dashboards, plus your partner's if they share it.</li>
+          <li>Accounts in ARS and USD; conversion at the BNA rate of each movement's day.</li>
+          <li>Inflation (INDEC CPI): constant pesos, real change, indexed budgets.</li>
+          <li>Splitwise-style shared expenses, purchases in installments, and recurring items confirmed with the real amount.</li>
+          <li>CSV / Excel import with a setup per bank, and automatic rules.</li>
+          <li>Budgets with alerts (in the app and by Telegram), and savings goals.</li>
+          <li>Reports, monthly review with a .docx report, private movements, export, daily backups and Docker.</li>
         </ul>
-        <p class="top"><a href="#arriba">&uarr; Volver arriba</a></p>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
       </td>
     </tr>
   </table>
 
-  <div class="foot">Finanzas &middot; uso privado del hogar &middot; <a href="/">Volver a la app</a></div>
+  <div class="foot">Finanzas &middot; private household use &middot; <a href="/">Back to the app</a></div>
 </div>
 </body>
 </html>
