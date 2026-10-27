@@ -4,6 +4,8 @@ A self-hosted finance dashboard for a couple. Free, one Docker container, SQLite
 
 **User guide:** [`docs/guide/`](docs/guide/README.md) explains every section of the app. Open problems found while writing it are in [`docs/known-issues.md`](docs/known-issues.md).
 
+Instructions for AI agents working on the code (conventions, release routine, decisions already made) are in [`CLAUDE.md`](CLAUDE.md).
+
 Scope was decided with [`docs/feature-questionnaire.md`](docs/feature-questionnaire.md); the resulting design is in [`docs/design.md`](docs/design.md).
 
 ## Features
@@ -58,7 +60,7 @@ npm run demo:reset   # rebuilds and reloads the demo data
 
 `npm run update` is the same as `git checkout -- package-lock.json && git pull --ff-only && npm ci`. Use `npm ci` rather than `npm install` to install: it never rewrites `package-lock.json`, so the next `git pull` can't be blocked by it.
 
-The footer shows the version you're running (`Finanzas v0.9.0 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
+The footer shows the version you're running (`Finanzas v0.9.1 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
 
 ### Development
 
