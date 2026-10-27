@@ -40,6 +40,8 @@ type Form = {
   account_id: number | null;
   to_account_id: number | null;
   to_amount: number | string;
+  /** Pesos per dollar for a conversion between an ARS and a USD account. */
+  rate: number | string;
   category_id: number | null;
   description: string;
   merchant: string;
@@ -62,6 +64,7 @@ const empty = (type: TxType = 'expense', accountId: number | null = null): Form 
   account_id: accountId,
   to_account_id: null,
   to_amount: '',
+  rate: '',
   category_id: null,
   description: '',
   merchant: '',
@@ -77,6 +80,13 @@ const empty = (type: TxType = 'expense', accountId: number | null = null): Form 
   first_date: today(),
 });
 
+/** Pesos per dollar implied by a conversion, whichever way it goes. */
+function impliedRate(fromCurrency: string, amount: number, toAmount: number): number {
+  const ars = fromCurrency === 'ARS' ? amount : toAmount;
+  const usd = fromCurrency === 'ARS' ? toAmount : amount;
+  return usd ? Math.round((ars / usd) * 100) / 100 : 0;
+}
+
 function fromTx(t: Tx): Form {
   const method = (t.split_method ?? 'default') as SplitMethod;
   const values: Record<number, number> = {};
@@ -90,6 +100,7 @@ function fromTx(t: Tx): Form {
     account_id: t.account_id,
     to_account_id: t.to_account_id,
     to_amount: t.to_amount ? fromCents(t.to_amount) : '',
+    rate: t.to_amount ? impliedRate(t.currency, t.amount, t.to_amount) : '',
     category_id: t.category_id,
     description: t.description,
     merchant: t.merchant ?? '',
@@ -151,6 +162,22 @@ export function TxFormModal() {
   const account = accounts.data?.find((a) => a.id === form.account_id);
   const toAccount = accounts.data?.find((a) => a.id === form.to_account_id);
   const crossCurrency = form.type === 'transfer' && account && toAccount && account.currency !== toAccount.currency;
+  const fromArs = account?.currency === 'ARS';
+  const latestFx = useQuery({ queryKey: ['fx', 'latest'], queryFn: () => api.get<{ latest: { date: string; sell: number; buy: number } | null }>('/fx?from=9999-01-01'), enabled: !!crossCurrency });
+  // Amount sent, amount received and rate stay consistent: change one and the received amount (or the rate) follows.
+  const received = (amount: number | string, rate: number | string) => {
+    const a = Number(amount);
+    const r = Number(rate);
+    if (!a || !r) return '';
+    return Math.round((fromArs ? a / r : a * r) * 100) / 100;
+  };
+  const setRate = (rate: number | string) => setForm((f) => ({ ...f, rate, to_amount: received(f.amount, rate) || f.to_amount }));
+  const setReceived = (to_amount: number | string) =>
+    setForm((f) => {
+      const a = Number(f.amount);
+      const t = Number(to_amount);
+      return { ...f, to_amount, rate: a && t ? Math.round((fromArs ? a / t : t / a) * 100) / 100 : f.rate };
+    });
   const crossOwner = form.type === 'transfer' && account && toAccount && account.owner_id !== null && toAccount.owner_id !== null && account.owner_id !== toAccount.owner_id;
   const personalAccount = account && account.owner_id !== null;
   const tx = existing.data;
@@ -327,7 +354,10 @@ export function TxFormModal() {
               label={inCuotas ? (form.type === 'income' ? 'Monto total a cobrar' : 'Monto total de la compra') : 'Monto'}
               currency={account?.currency}
               value={form.amount}
-              onChange={(v) => set('amount', v)}
+              onChange={(v) => {
+                set('amount', v);
+                if (crossCurrency && form.rate) setForm((f) => ({ ...f, amount: v, to_amount: received(v, f.rate) || f.to_amount }));
+              }}
               allowNegative={form.type === 'adjustment'}
               description={form.type === 'adjustment' ? 'Negativo para restar del saldo' : undefined}
               required
@@ -349,15 +379,29 @@ export function TxFormModal() {
             {form.type === 'transfer' && <AccountSelect label="Hacia" value={form.to_account_id} onChange={(v) => set('to_account_id', v)} required error={bad.has('to_account_id')} />}
           </SimpleGrid>
           {crossCurrency && (
-            <MoneyInput
-              label={`Monto recibido en ${toAccount!.currency}`}
-              description="Ej: compra de dólares: cuántos dólares entraron."
-              currency={toAccount!.currency}
-              value={form.to_amount}
-              onChange={(v) => set('to_amount', v)}
-              required
-              error={bad.has('to_amount')}
-            />
+            <SimpleGrid cols={{ base: 1, xs: 2 }}>
+              <NumberInput
+                label="Tipo de cambio"
+                description={latestFx.data?.latest ? `Pesos por dólar. BNA vendedor: $ ${latestFx.data.latest.sell.toLocaleString('es-AR')}` : 'Pesos por dólar'}
+                prefix="$ "
+                decimalSeparator=","
+                thousandSeparator="."
+                decimalScale={2}
+                hideControls
+                value={form.rate}
+                onChange={setRate}
+                error={bad.has('to_amount')}
+              />
+              <MoneyInput
+                label={`Monto recibido en ${toAccount!.currency}`}
+                description="Se calcula con el tipo de cambio, o al revés."
+                currency={toAccount!.currency}
+                value={form.to_amount}
+                onChange={setReceived}
+                required
+                error={bad.has('to_amount')}
+              />
+            </SimpleGrid>
           )}
           {crossOwner && (
             <Checkbox

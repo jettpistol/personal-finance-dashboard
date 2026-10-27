@@ -50,10 +50,10 @@ function syncUsersInto(target: DB) {
   if (target === coreDb()) return;
   const users = coreDb().prepare('SELECT * FROM users').all() as Record<string, unknown>[];
   const upsert = target.prepare(
-    `INSERT INTO users (id, username, display_name, password_hash, color, share_dashboard, telegram_chat_id, notify_budget, notify_recurring, notify_review, created_at)
-     VALUES (@id, @username, @display_name, '-', @color, @share_dashboard, @telegram_chat_id, @notify_budget, @notify_recurring, @notify_review, @created_at)
+    `INSERT INTO users (id, username, display_name, password_hash, color, share_dashboard, telegram_chat_id, email, notify_budget, notify_recurring, notify_review, created_at)
+     VALUES (@id, @username, @display_name, '-', @color, @share_dashboard, @telegram_chat_id, @email, @notify_budget, @notify_recurring, @notify_review, @created_at)
      ON CONFLICT(id) DO UPDATE SET username = excluded.username, display_name = excluded.display_name, color = excluded.color,
-       share_dashboard = excluded.share_dashboard, telegram_chat_id = excluded.telegram_chat_id, notify_budget = excluded.notify_budget,
+       share_dashboard = excluded.share_dashboard, telegram_chat_id = excluded.telegram_chat_id, email = excluded.email, notify_budget = excluded.notify_budget,
        notify_recurring = excluded.notify_recurring, notify_review = excluded.notify_review`,
   );
   target.transaction(() => users.forEach((u) => upsert.run(u)))();

@@ -18,6 +18,17 @@ Inactive rules are faded and are ignored everywhere. Rules belong to the househo
 
 ## What you can do
 
+### Start from the suggested rules
+
+Click **Reglas sugeridas** for a bank of about 120 ready-made rules for life in Buenos Aires: supermarkets (Coto, Carrefour, Día, Jumbo, Disco, ChangoMâs…), delivery (PedidosYa, Rappi), transport and car (SUBE, Uber, Cabify, DiDi, YPF, Shell, Axion, AUSA, TelePASE), home services (Edenor, Edesur, Metrogas, Naturgy, AySA, Telecentro, Personal/Flow, Movistar, Claro, expensas, ABL), subscriptions (Netflix, Spotify, Disney+, Max, Prime Video, YouTube, Apple, Google, ChatGPT…), health (OSDE, Swiss Medical, Galeno, Farmacity, gyms), shops (Mercado Libre, Frávega, Zara, Nike, Sodimac, Easy…), outings, travel (Aerolíneas, Flybondi, JetSMART, Despegar, Airbnb), taxes and bank fees (impuesto al cheque, percepciones on dollar purchases, Ingresos Brutos, monotributo, maintenance fees) and common income (sueldo, rendimientos, reintegros).
+
+1. Open a section (or search: *nafta*, *streaming*, *Coto*…). Each rule shows the category it sets and its tags (for example *suscripción*, *auto*, *nafta*, *impuestos*).
+2. Tick the ones you use, or a whole section with its box.
+3. Click **Agregar N reglas**. They are added to the profile in use with priority 0, so your own rules win.
+4. Click **Aplicar reglas** to categorize what you had already loaded.
+
+Rules already there (the same pattern, or a rule of yours for the same store) show **YA ESTÁ**. Nothing in the bank is applied until you add it. The suggested rules match the usual ways stores appear on statements (for example *MERPAGO\*PEDIDOSYA* or *DLO\*PEDIDOS YA*), and never change a movement's type, so a refund stays an income.
+
 ### Create a rule
 
 1. Click **Nueva regla**.

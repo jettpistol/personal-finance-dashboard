@@ -7,6 +7,7 @@ import { accountBalances, accountVisible, loadAccounts, loadUsers } from '../lib
 import { loadConverter } from '../lib/fx.js';
 import { today } from '../lib/dates.js';
 import { telegramEnabled, findChatIdByCode, sendTelegramMessage } from '../lib/telegram.js';
+import { mailEnabled, sendMail } from '../lib/mail.js';
 import { idParam, parse } from './util.js';
 import crypto from 'node:crypto';
 
@@ -48,6 +49,7 @@ const profileSchema = z
     color: z.string().max(20),
     share_dashboard: z.boolean(),
     telegram_chat_id: z.string().trim().max(40).nullable(),
+    email: z.union([z.email('El correo no es válido.'), z.literal('')]).nullable(),
     notify_budget: z.boolean(),
     notify_recurring: z.boolean(),
     notify_review: z.boolean(),
@@ -59,11 +61,11 @@ const linkCodes = new Map<string, { userId: number; expires: number }>();
 
 export default async function coreRoutes(app: FastifyInstance) {
   // ---- Users and profile ----
-  app.get('/users', async () => loadUsers().map(({ telegram_chat_id, ...u }) => ({ ...u, has_telegram: !!telegram_chat_id })));
+  app.get('/users', async () => loadUsers().map(({ telegram_chat_id, email, ...u }) => ({ ...u, has_telegram: !!telegram_chat_id, has_email: !!email })));
 
   app.get('/me', async (req) => {
     const u = loadUsers().find((x) => x.id === req.userId)!;
-    return { ...u, telegram_available: telegramEnabled() };
+    return { ...u, telegram_available: telegramEnabled(), mail_available: mailEnabled() };
   });
 
   app.patch('/me', async (req) => {
@@ -76,6 +78,18 @@ export default async function coreRoutes(app: FastifyInstance) {
     }
     if (sets.length) coreDb().prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...values, req.userId);
     if (profilesEnabled()) syncUsers();
+    return { ok: true };
+  });
+
+  app.post('/me/email/test', async (req) => {
+    if (!mailEnabled()) throw new HttpError(400, 'El correo no está configurado en el servidor (SMTP_HOST, SMTP_USER, SMTP_PASS).');
+    const u = loadUsers().find((x) => x.id === req.userId)!;
+    if (!u.email) throw new HttpError(400, 'Primero guardá tu correo.', 'email');
+    try {
+      await sendMail(u.email, 'Correo de prueba', `Hola ${u.display_name}: los avisos de Finanzas te van a llegar a este correo.`);
+    } catch (e) {
+      throw new HttpError(502, `No se pudo enviar el correo: ${(e as Error).message}`);
+    }
     return { ok: true };
   });
 

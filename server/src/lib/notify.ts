@@ -2,6 +2,7 @@ import { db } from '../db/index.js';
 import { config } from '../config.js';
 import { loadUsers } from './domain.js';
 import { escapeHtml, sendTelegramDocument, sendTelegramMessage } from './telegram.js';
+import { mailEnabled, sendMail } from './mail.js';
 
 export type NotifyKind = 'budget' | 'recurring' | 'review' | 'system';
 
@@ -22,16 +23,25 @@ const PREF: Record<NotifyKind, 'notify_budget' | 'notify_recurring' | 'notify_re
   system: null,
 };
 
-/** Stores an in-app notification and, where the user opted in, sends it on Telegram. Never throws. */
+/** Stores an in-app notification and, where the user opted in, sends it by email and/or Telegram. Never throws. */
 export async function notify(n: Notice) {
   const users = loadUsers().filter((u) => n.users === null || n.users.includes(u.id));
   const insert = db().prepare('INSERT INTO notifications (user_id, kind, title, body, link) VALUES (?, ?, ?, ?, ?)');
   for (const u of users) {
     insert.run(u.id, n.kind, n.title, n.body, n.link ?? null);
     const pref = PREF[n.kind];
-    if (!u.telegram_chat_id || (pref && !u[pref])) continue;
+    if (pref && !u[pref]) continue;
+    const link = n.link && config.publicUrl ? `${config.publicUrl}${n.link}` : '';
+    if (u.email && mailEnabled()) {
+      try {
+        await sendMail(u.email, n.title, `${n.body}${link ? `\n\n${link}` : ''}`, n.document);
+      } catch (e) {
+        console.error(`Email delivery to user ${u.id} failed:`, (e as Error).message);
+      }
+    }
+    if (!u.telegram_chat_id) continue;
     try {
-      const url = n.link && config.publicUrl ? `\n${config.publicUrl}${n.link}` : '';
+      const url = link ? `\n${link}` : '';
       if (n.document) {
         await sendTelegramDocument(u.telegram_chat_id, n.document.fileName, n.document.data, `${n.title}\n${n.body}`.slice(0, 1000));
       } else {

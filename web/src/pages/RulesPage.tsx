@@ -17,9 +17,10 @@ import {
   TagsInput,
   Text,
   TextInput,
+  Tooltip,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { IconEdit, IconPlus, IconTrash, IconWand } from '@tabler/icons-react';
+import { IconBooks, IconEdit, IconPlus, IconTrash, IconWand } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { date, fromCents, money, toCents } from '../lib/format';
@@ -28,6 +29,7 @@ import type { Currency, Rule } from '../lib/types';
 import { PageHeader } from '../components/Layout';
 import { AccountSelect, CategorySelect, MoneyInput } from '../components/inputs';
 import { GroupedSelect } from '../components/GroupedSelect';
+import { RuleCatalogModal } from '../components/RuleCatalogModal';
 
 const MATCH_LABEL: Record<Rule['match_type'], string> = {
   contains: 'contiene',
@@ -118,6 +120,7 @@ export function RulesPage() {
   const rules = useQuery({ queryKey: ['rules'], queryFn: () => api.get<Rule[]>('/rules') });
   const [editing, setEditing] = useState<Rule | 'new' | null>(null);
   const [applying, setApplying] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
 
   const apply = async () => {
     setApplying(true);
@@ -175,8 +178,13 @@ export function RulesPage() {
         description="Categorizan automáticamente los movimientos al importar o al escribir una descripción. Gana la de mayor prioridad que coincida."
         actions={
           <>
-            <Button variant="default" leftSection={<IconWand size={16} />} onClick={apply} loading={applying}>
-              Aplicar reglas a movimientos sin categoría
+            <Tooltip label="Categoriza con las reglas los movimientos que todavía no tienen categoría">
+              <Button variant="default" leftSection={<IconWand size={16} />} onClick={apply} loading={applying}>
+                Aplicar reglas
+              </Button>
+            </Tooltip>
+            <Button variant="default" leftSection={<IconBooks size={16} />} onClick={() => setBrowsing(true)}>
+              Reglas sugeridas
             </Button>
             <Button leftSection={<IconPlus size={16} />} onClick={() => setEditing('new')}>
               Nueva regla
@@ -187,7 +195,7 @@ export function RulesPage() {
       <Card>
         {!rules.data?.length ? (
           <Text c="dimmed" size="sm">
-            Todavía no hay reglas. Ejemplo: si la descripción contiene «COTO», categoría Supermercado.
+            Todavía no hay reglas. Empezá por «Reglas sugeridas»: comercios y servicios habituales de Buenos Aires.
           </Text>
         ) : (
           <Table.ScrollContainer minWidth={700}>
@@ -243,6 +251,7 @@ export function RulesPage() {
         )}
       </Card>
       {editing && <RuleModal rule={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
+      {browsing && <RuleCatalogModal onClose={() => setBrowsing(false)} />}
     </>
   );
 }

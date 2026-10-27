@@ -1,5 +1,13 @@
 import path from 'node:path';
 
+// Optional settings file next to package.json (git-ignored), e.g. the email password. Real
+// environment variables win over it.
+try {
+  process.loadEnvFile(path.join(process.cwd(), '.env'));
+} catch {
+  /* no file: fine */
+}
+
 function env(name: string, fallback: string): string {
   const v = process.env[name];
   return v === undefined || v === '' ? fallback : v;
@@ -21,7 +29,14 @@ export const config = {
   secureCookies: env('SECURE_COOKIES', 'false') === 'true',
   sessionDays: Number(env('SESSION_DAYS', '30')),
   telegramToken: env('TELEGRAM_BOT_TOKEN', ''),
-  // Public URL used in Telegram messages, e.g. https://finanzas.example.com
+  smtp: {
+    host: env('SMTP_HOST', ''),
+    port: Number(env('SMTP_PORT', '465')),
+    user: env('SMTP_USER', ''),
+    pass: env('SMTP_PASS', ''),
+    from: env('MAIL_FROM', ''),
+  },
+  // Public URL used in Telegram messages and emails, e.g. https://finanzas.example.com
   publicUrl: env('PUBLIC_URL', ''),
   backupKeepDaily: Number(env('BACKUP_KEEP_DAILY', '14')),
   backupKeepMonthly: Number(env('BACKUP_KEEP_MONTHLY', '12')),

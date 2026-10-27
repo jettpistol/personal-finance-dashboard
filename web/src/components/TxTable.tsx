@@ -15,11 +15,21 @@ export function txSign(t: Tx): number {
 export function TxAmount({ t }: { t: Tx }) {
   const sign = txSign(t);
   const color = sign < 0 ? undefined : sign > 0 ? 'teal' : 'dimmed';
+  // A conversion between currencies shows what came in and the rate used.
+  const toCurrency = t.currency === 'ARS' ? 'USD' : 'ARS';
+  const rate = t.to_amount ? (t.currency === 'ARS' ? t.amount / t.to_amount : t.to_amount / t.amount) : null;
   return (
-    <Text className="num" fw={600} c={color} size="sm" ta="right">
-      {t.type === 'transfer' ? '' : sign < 0 ? '-' : sign > 0 ? '+' : ''}
-      {money(Math.abs(t.amount), t.currency)}
-    </Text>
+    <>
+      <Text className="num" fw={600} c={color} size="sm" ta="right">
+        {t.type === 'transfer' ? '' : sign < 0 ? '-' : sign > 0 ? '+' : ''}
+        {money(Math.abs(t.amount), t.currency)}
+      </Text>
+      {t.type === 'transfer' && t.to_amount && rate && (
+        <Text className="num" size="xs" c="dimmed" ta="right">
+          → {money(t.to_amount, toCurrency)} · TC $ {rate.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
+        </Text>
+      )}
+    </>
   );
 }
 

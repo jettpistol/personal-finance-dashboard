@@ -156,7 +156,14 @@ Money moving between two accounts. It never counts as income or spending.
 - There's no category, shared switch or private switch.
 - A transfer into a joint account is a contribution to the household pot. It doesn't create a debt between you.
 
-**Buying dollars (two currencies).** When **Desde** and **Hacia** are in different currencies, a new box appears: **Monto recibido en USD** (or **en ARS**), "Ej: compra de dólares: cuántos dólares entraron." Enter the pesos that left in **Monto** and the dollars that arrived here. The origin balance goes down by the first amount and the destination goes up by the second, so the effective rate is whatever you actually paid.
+**Buying or selling dollars (two currencies).** When **Desde** and **Hacia** are in different currencies, two boxes appear:
+
+- **Tipo de cambio**: pesos per dollar, with today's BNA sell quote shown as a reference.
+- **Monto recibido en USD** (or **en ARS**).
+
+Fill in either one and the other is calculated: with $ 150.000 in **Monto** and a rate of 1.250, the received amount becomes US$ 120. Typing the dollars that actually arrived works the other way round. The origin balance goes down by the first amount and the destination goes up by the second. In the list, these transfers show what came in and the rate, for example *→ US$ 120,00 · TC $ 1.250*.
+
+To pay something in dollars with pesos, first record this conversion into a dollar account at the rate you got, then pay from that account.
 
 **Paying each other back.** When **Desde** is one partner's personal account and **Hacia** is the other partner's personal account, a checkbox appears: **Es un pago para saldar deudas entre nosotros**, ticked by default. While ticked, the transfer reduces what one owes the other in [Gastos compartidos](gastos-compartidos.md) and shows as **Pago de deuda** in the list. Untick it for a transfer between you that has nothing to do with shared expenses (a gift, a loan you track separately). A settlement must be in one currency: both accounts need the same currency, or you must untick the box.
 

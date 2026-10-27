@@ -300,4 +300,8 @@ export const migrations: string[] = [
     note TEXT
   );
   `,
+  // Email notifications: each user's address (users live in the core DB and are copied to profiles).
+  `
+  ALTER TABLE users ADD COLUMN email TEXT;
+  `,
 ];

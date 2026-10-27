@@ -205,6 +205,19 @@ describe('money flows', () => {
     expect((await call('beto', 'DELETE', `/api/loans/${id}`)).status).toBe(404);
   });
 
+  it('offers a bank of suggested rules and adds only the picked ones, once', async () => {
+    const cat0 = (await call('ana', 'GET', '/api/rules/catalog')).body;
+    expect(cat0.length).toBeGreaterThan(100);
+    const netflix = cat0.find((r: { id: string }) => r.id === 'netflix');
+    expect(netflix).toMatchObject({ category_id: cat['Streaming'], added: false, tags: ['suscripción'] });
+    expect((await call('ana', 'POST', '/api/rules/catalog', { ids: ['netflix', 'ypf'] })).body.created).toBe(2);
+    expect((await call('ana', 'POST', '/api/rules/catalog', { ids: ['netflix'] })).body.created).toBe(0);
+    expect((await call('ana', 'GET', '/api/rules/catalog')).body.find((r: { id: string }) => r.id === 'netflix').added).toBe(true);
+    const s = (await call('ana', 'POST', '/api/transactions/suggest', { description: 'NETFLIX.COM 12345', amount: -1000 })).body;
+    expect(s).toMatchObject({ category_id: cat['Streaming'], merchant: 'Netflix', tags: ['suscripción'] });
+    db().prepare(`DELETE FROM rules WHERE name IN ('Netflix', 'YPF')`).run();
+  });
+
   it('generates recurring bills as pending and confirms them with the real amount', async () => {
     const r = await call('ana', 'POST', '/api/recurring', {
       description: 'Internet', type: 'expense', amount: 25_000_00, account_id: ids.joint, category_id: cat['Servicios'], frequency: 'monthly', next_date: `${addMonthsToMonth(M, -1)}-15`,

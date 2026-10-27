@@ -22,6 +22,7 @@ export type User = {
   color: string;
   share_dashboard: number;
   telegram_chat_id: string | null;
+  email: string | null;
   notify_budget: number;
   notify_recurring: number;
   notify_review: number;
@@ -98,7 +99,7 @@ export function scopeUserId(scope: Scope): number | null {
 export function loadUsers(): User[] {
   return db()
     .prepare(
-      'SELECT id, username, display_name, color, share_dashboard, telegram_chat_id, notify_budget, notify_recurring, notify_review FROM users ORDER BY id',
+      'SELECT id, username, display_name, color, share_dashboard, telegram_chat_id, email, notify_budget, notify_recurring, notify_review FROM users ORDER BY id',
     )
     .all() as User[];
 }

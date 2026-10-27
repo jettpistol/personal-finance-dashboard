@@ -2,12 +2,13 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { db } from '../db/index.js';
 import { HttpError } from '../lib/http.js';
-import { accountVisible, fetchTxs, loadAccounts, txVisibility } from '../lib/domain.js';
+import { accountVisible, fetchTxs, loadAccounts, loadCategories, txVisibility } from '../lib/domain.js';
 import { applyRules, loadRules, ruleMatches, type Rule } from '../lib/rules.js';
 import { generateDueRecurring, type Recurring } from '../lib/recurring.js';
 import { assertWritable, splitSchema } from '../lib/transactions.js';
 import { isValidDate } from '../lib/dates.js';
 import { idParam, parse } from './util.js';
+import { RULE_CATALOG } from '../lib/rule-catalog.js';
 
 const ruleSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -86,6 +87,47 @@ export default async function automationRoutes(app: FastifyInstance) {
   app.delete('/rules/:id', async (req) => {
     db().prepare('DELETE FROM rules WHERE id = ?').run(idParam(req.params));
     return { ok: true };
+  });
+
+  // Suggested rules for Buenos Aires: browse them and add the ones you want. Nothing is applied by itself.
+  const catalogView = () => {
+    const cats = [...loadCategories().values()];
+    const byPath = (path: string | null) => {
+      if (!path) return null;
+      const [main, sub] = path.split(' > ');
+      const parent = cats.find((c) => c.parent_id === null && c.name === main && !c.archived);
+      if (!parent) return null;
+      return sub ? (cats.find((c) => c.parent_id === parent.id && c.name === sub && !c.archived) ?? null) : parent;
+    };
+    // Already there: the same pattern, or a rule you wrote yourself for the same store.
+    const rows = db().prepare('SELECT pattern, set_merchant FROM rules').all() as { pattern: string; set_merchant: string | null }[];
+    const patterns = new Set(rows.map((r) => r.pattern));
+    const merchants = new Set(rows.map((r) => r.set_merchant?.toLowerCase()).filter(Boolean));
+    return RULE_CATALOG.map((r) => {
+      const cat = byPath(r.category);
+      const added = patterns.has(r.pattern) || (!!r.merchant && merchants.has(r.merchant.toLowerCase()));
+      return { ...r, category_id: cat?.id ?? null, category_kind: cat?.kind ?? null, added };
+    });
+  };
+
+  app.get('/rules/catalog', async () => catalogView());
+
+  app.post('/rules/catalog', async (req) => {
+    const { ids } = parse(z.object({ ids: z.array(z.string()).min(1).max(500) }), req.body);
+    const wanted = new Set(ids);
+    const insert = db().prepare(
+      // No set_type: a refund from the same store must stay income.
+      `INSERT INTO rules (name, priority, match_type, pattern, set_category_id, set_merchant, set_tags, active) VALUES (?, 0, 'regex', ?, ?, ?, ?, 1)`,
+    );
+    let created = 0;
+    db().transaction(() => {
+      for (const r of catalogView()) {
+        if (!wanted.has(r.id) || r.added) continue;
+        insert.run(r.name, r.pattern, r.category_id, r.merchant || null, r.tags.length ? JSON.stringify(r.tags) : null);
+        created++;
+      }
+    })();
+    return { created };
   });
 
   // Shows which existing transactions a (possibly unsaved) rule would match.

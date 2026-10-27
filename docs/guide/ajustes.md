@@ -1,6 +1,6 @@
 # Ajustes
 
-Your own profile and password, Telegram alerts, the household's shared settings and people, categories, exchange rates and inflation, export and backups.
+Your own profile and password, email (and Telegram) alerts, the household's shared settings and people, categories, exchange rates and inflation, export and backups.
 
 ![Ajustes page on the Perfil tab: Tus datos with Usuario, Nombre para mostrar, Color and the sharing switch, and Cambiar contraseña](img/ajustes.png)
 
@@ -11,7 +11,7 @@ Open it from the sidebar, the user menu or the footer. The page has six tabs and
 | Tab | What it holds | Applies to |
 | --- | --- | --- |
 | **Perfil** | Your name, color, dashboard sharing and password | You, in every data profile |
-| **Notificaciones** | Telegram link and which alerts to receive | You, in every data profile |
+| **Notificaciones** | Your email for alerts, which alerts to receive, optional Telegram | You, in every data profile |
 | **Hogar** | Household name, default split, BNA quote, budget alerts, inflation indexing; the people | Settings: the data profile in use. People: every profile |
 | **Categorías** | Expense and income categories | The data profile in use |
 | **Cotizaciones e inflación** | BNA dollar quotes and INDEC CPI | The data profile in use |
@@ -42,9 +42,23 @@ If something is wrong the field turns red: *La contraseña actual no es correcta
 
 ### Notificaciones
 
-Everything the app tells you lands in the bell in the top bar. This tab decides what is also sent to you by Telegram.
+Everything the app tells you lands in the bell in the top bar. This tab decides what is also sent to you by email (or Telegram).
 
-**Telegram** (with a **Vinculado** or **Sin vincular** label)
+**Correo** (with an **Activo**, **Falta configurar** or **Sin correo** label)
+
+1. Type **Tu correo** and click **Guardar**. An invalid address is marked in red.
+2. Click **Enviar prueba** to check it arrives.
+
+Sending is free with a Gmail account. If the card says **El envío de correos no está configurado**, whoever runs the app sets it up once:
+
+1. In the Google account that will send the emails, turn on 2-Step Verification and create an **app password** at myaccount.google.com/apppasswords (16 letters).
+2. In the `server` folder, copy `.env.example` to `.env`, fill in `SMTP_USER` (the Gmail address) and `SMTP_PASS` (the app password), and restart the app.
+
+The app password only lets the app send mail; it isn't your Google password, and you can revoke it any time from the same page.
+
+**Qué avisos recibir**: budgets, recurring items to confirm, and the monthly review (.docx attached). They apply to email and Telegram alike.
+
+**Telegram (opcional)** (with a **Vinculado** or **Sin vincular** label)
 
 If the card says **El bot no está configurado en el servidor**, whoever runs the server has to create a bot with @BotFather and give its token to the app, then restart it. The steps are listed on screen. Until then Telegram can't be used.
 

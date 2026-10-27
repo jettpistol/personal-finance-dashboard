@@ -34,7 +34,7 @@ The order follows the sidebar.
 | [Recurrentes](recurrentes.md) | Rent, bills, subscriptions and salaries that repeat; you confirm each one with the real amount. |
 | | |
 | [Perfil de datos](perfil-de-datos.md) | Separate sets of data (for example test data vs your real data). |
-| [Ajustes](ajustes.md) | Your profile and password, the household, categories, exchange rates and inflation, Telegram, export and backups. |
+| [Ajustes](ajustes.md) | Your profile and password, email alerts, the household, categories, exchange rates and inflation, export and backups. |
 
 How every figure is calculated (currency conversion, inflation, what counts in each dashboard, how shared amounts are split) is collected in [How the numbers are worked out](como-se-calcula.md).
 

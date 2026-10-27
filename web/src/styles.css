@@ -1201,3 +1201,32 @@ a {
 .pfd-debtor-row[data-closed] {
   opacity: 0.6;
 }
+
+/* Suggested rules: section strips that open and close, one ruled row per rule. */
+.pfd-catalog {
+  border: 1px solid var(--pfd-rule);
+}
+
+.pfd-catalog-head {
+  padding: 6px 10px;
+  background: linear-gradient(var(--pfd-strip-top), var(--pfd-strip-bottom));
+  border-bottom: 1px solid var(--pfd-rule);
+}
+
+.pfd-catalog-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 30px;
+  border-bottom: 1px solid var(--pfd-rule);
+  cursor: pointer;
+}
+
+.pfd-catalog-row:hover {
+  background: var(--pfd-tint-top);
+}
+
+.pfd-catalog-row[data-added] {
+  cursor: default;
+  opacity: 0.6;
+}

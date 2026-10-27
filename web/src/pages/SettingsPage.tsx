@@ -200,10 +200,16 @@ function NotificationsTab() {
   const [code, setCode] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [chatId, setChatId] = useState('');
+  const [email, setEmail] = useState('');
+  const [emailBad, setEmailBad] = useState(false);
 
   useEffect(() => {
     setChatId(me.data?.telegram_chat_id ?? '');
   }, [me.data?.telegram_chat_id]);
+
+  useEffect(() => {
+    setEmail(me.data?.email ?? '');
+  }, [me.data?.email]);
 
   const run = async (key: string, fn: () => Promise<unknown>, ok?: string) => {
     setBusy(key);
@@ -223,12 +229,83 @@ function NotificationsTab() {
   if (!me.data) return null;
   const linked = !!me.data.telegram_chat_id;
 
+  const saveEmail = async () => {
+    setBusy('email');
+    try {
+      await api.patch('/me', { email: email.trim() || null });
+      setEmailBad(false);
+      notifyOk(email.trim() ? 'Correo guardado' : 'Correo quitado');
+      qc.invalidateQueries({ queryKey: ['me'] });
+    } catch (e) {
+      setEmailBad(errorFields(e).includes('email'));
+      notifyError(e);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <SimpleGrid cols={{ base: 1, md: 2 }}>
       <Card>
         <Stack>
           <Group justify="space-between">
-            <Title order={4}>Telegram</Title>
+            <Title order={4}>Correo</Title>
+            {!me.data.email ? <Badge color="gray">Sin correo</Badge> : me.data.mail_available ? <Badge color="teal">Activo</Badge> : <Badge color="yellow">Falta configurar</Badge>}
+          </Group>
+          {!me.data.mail_available && (
+            <Alert color="yellow" title="El envío de correos no está configurado">
+              <List size="sm" spacing={4} type="ordered">
+                <List.Item>
+                  En tu cuenta de Google, activá la verificación en 2 pasos y creá una <b>contraseña de aplicación</b> (myaccount.google.com/apppasswords). Es gratis.
+                </List.Item>
+                <List.Item>
+                  En la carpeta <Code>server</Code>, creá el archivo <Code>.env</Code> con <Code>SMTP_HOST=smtp.gmail.com</Code>, <Code>SMTP_USER=tu-correo@gmail.com</Code> y{' '}
+                  <Code>SMTP_PASS=la-contraseña-de-aplicación</Code>, y reiniciá la app.
+                </List.Item>
+              </List>
+            </Alert>
+          )}
+          <Group align="flex-end" wrap="nowrap">
+            <TextInput
+              label="Tu correo"
+              placeholder="nombre@gmail.com"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmailBad(false);
+                setEmail(e.currentTarget.value);
+              }}
+              error={emailBad}
+              style={{ flex: 1 }}
+            />
+            <Button variant="default" loading={busy === 'email'} onClick={saveEmail}>
+              Guardar
+            </Button>
+          </Group>
+          {me.data.email && me.data.mail_available && (
+            <Group>
+              <Button variant="default" loading={busy === 'mailtest'} onClick={() => run('mailtest', () => api.post('/me/email/test'), `Correo de prueba enviado a ${me.data!.email}`)}>
+                Enviar prueba
+              </Button>
+            </Group>
+          )}
+        </Stack>
+      </Card>
+      <Card>
+        <Stack>
+          <Title order={4}>Qué avisos recibir</Title>
+          <Text size="sm" c="dimmed">
+            Siempre se guardan en la campanita de la app. Estas opciones controlan el envío por correo (y por Telegram, si lo usás).
+          </Text>
+          <Switch label="Presupuestos al 80% y superados" checked={!!me.data.notify_budget} onChange={(e) => pref('notify_budget', e.currentTarget.checked)} />
+          <Switch label="Recurrentes pendientes de confirmar" checked={!!me.data.notify_recurring} onChange={(e) => pref('notify_recurring', e.currentTarget.checked)} />
+          <Switch label="Cierre de mes (documento .docx)" checked={!!me.data.notify_review} onChange={(e) => pref('notify_review', e.currentTarget.checked)} />
+        </Stack>
+      </Card>
+      <Card>
+        <Stack>
+          <Group justify="space-between">
+            <Title order={4}>Telegram (opcional)</Title>
             {linked ? <Badge color="teal">Vinculado</Badge> : <Badge color="gray">Sin vincular</Badge>}
           </Group>
           {!me.data.telegram_available ? (
@@ -291,17 +368,6 @@ function NotificationsTab() {
               Guardar
             </Button>
           </Group>
-        </Stack>
-      </Card>
-      <Card>
-        <Stack>
-          <Title order={4}>Qué avisos recibir</Title>
-          <Text size="sm" c="dimmed">
-            Siempre se guardan en la campanita de la app. Estas opciones controlan el envío por Telegram.
-          </Text>
-          <Switch label="Presupuestos al 80% y superados" checked={!!me.data.notify_budget} onChange={(e) => pref('notify_budget', e.currentTarget.checked)} />
-          <Switch label="Recurrentes pendientes de confirmar" checked={!!me.data.notify_recurring} onChange={(e) => pref('notify_recurring', e.currentTarget.checked)} />
-          <Switch label="Cierre de mes (documento .docx)" checked={!!me.data.notify_review} onChange={(e) => pref('notify_review', e.currentTarget.checked)} />
         </Stack>
       </Card>
     </SimpleGrid>

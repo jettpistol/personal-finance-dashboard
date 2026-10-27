@@ -20,6 +20,8 @@ export type Me = User & {
   notify_recurring: number;
   notify_review: number;
   telegram_available: boolean;
+  email: string | null;
+  mail_available: boolean;
 };
 
 export type Account = {
