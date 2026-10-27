@@ -23,6 +23,7 @@ The order follows the sidebar.
 | [Cuentas](cuentas.md) | Accounts and their balances, joint or personal, in ARS or USD. |
 | [Gastos compartidos](gastos-compartidos.md) | Who owes whom from shared expenses and shared income, and settling up. |
 | [Deudores](deudores.md) | Money and things you lent to other people: what's still out, partial returns, reminders. |
+| [Pagos pendientes](pagos-pendientes.md) | What you have to do yourself each month (savings, paying someone back) and loans to collect; it chases you until it's done. |
 | **Planificación** | |
 | [Presupuestos](presupuestos.md) | Monthly limits per category, alerts at 80% and 100%, and indexing by inflation. |
 | [Metas de ahorro](metas.md) | Savings goals and how much to put aside each month. |
