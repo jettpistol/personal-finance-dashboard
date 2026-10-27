@@ -17,7 +17,7 @@ const QUESTIONS = [
   '¿Qué categoría se pasó del presupuesto y por qué?',
   '¿Hubo gastos que no esperábamos? ¿Se van a repetir?',
   '¿Hay suscripciones o servicios que podamos cancelar o renegociar?',
-  '¿Cuánto apartamos para las metas de ahorro? ¿Vamos al ritmo necesario?',
+  '¿Cuánto apartamos para los objetivos? ¿Vamos al ritmo necesario?',
   '¿Quedó alguna deuda entre nosotros sin saldar?',
   '¿Cambiamos algún presupuesto para el mes que viene (por ejemplo, por inflación)?',
 ];

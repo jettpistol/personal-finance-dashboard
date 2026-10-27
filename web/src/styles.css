@@ -723,6 +723,13 @@ a {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3) !important;
 }
 
+/* In dark mode the off state keeps its light-mode look (white, dark text), which reads better than hollow. */
+[data-mantine-color-scheme='dark'] .pfd-toggle:not([data-on]) {
+  background-image: linear-gradient(#ffffff, #e6ebf1);
+  border-color: #b9c3cf;
+  color: #16202c;
+}
+
 /* Provisional-figure mark, as in statistical releases. */
 .pfd-note-mark {
   font-size: 0.75em;
@@ -940,12 +947,6 @@ a {
 .pfd-gs-name {
   flex: 1;
   min-width: 0;
-}
-
-.pfd-gs-count {
-  font-weight: 600;
-  color: var(--mantine-color-dimmed);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Switch: only the lever is clickable; the text next to it is just a label. */
@@ -1202,6 +1203,42 @@ a {
   opacity: 0.6;
 }
 
+/* The row's left part opens its details: when it was lent, the plan, returns, notes. */
+.pfd-debtor-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pfd-debtor-caret {
+  flex: none;
+  color: var(--mantine-color-dimmed);
+  transition: transform 120ms ease;
+}
+
+.pfd-debtor-caret[data-open] {
+  transform: rotate(90deg);
+}
+
+.pfd-debtor-details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 8px 0 2px 22px;
+  font-size: var(--mantine-font-size-xs);
+}
+
+.pfd-debtor-details dt {
+  color: var(--mantine-color-dimmed);
+}
+
+.pfd-debtor-details dd {
+  margin: 0;
+  min-width: 0;
+}
+
 /* Suggested rules: section strips that open and close, one ruled row per rule. */
 .pfd-catalog {
   border: 1px solid var(--pfd-rule);
@@ -1296,4 +1333,61 @@ a {
   padding: 10px 12px;
   border: 1px solid var(--pfd-rule);
   background: var(--pfd-tint-top);
+}
+
+/* Category tag in the movements table: sentence case, larger and darker than a default light badge. */
+.pfd-cat-badge {
+  text-transform: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  max-width: 100%;
+}
+
+[data-mantine-color-scheme='light'] .pfd-cat-badge {
+  color: color-mix(in srgb, var(--badge-color) 72%, #000);
+}
+
+[data-mantine-color-scheme='dark'] .pfd-cat-badge {
+  color: color-mix(in srgb, var(--badge-color) 55%, #fff);
+}
+
+/* Read-only result next to the exchange rate (Transf. propia between currencies). */
+.pfd-received {
+  padding: 6px 10px;
+  border: 1px dashed var(--pfd-rule-strong);
+  background: var(--pfd-strip);
+}
+
+/* Every dropdown list (Select, Autocomplete, GroupedSelect…) can be stretched from its bottom-right
+   corner; the drag itself is handled in lib/dropdown-resize.ts. */
+.m_88b62a41::after {
+  content: '';
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  width: 12px;
+  height: 12px;
+  cursor: ns-resize;
+  background: linear-gradient(135deg, transparent 0 50%, var(--mantine-color-dimmed) 50% 56%, transparent 56% 70%, var(--mantine-color-dimmed) 70% 76%, transparent 76%);
+  opacity: 0.7;
+}
+
+/* Once stretched, the list fills the new height instead of stopping at its usual maximum. */
+.m_88b62a41[data-resized] {
+  display: flex;
+  flex-direction: column;
+}
+
+.m_88b62a41[data-resized] > .m_b2821a6e {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.m_88b62a41[data-resized] > .m_b2821a6e > div:first-child {
+  flex: 1;
+  min-height: 0;
+  max-height: none !important;
 }

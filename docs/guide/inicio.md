@@ -64,11 +64,11 @@ This list always shows the latest movements, even when you pick an earlier month
 - **Saldo compartido**: who owes whom for shared expenses, one line per currency, for example **Le debés $ 201.499,60 a Milagros** or **Milagros te debe …**. **Están a mano.** when nobody owes anything. It is the same on every dashboard and always reflects today, not the selected month. **Detalle** opens [Gastos compartidos](gastos-compartidos.md).
 - **Cuentas**: the dashboard's active (not archived) accounts with today's balance in their own currency, and a **Total** in the display currency. Hover an account in the other currency to see its converted value "al dólar BNA de hoy". On **Hogar** these are the joint accounts; on **Mío**, your own. A partner's private accounts never appear.
 - **Cuotas comprometidas** (only if there are any): future installments already scheduled, month by month, up to six months ahead.
-- **Metas de ahorro** (only if there are any): up to three active goals of this dashboard, with percentage, saved vs target and how much is still needed per month. **Ver metas** goes to [Metas](metas.md).
+- **Objetivos** (only if there are any): up to three active objectives of this dashboard, with percentage, saved vs target and how much is still needed per month. **Ver todos** goes to [Objetivos](metas.md).
 
 ## What you can do
 
-- **Look at another month**: use the month picker in the header. Everything follows the month except **Últimos movimientos**, **Saldo compartido**, **Cuentas**, **Cuotas comprometidas** and **Metas de ahorro**, which always show the current state.
+- **Look at another month**: use the month picker in the header. Everything follows the month except **Últimos movimientos**, **Saldo compartido**, **Cuentas**, **Cuotas comprometidas** and **Objetivos**, which always show the current state.
 - **Switch dashboard or currency**: use **Hogar / Mío / partner** and **ARS / USD** in the top bar (see [Barra superior](barra-superior.md)).
 - **Check spending against inflation**: in **Gasto por rubro**, switch to **Real (IPC)** (ARS only).
 - **Add a movement**: **Agregar** in **Últimos movimientos**, or **Nuevo movimiento** in the side menu.
@@ -92,4 +92,4 @@ This list always shows the latest movements, even when you pick an earlier month
 - Early in a month, look at the previous month first: the current one is still filling up, and its CPI is not published yet.
 - If the income column looks empty on **Hogar**, record your transfers into the joint account: they are what the household "earns".
 
-See also: [Guide index](README.md) · [Login and top bar](barra-superior.md) · [Movimientos](movimientos.md) · [Presupuestos](presupuestos.md) · [Gastos compartidos](gastos-compartidos.md) · [Metas de ahorro](metas.md) · [Reportes](reportes.md) · [How the numbers are worked out](como-se-calcula.md)
+See also: [Guide index](README.md) · [Login and top bar](barra-superior.md) · [Movimientos](movimientos.md) · [Presupuestos](presupuestos.md) · [Gastos compartidos](gastos-compartidos.md) · [Objetivos](metas.md) · [Reportes](reportes.md) · [How the numbers are worked out](como-se-calcula.md)

@@ -4,6 +4,7 @@ import {
   Autocomplete,
   Button,
   Card,
+  Collapse,
   Group,
   Menu,
   Modal,
@@ -19,10 +20,11 @@ import {
   TextInput,
   Title,
   Tooltip,
+  UnstyledButton,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
-import { IconArrowBackUp, IconCopy, IconDots, IconPlus } from '@tabler/icons-react';
+import { IconArrowBackUp, IconChevronRight, IconCopy, IconDots, IconPlus } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { PageHeader } from '../components/Layout';
@@ -251,59 +253,39 @@ function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void
       onConfirm: () => act(() => api.del(`/loans/${l.id}`)),
     });
 
+  const [open, setOpen] = useState(false);
   const partial = l.kind === 'money' && l.returned > 0 && !l.closed_on;
+  // One short line under the amount; everything else waits behind the row's toggle.
+  const status = l.closed_on
+    ? `${l.closed_reason === 'forgiven' ? 'Perdonado' : 'Devuelto'} el ${date(l.closed_on, 'D MMM')}`
+    : [
+        partial ? `Falta ${money(l.outstanding, l.currency)}` : null,
+        l.next_installment ? `cuota ${l.next_installment.n}: ${date(l.next_installment.due, 'D MMM')}` : l.due_on ? `vence ${date(l.due_on, 'D MMM')}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ') || ago(l.lent_on);
   return (
     <div className="pfd-debtor-row" data-closed={l.closed_on ? true : undefined}>
-      <Group justify="space-between" wrap="nowrap" align="flex-start" gap="sm">
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <Group gap={6} wrap="nowrap">
-            <Text fw={600} size="sm" className={l.kind === 'money' ? 'num' : undefined} lineClamp={1}>
-              {l.kind === 'money' ? money(l.amount, l.currency) : l.item}
-            </Text>
-            {l.kind === 'item' && <span className="pfd-tag">Objeto</span>}
-            {l.overdue && (
-              <span className="pfd-tag" data-tone="ocre">
-                Vencido
-              </span>
-            )}
-            {l.closed_reason === 'returned' && (
-              <span className="pfd-tag" data-tone="gray">
-                Devuelto
-              </span>
-            )}
-            {l.closed_reason === 'forgiven' && (
-              <span className="pfd-tag" data-tone="gray">
-                Perdonado
-              </span>
-            )}
-          </Group>
-          {l.first_due && (
-            <Text size="xs" className="num">
-              {(l.installments ?? 1) > 1 ? `${l.installments} cuotas de ${money(l.schedule[0]?.amount, l.currency)}` : `Un pago de ${money(l.total, l.currency)}`}
-              {l.interest_rate ? ` · ${String(l.interest_rate).replace('.', ',')}% mensual` : ' · sin interés'}
-              {l.next_installment && !l.closed_on && ` · próxima: ${date(l.next_installment.due, 'D MMM')}`}
-            </Text>
-          )}
-          <Text size="xs" c="dimmed">
-            {l.kind === 'money' && l.item ? `${l.item} · ` : ''}
-            {date(l.lent_on, 'D MMM YYYY')} ({ago(l.lent_on)})
-            {l.due_on && !l.closed_on && ` · devolver antes del ${date(l.due_on, 'D MMM')}`}
-            {l.closed_on && ` · ${l.closed_reason === 'forgiven' ? 'perdonado' : 'devuelto'} el ${date(l.closed_on, 'D MMM YYYY')}`}
-          </Text>
-          {partial && (
-            <>
-              <Progress value={(l.returned / (l.total ?? l.amount ?? 1)) * 100} size={6} mt={6} color="teal" aria-label="Devuelto" />
-              <Text size="xs" mt={2} className="num">
-                Devolvió {money(l.returned, l.currency)} · falta <b>{money(l.outstanding, l.currency)}</b>
+      <Group justify="space-between" wrap="nowrap" gap="sm">
+        <UnstyledButton className="pfd-debtor-main" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          <IconChevronRight size={14} className="pfd-debtor-caret" data-open={open || undefined} aria-hidden />
+          <div style={{ minWidth: 0 }}>
+            <Group gap={6} wrap="nowrap">
+              <Text fw={600} size="sm" className={l.kind === 'money' ? 'num' : undefined} lineClamp={1}>
+                {l.kind === 'money' ? money(l.amount, l.currency) : l.item}
               </Text>
-            </>
-          )}
-          {l.notes && (
-            <Text size="xs" c="dimmed" fs="italic" mt={2}>
-              {l.notes}
+              {l.kind === 'item' && <span className="pfd-tag">Objeto</span>}
+              {l.overdue && (
+                <span className="pfd-tag" data-tone="ocre">
+                  Vencido
+                </span>
+              )}
+            </Group>
+            <Text size="xs" c="dimmed" className="num" lineClamp={1}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
             </Text>
-          )}
-        </div>
+          </div>
+        </UnstyledButton>
         <Group gap={4} wrap="nowrap">
           {!l.closed_on && (
             <Button size="compact-xs" variant="default" leftSection={<IconArrowBackUp size={13} />} onClick={onReturn}>
@@ -327,6 +309,64 @@ function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void
           </Menu>
         </Group>
       </Group>
+      <Collapse in={open}>
+        <dl className="pfd-debtor-details">
+          {l.kind === 'money' && l.item && (
+            <>
+              <dt>Para</dt>
+              <dd>{l.item}</dd>
+            </>
+          )}
+          <dt>Prestado</dt>
+          <dd>
+            {date(l.lent_on, 'D MMM YYYY')} ({ago(l.lent_on)})
+          </dd>
+          {l.due_on && (
+            <>
+              <dt>Devolver antes del</dt>
+              <dd>{date(l.due_on, 'D MMM YYYY')}</dd>
+            </>
+          )}
+          {l.first_due && (
+            <>
+              <dt>Plan</dt>
+              <dd className="num">
+                {(l.installments ?? 1) > 1 ? `${l.installments} cuotas de ${money(l.schedule[0]?.amount, l.currency)}` : `Un pago de ${money(l.total, l.currency)}`}
+                {l.interest_rate ? ` · ${String(l.interest_rate).replace('.', ',')}% mensual` : ' · sin interés'}
+              </dd>
+            </>
+          )}
+          {l.kind === 'money' && l.returned > 0 && (
+            <>
+              <dt>Devolvió</dt>
+              <dd className="num">
+                {money(l.returned, l.currency)} de {money(l.total ?? l.amount, l.currency)}
+                {!l.closed_on && <Progress value={(l.returned / (l.total ?? l.amount ?? 1)) * 100} size={6} mt={4} color="teal" aria-label="Devuelto" />}
+              </dd>
+            </>
+          )}
+          {l.returns.length > 0 && (
+            <>
+              <dt>Devoluciones</dt>
+              <dd>
+                {l.returns.map((r) => (
+                  <div key={r.id} className="num">
+                    {date(r.date, 'D MMM')}
+                    {r.amount != null && ` · ${money(r.amount, l.currency)}`}
+                    {r.note && <Text span c="dimmed">{` · ${r.note}`}</Text>}
+                  </div>
+                ))}
+              </dd>
+            </>
+          )}
+          {l.notes && (
+            <>
+              <dt>Notas</dt>
+              <dd>{l.notes}</dd>
+            </>
+          )}
+        </dl>
+      </Collapse>
     </div>
   );
 }

@@ -28,18 +28,22 @@ import {
 } from '@mantine/core';
 import { DateInput, MonthPickerInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
-import { IconDots, IconDownload, IconPlus, IconRefresh } from '@tabler/icons-react';
+import { IconDots, IconDownload, IconPencil, IconPlus, IconRefresh } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { api, download, qs } from '../lib/api';
 import { useApp } from '../lib/app-state';
-import { date, MANTINE_COLORS, monthName, today } from '../lib/format';
+import { date, MANTINE_COLORS, money, monthName, today } from '../lib/format';
 import { errorFields, notifyError, notifyOk, useCategories, useMe, useSettings, useUsers } from '../lib/queries';
-import type { Category, FxRate, Settings } from '../lib/types';
+import type { Category, Currency, FxRate, Settings } from '../lib/types';
 import { PageHeader } from '../components/Layout';
 import { MailSetupCard } from '../components/MailSetupCard';
 
 export function SettingsPage() {
-  const [tab, setTab] = useState<string | null>('profile');
+  // In the URL, so the tab survives a reload (and the redraw after Monedas changes).
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') ?? 'profile';
+  const setTab = (t: string | null) => setParams(t && t !== 'profile' ? { tab: t } : {}, { replace: true });
   return (
     <>
       <PageHeader title="Ajustes" />
@@ -49,6 +53,7 @@ export function SettingsPage() {
           <Tabs.Tab value="notifications">Notificaciones</Tabs.Tab>
           <Tabs.Tab value="household">Hogar</Tabs.Tab>
           <Tabs.Tab value="categories">Categorías</Tabs.Tab>
+          <Tabs.Tab value="currencies">Monedas</Tabs.Tab>
           <Tabs.Tab value="rates">Cotizaciones e inflación</Tabs.Tab>
           <Tabs.Tab value="data">Datos</Tabs.Tab>
         </Tabs.List>
@@ -63,6 +68,9 @@ export function SettingsPage() {
         </Tabs.Panel>
         <Tabs.Panel value="categories">
           <CategoriesTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="currencies">
+          <CurrenciesTab />
         </Tabs.Panel>
         <Tabs.Panel value="rates">
           <RatesTab />
@@ -203,6 +211,7 @@ function NotificationsTab() {
   const [chatId, setChatId] = useState('');
   const [email, setEmail] = useState('');
   const [emailBad, setEmailBad] = useState(false);
+  const [editingEmail, setEditingEmail] = useState(false);
 
   useEffect(() => {
     setChatId(me.data?.telegram_chat_id ?? '');
@@ -235,6 +244,7 @@ function NotificationsTab() {
     try {
       await api.patch('/me', { email: email.trim() || null });
       setEmailBad(false);
+      setEditingEmail(false);
       notifyOk(email.trim() ? 'Correo guardado' : 'Correo quitado');
       qc.invalidateQueries({ queryKey: ['me'] });
     } catch (e) {
@@ -253,28 +263,49 @@ function NotificationsTab() {
             <Title order={4}>Correo</Title>
             {!me.data.email ? <Badge color="gray">Sin correo</Badge> : me.data.mail_available ? <Badge color="teal">Activo</Badge> : <Badge color="yellow">Falta configurar</Badge>}
           </Group>
-          {!me.data.mail_available && (
-            <Text size="sm" c="dimmed">
-              Falta configurar la cuenta que envía los avisos.
-            </Text>
+          {me.data.email && !editingEmail ? (
+            <Group gap="xs" wrap="nowrap">
+              <Text fw={600} truncate>
+                {me.data.email}
+              </Text>
+              <ActionIcon variant="subtle" color="gray" aria-label="Editar correo" onClick={() => setEditingEmail(true)}>
+                <IconPencil size={16} />
+              </ActionIcon>
+            </Group>
+          ) : (
+            <Group align="flex-end" wrap="nowrap">
+              <TextInput
+                label="Tu correo"
+                placeholder="nombre@gmail.com"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmailBad(false);
+                  setEmail(e.currentTarget.value);
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && saveEmail()}
+                error={emailBad}
+                style={{ flex: 1 }}
+                autoFocus={editingEmail}
+              />
+              <Button variant="default" loading={busy === 'email'} onClick={saveEmail}>
+                Guardar
+              </Button>
+              {editingEmail && (
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  onClick={() => {
+                    setEmail(me.data?.email ?? '');
+                    setEmailBad(false);
+                    setEditingEmail(false);
+                  }}
+                >
+                  Cancelar
+                </Button>
+              )}
+            </Group>
           )}
-          <Group align="flex-end" wrap="nowrap">
-            <TextInput
-              label="Tu correo"
-              placeholder="nombre@gmail.com"
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmailBad(false);
-                setEmail(e.currentTarget.value);
-              }}
-              error={emailBad}
-              style={{ flex: 1 }}
-            />
-            <Button variant="default" loading={busy === 'email'} onClick={saveEmail}>
-              Guardar
-            </Button>
-          </Group>
           {me.data.email && me.data.mail_available && (
             <Group>
               <Button variant="default" loading={busy === 'mailtest'} onClick={() => run('mailtest', () => api.post('/me/email/test'), `Correo de prueba enviado a ${me.data!.email}`)}>
@@ -369,6 +400,42 @@ function NotificationsTab() {
 }
 
 // ---- Hogar ----
+
+function CurrenciesTab() {
+  const qc = useQueryClient();
+  const settings = useSettings();
+  const [busy, setBusy] = useState<Currency | null>(null);
+  if (!settings.data) return null;
+  const hide = settings.data.hide_cents ?? { ARS: true, USD: true };
+
+  const toggle = async (c: Currency, on: boolean) => {
+    setBusy(c);
+    try {
+      await api.patch('/settings', { hide_cents: { ...hide, [c]: on } });
+      await qc.invalidateQueries({ queryKey: ['settings'] });
+    } catch (e) {
+      notifyError(e);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      {(['ARS', 'USD'] as Currency[]).map((c) => (
+        <Card key={c}>
+          <Stack gap="sm">
+            <Title order={4}>{c === 'ARS' ? 'Pesos (ARS)' : 'Dólares (USD)'}</Title>
+            <Switch label="Ocultar centavos" checked={hide[c]} disabled={busy === c} onChange={(e) => toggle(c, e.currentTarget.checked)} />
+            <Text size="sm" c="dimmed">
+              Ejemplo: <span className="num">{money(c === 'ARS' ? 1234560 : 123450, c)}</span>
+            </Text>
+          </Stack>
+        </Card>
+      ))}
+    </SimpleGrid>
+  );
+}
 
 function HouseholdTab() {
   const qc = useQueryClient();

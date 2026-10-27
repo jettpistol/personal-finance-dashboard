@@ -51,7 +51,7 @@ Newest first, 50 rows per page, with page numbers at the bottom when there are m
 | Checkbox | Selects the row for [bulk actions](#change-or-delete-many-at-once). The box in the header selects every row on this page that you can edit. |
 | **Fecha** | Day, as DD/MM/YY. |
 | **Descripción** | The description (or the merchant if there's no description, or **(sin descripción)**), followed by labels: **Pendiente**; whose it is (**Compartido**, or the person's name, see below); **Privado**; **Recurrente**; and a paperclip if a receipt is attached. Tags appear underneath. |
-| **Categoría** | For expenses and income, the category as **Main › Sub**. Otherwise **Transferencia**, **Pago de deuda** (a settlement between you two) or **Ajuste**. |
+| **Categoría** | For expenses and income, the category as **Main › Sub**, in a coloured tag. Otherwise **Transferencia**, **Pago de deuda** (a settlement between you two) or **Ajuste**. |
 | **Cuenta** | The account. Transfers show **origin → destination**. **Cuenta privada** means the account belongs to your partner and is private: you see the movement only because it's a shared expense or a payment to you. |
 | **Monto** | In the account's own currency (`$` or `US$`). Expenses carry a minus sign, income a plus sign in green, transfers no sign in grey (the amount that left the origin), adjustments their own sign. |
 
@@ -132,7 +132,7 @@ Fields marked with a red asterisk are required. Which fields appear depends on t
 1. **Type** (the four tabs at the top): **Gasto**, **Ingreso**, **Transf. propia** (between your own or the household's accounts, not a payment to someone else), **Ajuste**.
 2. **Monto**: in the currency of the chosen account (the prefix switches between `$` and `US$`). Use a comma for decimals.
 3. **Fecha**: today by default.
-4. **Cuenta**: the account the money left or entered. The list is grouped by **Común**, you and your partner, and shows the currency of each account. Click a group's title to open or close it: when the list opens, only the group of the selected account is open; typing searches all groups. Archived accounts aren't offered. A new form starts on your first personal account (or the first joint one if you have none).
+4. **Cuenta**: the account the money left or entered. The list is grouped by **Común**, you and your partner, and shows the currency of each account. Click a group's title to open or close it: when the list opens, only the group of the selected account is open; typing searches all groups. If a list is too short, drag its bottom-right corner down to make it taller (this works on every list in the app). Archived accounts aren't offered. A new form starts on your first personal account (or the first joint one if you have none).
 5. **Descripción**: free text, for example "Supermercado". When you leave this box on a new expense or income, the app may fill in the category and more (see [Category suggestions](#category-suggestions)).
 6. **Comercio**: optional merchant name. Used by [Reportes](reportes.md) for top merchants.
 7. **Etiquetas**: type a tag and press Enter; existing tags are suggested. Up to 20 per movement.
@@ -158,10 +158,8 @@ Money moving between two accounts. It never counts as income or spending.
 
 **Buying or selling dollars (two currencies).** When **Desde** and **Hacia** are in different currencies, two boxes appear:
 
-- **Tipo de cambio**: pesos per dollar, with today's BNA sell quote shown as a reference.
-- **Monto recibido en USD** (or **en ARS**).
-
-Fill in either one and the other is calculated: with $ 150.000 in **Monto** and a rate of 1.250, the received amount becomes US$ 120. Typing the dollars that actually arrived works the other way round. The origin balance goes down by the first amount and the destination goes up by the second. In the list, these transfers show what came in and the rate, for example *→ US$ 120,00 · TC $ 1.250*.
+- **Tipo de cambio**: pesos per dollar. It starts at today's BNA quote (sell when buying dollars, buy when selling them); change it to the rate you actually got.
+- **Monto recibido en USD** (or **en ARS**): not editable, it's calculated from **Monto** and **Tipo de cambio**. With $ 150.000 and a rate of 1.250 it shows US$ 120. The origin balance goes down by the first amount and the destination goes up by the second. In the list, these transfers show what came in and the rate, for example *→ US$ 120,00 · TC $ 1.250*.
 
 To pay something in dollars with pesos, first record this conversion into a dollar account at the rate you got, then pay from that account.
 
@@ -242,6 +240,8 @@ Each cuota is created **pending**: it doesn't count in balances, totals or repor
 
 At the top of a new movement, **Importar CSV** opens a window to load many movements from one file.
 
+The window opens in the middle of the screen with the file format, then **Descargar ejemplo** and **Elegir archivo** one under the other.
+
 1. Click **Descargar ejemplo** to get a sample file with the right columns, and fill it in a spreadsheet (one row per movement).
    - Required: **fecha** (DD/MM/AAAA or AAAA-MM-DD), **tipo** (gasto or ingreso), **monto** (positive, comma for decimals, e.g. 12.500,50), **cuenta** (the account's name exactly as in **Cuentas**).
    - Optional: **categoria** (a category, or *Main > Sub*), **descripcion**, **comercio**, **compartido** (si/no), **etiquetas** (separated by |), **notas**.
@@ -276,7 +276,7 @@ If a field is missing or invalid, it's outlined in red and a red message appears
 | --- | --- |
 | "Ingresá el monto." | Enter an amount above zero (or any non-zero amount for an **Ajuste**). |
 | "Elegí una cuenta." / "Elegí la cuenta destino." | Pick the account(s). |
-| "Indicá cuánto entró en USD." | Fill in **Monto recibido** for a transfer between currencies. |
+| "Indicá el tipo de cambio." | Fill in **Tipo de cambio** for a transfer between currencies. |
 | "La cuenta destino debe ser distinta a la de origen." | **Desde** and **Hacia** are the same account. |
 | "La categoría no corresponde al tipo de movimiento." | An income category on an expense (or the other way round), usually from a suggestion. Pick another one. |
 | "Para saldar deudas, ambas cuentas deben tener la misma moneda." | Untick **Es un pago para saldar deudas entre nosotros**, or use accounts in the same currency. |

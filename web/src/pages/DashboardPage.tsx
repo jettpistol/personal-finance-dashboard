@@ -377,9 +377,9 @@ export function DashboardPage() {
             {scopeGoals.length > 0 && (
               <Card data-bar="blue">
                 <Group justify="space-between">
-                  <Title order={4}>Metas de ahorro</Title>
+                  <Title order={4}>Objetivos</Title>
                   <Anchor component={Link} to="/metas" size="xs">
-                    Ver metas
+                    Ver todos
                   </Anchor>
                 </Group>
                 <Stack gap="sm">

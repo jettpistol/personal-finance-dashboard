@@ -1,12 +1,12 @@
 # Ajustes
 
-Your own profile and password, email (and Telegram) alerts, the household's shared settings and people, categories, exchange rates and inflation, export and backups.
+Your own profile and password, email (and Telegram) alerts, the household's shared settings and people, categories, how amounts are shown, exchange rates and inflation, export and backups.
 
 ![Ajustes page on the Perfil tab: Tus datos with Usuario, Nombre para mostrar, Color and the sharing switch, and Cambiar contraseña](img/ajustes.png)
 
 ## What you see
 
-Open it from the sidebar, the user menu or the footer. The page has six tabs and always opens on the first one:
+Open it from the sidebar, the user menu or the footer. The page has seven tabs and opens on the first one (the address remembers the tab you're on, e.g. `/ajustes?tab=currencies`):
 
 | Tab | What it holds | Applies to |
 | --- | --- | --- |
@@ -14,6 +14,7 @@ Open it from the sidebar, the user menu or the footer. The page has six tabs and
 | **Notificaciones** | Your email for alerts, which alerts to receive, optional Telegram | You, in every data profile |
 | **Hogar** | Household name, default split, BNA quote, budget alerts, inflation indexing; the people | Settings: the data profile in use. People: every profile |
 | **Categorías** | Expense and income categories | The data profile in use |
+| **Monedas** | **Ocultar centavos** for ARS and USD | The data profile in use |
 | **Cotizaciones e inflación** | BNA dollar quotes and INDEC CPI | The data profile in use |
 | **Datos** | Export to CSV and Excel, backups | The data profile in use |
 
@@ -46,15 +47,11 @@ Everything the app tells you lands in the bell in the top bar. This tab decides 
 
 **Correo** (with an **Activo**, **Falta configurar** or **Sin correo** label)
 
-1. Type **Tu correo** and click **Guardar**. An invalid address is marked in red.
-2. Click **Enviar prueba** to check it arrives.
+1. Type **Tu correo** and click **Guardar** (or press Enter). An invalid address is marked in red.
+2. Once saved, the address shows as text. Click the pencil next to it to change it (**Cancelar** leaves it as it was).
+3. Click **Enviar prueba** to check it arrives.
 
-Sending is free with a Gmail account. If the card says **El envío de correos no está configurado**, whoever runs the app sets it up once:
-
-1. In the Google account that will send the emails, turn on 2-Step Verification and create an **app password** at myaccount.google.com/apppasswords (16 letters).
-2. In the `server` folder, copy `.env.example` to `.env`, fill in `SMTP_USER` (the Gmail address) and `SMTP_PASS` (the app password), and restart the app.
-
-The app password only lets the app send mail; it isn't your Google password, and you can revoke it any time from the same page.
+Sending is free with a Gmail account. **Falta configurar** means nobody has set up the account that sends the emails yet: the **Cuenta que envía los avisos** card next to it does that once for both of you. Step by step: [Set up email notifications](configurar-correo.md).
 
 **Qué avisos recibir**: budgets, recurring items to confirm, and the monthly review (.docx attached). They apply to email and Telegram alike.
 
@@ -126,6 +123,10 @@ To add one:
 
 - An archived category is no longer offered when you record or edit movements, but past movements keep it and reports still show it. You can bring it back with **Desarchivar**.
 - Deleting is permanent: its subcategories are deleted too, its movements become uncategorised (**Sin categoría**), its budgets are deleted and rules that set it stop setting a category. Prefer archiving.
+
+### Monedas
+
+One card per currency, **Pesos (ARS)** and **Dólares (USD)**, each with **Ocultar centavos** (on by default) and an example. With it on, amounts in that currency show without cents everywhere in the app and in the emails ($ 12.346 instead of $ 12.345,60). It's a household setting: it applies to both of you. Amounts are still stored with their cents, and you can still type cents in any amount box.
 
 ### Cotizaciones e inflación
 

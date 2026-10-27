@@ -15,6 +15,8 @@ Reportes shows how your money moved over several months: spending per category, 
 
 All tabs follow the dashboard (**Hogar**, **Mío**, partner) and currency chosen in the top bar, except **Por persona** (always both of you) and **Inflación** (always in pesos).
 
+Chart axes shorten amounts with **k** (thousands) and **M** (millions), for example *$ 450k* or *$ 1,8M*. Hover a bar or point for the full figure.
+
 If some movements could not be converted for lack of a dollar quote, a yellow alert appears at the top of **Tendencia**, **Anual** and **Ahorro**; those amounts count as zero until you load the quotes in **Ajustes**.
 
 ### Tendencia

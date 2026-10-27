@@ -26,7 +26,7 @@ The order follows the sidebar.
 | [Pagos pendientes](pagos-pendientes.md) | What you have to do yourself each month (savings, paying someone back) and loans to collect; it chases you until it's done. |
 | **Planificación** | |
 | [Presupuestos](presupuestos.md) | Monthly limits per category, alerts at 80% and 100%, and indexing by inflation. |
-| [Metas de ahorro](metas.md) | Savings goals and how much to put aside each month. |
+| [Objetivos](metas.md) | Savings objectives (with picture, link, notes and priority) and how much to put aside each month. |
 | [Reportes](reportes.md) | Trends, yearly summary, net worth, spending per person, inflation. |
 | [Cierre de mes](cierre-de-mes.md) | The monthly sit-down: review, notes and the downloadable .docx report. |
 | **Automatización** | |

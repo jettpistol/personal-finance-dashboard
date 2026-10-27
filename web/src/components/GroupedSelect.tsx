@@ -192,7 +192,6 @@ export function GroupedSelect({
         <Combobox.Option value={GROUP + entry.group} id={headerId} className="pfd-gs-groupLabel" aria-expanded={open} data-open={open || undefined}>
           <IconCaretRightFilled size={11} className="pfd-gs-caret" aria-hidden />
           <span className="pfd-gs-name">{entry.group}</span>
-          {!open && <span className="pfd-gs-count">{items.length}</span>}
         </Combobox.Option>
         {open && items.map(renderItem)}
       </div>

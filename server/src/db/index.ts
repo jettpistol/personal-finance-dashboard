@@ -94,6 +94,8 @@ export const DEFAULT_SETTINGS: Record<string, unknown> = {
   budget_thresholds: [80, 100],
   // Show ARS budgets adjusted by the CPI published since each one was set.
   budget_indexing: false,
+  // Ajustes → Monedas: show whole amounts, without cents.
+  hide_cents: { ARS: true, USD: true },
 };
 
 function seedDefaults(db: DB) {

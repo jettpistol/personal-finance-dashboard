@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Anchor,
@@ -127,7 +127,7 @@ export function TxFormModal() {
     installments: !!txModal?.installments,
     amount: txModal?.prefill?.amount ?? '',
     to_account_id: txModal?.prefill?.toAccountId ?? null,
-    to_amount: txModal?.prefill?.toAmount ?? '',
+    to_amount: '',
     description: txModal?.prefill?.description ?? '',
   }));
   const [saving, setSaving] = useState(false);
@@ -171,20 +171,36 @@ export function TxFormModal() {
   const crossCurrency = form.type === 'transfer' && account && toAccount && account.currency !== toAccount.currency;
   const fromArs = account?.currency === 'ARS';
   const latestFx = useQuery({ queryKey: ['fx', 'latest'], queryFn: () => api.get<{ latest: { date: string; sell: number; buy: number } | null }>('/fx?from=9999-01-01'), enabled: !!crossCurrency });
-  // Amount sent, amount received and rate stay consistent: change one and the received amount (or the rate) follows.
+  // The amount received is never typed: it follows from the amount sent and the rate.
   const received = (amount: number | string, rate: number | string) => {
     const a = Number(amount);
     const r = Number(rate);
     if (!a || !r) return '';
     return Math.round((fromArs ? a / r : a * r) * 100) / 100;
   };
-  const setRate = (rate: number | string) => setForm((f) => ({ ...f, rate, to_amount: received(f.amount, rate) || f.to_amount }));
-  const setReceived = (to_amount: number | string) =>
+  // A known amount to receive (e.g. US$ 200 to save, from Pagos pendientes): the amount sent follows the rate until you type it.
+  const [target, setTarget] = useState(Number(txModal?.prefill?.toAmount) || 0);
+  const sentFor = (want: number, rate: number | string) => (Number(rate) ? Math.round((fromArs ? want * Number(rate) : want / Number(rate)) * 100) / 100 : '');
+  const setRate = (rate: number | string) =>
     setForm((f) => {
-      const a = Number(f.amount);
-      const t = Number(to_amount);
-      return { ...f, to_amount, rate: a && t ? Math.round((fromArs ? a / t : t / a) * 100) / 100 : f.rate };
+      const amount = target ? sentFor(target, rate) || f.amount : f.amount;
+      return { ...f, rate, amount, to_amount: received(amount, rate) };
     });
+  // Start conversions at today's BNA rate: sell when buying dollars, buy when selling them.
+  const rateStarted = useRef(false);
+  useEffect(() => {
+    const fx = latestFx.data?.latest;
+    if (!crossCurrency) rateStarted.current = false;
+    if (!crossCurrency || !fx || rateStarted.current) return;
+    rateStarted.current = true;
+    if (form.rate === '') setRate(fromArs ? fx.sell : fx.buy);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crossCurrency, latestFx.data, fromArs]);
+  // Swapping the accounts flips the conversion; an edit keeps its stored amount until something changes.
+  useEffect(() => {
+    if (crossCurrency && !editId) setForm((f) => ({ ...f, to_amount: received(f.amount, f.rate) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crossCurrency, fromArs, form.to_account_id]);
   const crossOwner = form.type === 'transfer' && account && toAccount && account.owner_id !== null && toAccount.owner_id !== null && account.owner_id !== toAccount.owner_id;
   const personalAccount = account && account.owner_id !== null;
   const tx = existing.data;
@@ -228,7 +244,7 @@ export function TxFormModal() {
     if (!toCents(form.amount) || (form.type !== 'adjustment' && toCents(form.amount) < 0)) return fail(new FieldError('Ingresá el monto.', ['amount']));
     if (!form.account_id) return fail(new FieldError('Elegí una cuenta.', ['account_id']));
     if (form.type === 'transfer' && !form.to_account_id) return fail(new FieldError('Elegí la cuenta destino.', ['to_account_id']));
-    if (crossCurrency && !(toCents(form.to_amount) > 0)) return fail(new FieldError(`Indicá cuánto entró en ${toAccount!.currency}.`, ['to_amount']));
+    if (crossCurrency && !(toCents(form.to_amount) > 0)) return fail(new FieldError('Indicá el tipo de cambio.', ['rate']));
     const splitIssue = splittable && form.is_shared ? splitProblem(form.split_method, form.split_values, users, toCents(form.amount), account?.currency) : null;
     if (splitIssue) return fail(new FieldError(splitIssue, ['split']));
     setSaving(true);
@@ -363,9 +379,8 @@ export function TxFormModal() {
               value={form.amount}
               onChange={(v) => {
                 set('amount', v);
-                if (crossCurrency && form.rate) setForm((f) => ({ ...f, amount: v, to_amount: received(v, f.rate) || f.to_amount }));
-                // Amount received already known (e.g. US$ 200 to save): the rate follows from what you paid.
-                else if (crossCurrency && form.to_amount) setReceived(form.to_amount);
+                setTarget(0);
+                if (crossCurrency) setForm((f) => ({ ...f, amount: v, to_amount: received(v, f.rate) }));
               }}
               allowNegative={form.type === 'adjustment'}
               description={form.type === 'adjustment' ? 'Negativo para restar del saldo' : undefined}
@@ -398,18 +413,23 @@ export function TxFormModal() {
                 decimalScale={2}
                 hideControls
                 value={form.rate}
-                onChange={setRate}
-                error={bad.has('to_amount')}
+                onChange={(v) => {
+                  clearBad('rate');
+                  setRate(v);
+                }}
+                error={bad.has('rate') || bad.has('to_amount')}
               />
-              <MoneyInput
-                label={`Monto recibido en ${toAccount!.currency}`}
-                description="Se calcula con el tipo de cambio, o al revés."
-                currency={toAccount!.currency}
-                value={form.to_amount}
-                onChange={setReceived}
-                required
-                error={bad.has('to_amount')}
-              />
+              <div className="pfd-received">
+                <Text size="sm" fw={500}>
+                  Monto recibido en {toAccount!.currency}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Sale del monto y el tipo de cambio
+                </Text>
+                <Text className="num" fw={700} size="lg" mt={4}>
+                  {toCents(form.to_amount) > 0 ? money(toCents(form.to_amount), toAccount!.currency) : '—'}
+                </Text>
+              </div>
             </SimpleGrid>
           )}
           {crossOwner && (

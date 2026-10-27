@@ -5,6 +5,7 @@ import { buildApp } from '../src/app.js';
 import { upsertRate } from '../src/lib/fx.js';
 import { addMonthsToMonth, currentMonth, today } from '../src/lib/dates.js';
 import { generateDueRecurring } from '../src/lib/recurring.js';
+import { formatMoney } from '../src/lib/money.js';
 
 let app: FastifyInstance;
 const cookies: Record<string, string> = {};
@@ -286,6 +287,15 @@ describe('money flows', () => {
     expect((await call('ana', 'POST', '/api/budgets/index-cpi', { scope: 'household' })).status).toBe(404);
   });
 
+  it('hides cents per currency, by default for both', async () => {
+    expect((await call('ana', 'GET', '/api/settings')).body.hide_cents).toEqual({ ARS: true, USD: true });
+    expect(formatMoney(123456, 'ARS')).toBe('$ 1.235');
+    expect((await call('ana', 'PATCH', '/api/settings', { hide_cents: { ARS: true, USD: false } })).status).toBe(200);
+    expect(formatMoney(123456, 'USD')).toBe('US$ 1.234,56');
+    expect((await call('ana', 'PATCH', '/api/settings', { hide_cents: { ARS: 'no' } })).status).toBe(400);
+    await call('ana', 'PATCH', '/api/settings', { hide_cents: { ARS: true, USD: true } });
+  });
+
   it('builds the monthly review docx and exports', async () => {
     const r = await app.inject({ method: 'GET', url: `/api/reviews/${M}/docx?scope=household`, headers: { cookie: cookies.ana } });
     expect(r.statusCode).toBe(200);
@@ -294,6 +304,71 @@ describe('money flows', () => {
     expect(x.statusCode).toBe(200);
     const csv = await app.inject({ method: 'GET', url: '/api/export/transactions.csv', headers: { cookie: cookies.beto } });
     expect(csv.body).not.toContain('Regalo sorpresa');
+  });
+});
+
+describe('objetivos (goals)', () => {
+  // A 1x1 PNG, sent as a hand-built multipart body like the CSV uploads above.
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  const upload = (who: 'ana' | 'beto', id: number, data: Buffer, type = 'image/png') => {
+    const boundary = '----goalimg';
+    const payload = Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="foto.png"\r\nContent-Type: ${type}\r\n\r\n`),
+      data,
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ]);
+    return app.inject({ method: 'POST', url: `/api/goals/${id}/image`, payload, headers: { cookie: cookies[who], 'content-type': `multipart/form-data; boundary=${boundary}` } });
+  };
+  const goals = async (who: 'ana' | 'beto') => (await call(who, 'GET', '/api/goals')).body as { id: number; name: string; [k: string]: unknown }[];
+
+  it('creates a goal with a link, notes and priority, and validates the link', async () => {
+    const r = await call('ana', 'POST', '/api/goals', {
+      name: 'Bici nueva', target_amount: 900_000_00, scope: 'household', url: 'https://tienda.example.com/bici', notes: 'Rodado 29, talle M', priority: 'high',
+    });
+    expect(r.status).toBe(200);
+    ids.goalBike = r.body.id;
+    expect((await goals('beto')).find((g) => g.id === ids.goalBike)).toMatchObject({
+      url: 'https://tienda.example.com/bici', notes: 'Rodado 29, talle M', priority: 'high', image_version: null,
+    });
+    expect((await call('ana', 'POST', '/api/goals', { name: 'X', target_amount: 1, url: 'javascript:alert(1)' })).status).toBe(400);
+    expect((await call('ana', 'POST', '/api/goals', { name: 'X', target_amount: 1, priority: 'urgente' })).status).toBe(400);
+    // Blank fields from the form clear the value.
+    const put = await call('ana', 'PUT', `/api/goals/${ids.goalBike}`, { name: 'Bici nueva', target_amount: 900_000_00, scope: 'household', url: '', notes: ' ', priority: 'low' });
+    expect(put.status).toBe(200);
+    expect((await goals('ana')).find((g) => g.id === ids.goalBike)).toMatchObject({ url: null, notes: null, priority: 'low' });
+  });
+
+  it('uploads, serves, replaces and removes the picture', async () => {
+    expect((await call('ana', 'GET', `/api/goals/${ids.goalBike}/image`)).status).toBe(404);
+    expect((await upload('ana', ids.goalBike, Buffer.from('%PDF-1.4'), 'application/pdf')).statusCode).toBe(400);
+    const up = await upload('ana', ids.goalBike, png);
+    expect(up.statusCode).toBe(200);
+    const v1 = up.json().image_version as string;
+    expect((await goals('ana')).find((g) => g.id === ids.goalBike)?.image_version).toBe(v1);
+    // A household goal's picture is visible to both.
+    const got = await app.inject({ method: 'GET', url: `/api/goals/${ids.goalBike}/image`, headers: { cookie: cookies.beto } });
+    expect(got.statusCode).toBe(200);
+    expect(got.headers['content-type']).toBe('image/png');
+    expect(got.rawPayload.equals(png)).toBe(true);
+    // Replacing gives a new version; deleting clears it.
+    const v2 = (await upload('beto', ids.goalBike, png)).json().image_version;
+    expect(v2).not.toBe(v1);
+    expect((await call('ana', 'DELETE', `/api/goals/${ids.goalBike}/image`)).status).toBe(200);
+    expect((await call('ana', 'GET', `/api/goals/${ids.goalBike}/image`)).status).toBe(404);
+    expect((await goals('ana')).find((g) => g.id === ids.goalBike)?.image_version).toBeNull();
+  });
+
+  it("hides the picture of a goal the other person can't see", async () => {
+    // Ana stopped sharing her dashboard earlier, so her personal goals are hers alone.
+    const r = await call('ana', 'POST', '/api/goals', { name: 'Regalo para Beto', target_amount: 50_000_00, scope: 'user:1', priority: 'medium' });
+    ids.goalSecret = r.body.id;
+    expect((await upload('ana', ids.goalSecret, png)).statusCode).toBe(200);
+    expect((await call('ana', 'GET', `/api/goals/${ids.goalSecret}/image`)).status).toBe(200);
+    expect((await goals('beto')).map((g) => g.id)).not.toContain(ids.goalSecret);
+    expect((await call('beto', 'GET', `/api/goals/${ids.goalSecret}/image`)).status).toBe(404);
+    expect((await upload('beto', ids.goalSecret, png)).statusCode).toBe(404);
+    expect((await call('beto', 'DELETE', `/api/goals/${ids.goalSecret}/image`)).status).toBe(404);
+    expect((await call('ana', 'GET', `/api/goals/${ids.goalSecret}/image`)).status).toBe(200);
   });
 });
 

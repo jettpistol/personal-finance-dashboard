@@ -40,6 +40,7 @@ const settingsSchema = z
     fx_side: z.enum(['sell', 'buy', 'avg']),
     budget_thresholds: z.array(z.number().int().min(1).max(200)).max(5),
     budget_indexing: z.boolean(),
+    hide_cents: z.object({ ARS: z.boolean(), USD: z.boolean() }),
   })
   .partial();
 
@@ -197,6 +198,7 @@ export default async function coreRoutes(app: FastifyInstance) {
     fx_side: getSetting('fx_side'),
     budget_thresholds: getSetting('budget_thresholds'),
     budget_indexing: getSetting('budget_indexing'),
+    hide_cents: getSetting('hide_cents'),
   }));
 
   app.patch('/settings', async (req) => {

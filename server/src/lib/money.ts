@@ -1,3 +1,5 @@
+import { getSetting } from '../db/index.js';
+
 export type Currency = 'ARS' | 'USD';
 export const CURRENCIES: Currency[] = ['ARS', 'USD'];
 
@@ -31,7 +33,17 @@ export function allocate(total: number, weights: number[]): number[] {
   return parts;
 }
 
+/** Ajustes → Monedas: whole amounts only for that currency (outside a profile, e.g. in tests, cents show). */
+function hideCents(currency: Currency): boolean {
+  try {
+    return getSetting<Record<Currency, boolean>>('hide_cents')?.[currency] ?? true;
+  } catch {
+    return false;
+  }
+}
+
 export function formatMoney(cents: number, currency: Currency): string {
-  const n = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100);
+  const digits = hideCents(currency) ? 0 : 2;
+  const n = new Intl.NumberFormat('es-AR', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(cents / 100);
   return currency === 'USD' ? `US$ ${n}` : `$ ${n}`;
 }

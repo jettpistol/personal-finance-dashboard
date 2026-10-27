@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Alert, Card, Group, Text, Tooltip } from '@mantine/core';
 import { IconAlertTriangle, IconArrowDownRight, IconArrowUpRight } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
-import { money, pct } from '../lib/format';
+import { money, moneyShort, pct } from '../lib/format';
 import type { Currency } from '../lib/types';
 
 // Small building blocks shared by the Reports and Month review pages.
@@ -12,6 +12,9 @@ export const units = (cents: number | null | undefined) => (cents == null ? 0 : 
 
 /** Formatter for chart axes/tooltips that receive units. */
 export const unitFormatter = (currency: Currency, compact = false) => (v: number) => money(Math.round(v * 100), currency, { compact });
+
+/** Axis labels in units, shortened with k / M (the tooltip keeps the full figure). */
+export const axisK = (currency: Currency) => ({ tickFormatter: (v: number) => moneyShort(Math.round(v * 100), currency) });
 
 export function change(cur: number, prev: number): number | null {
   return prev ? ((cur - prev) / Math.abs(prev)) * 100 : null;

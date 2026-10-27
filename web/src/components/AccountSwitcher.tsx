@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Alert, Avatar, Button, Menu, Modal, PasswordInput, Stack, TextInput } from '@mantine/core';
-import { IconLock, IconLogout2, IconUserPlus } from '@tabler/icons-react';
+import { IconCheck, IconLock, IconLogout2, IconUserPlus } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../lib/api';
 import { useApp } from '../lib/app-state';
 import { logoutAccount, refreshAsNewUser, switchAccount, useLoggedAccounts } from '../lib/accounts';
 import { notifyOk } from '../lib/queries';
 
-/** User-menu section: the other accounts logged in on this browser (one click switches) and "Agregar cuenta". */
+/** User-menu section: you (ticked, first), the other accounts logged in on this browser (one click switches) and "Agregar cuenta". */
 export function AccountMenuSection({ onAdd }: { onAdd: () => void }) {
   const qc = useQueryClient();
   const { me, users } = useApp();
@@ -19,6 +19,18 @@ export function AccountMenuSection({ onAdd }: { onAdd: () => void }) {
   return (
     <>
       <Menu.Label>Cuentas</Menu.Label>
+      <Menu.Item
+        leftSection={
+          <Avatar color={me.color} variant="filled" size={20}>
+            {me.display_name.slice(0, 1).toUpperCase()}
+          </Avatar>
+        }
+        rightSection={<IconCheck size={16} />}
+        fw={600}
+        aria-current="true"
+      >
+        {me.display_name}
+      </Menu.Item>
       {others.map((a) => (
         <Menu.Item
           key={a.id}

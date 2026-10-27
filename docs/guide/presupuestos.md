@@ -83,4 +83,4 @@ When a movement makes a budget of the current month cross a threshold, you get a
 - Alerts are checked when you add, edit or confirm a movement in the app. Rows brought in with **Importar** do not trigger alerts by themselves.
 - If a subcategory has its own budget and so does its parent, the subcategory's spending counts in both.
 
-See also: [Guide index](README.md) · [Inicio](inicio.md) · [Movimientos](movimientos.md) · [Gastos compartidos](gastos-compartidos.md) · [Metas de ahorro](metas.md) · [Reportes](reportes.md) · [Cierre de mes](cierre-de-mes.md) · [Ajustes](ajustes.md) · [How the numbers are worked out](como-se-calcula.md)
+See also: [Guide index](README.md) · [Inicio](inicio.md) · [Movimientos](movimientos.md) · [Gastos compartidos](gastos-compartidos.md) · [Objetivos](metas.md) · [Reportes](reportes.md) · [Cierre de mes](cierre-de-mes.md) · [Ajustes](ajustes.md) · [How the numbers are worked out](como-se-calcula.md)

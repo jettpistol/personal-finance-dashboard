@@ -67,7 +67,7 @@ const NAV = [
   { to: '/pendientes', label: 'Pagos pendientes', icon: IconAlarm },
   { section: 'Planificación' },
   { to: '/presupuestos', label: 'Presupuestos', icon: IconPigMoney },
-  { to: '/metas', label: 'Metas de ahorro', icon: IconTarget },
+  { to: '/metas', label: 'Objetivos', icon: IconTarget },
   { to: '/reportes', label: 'Reportes', icon: IconChartPie },
   { to: '/cierre', label: 'Cierre de mes', icon: IconCalendarCheck },
   { section: 'Automatización' },

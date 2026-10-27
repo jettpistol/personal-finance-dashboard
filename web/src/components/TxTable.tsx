@@ -150,7 +150,7 @@ export function TxTable({
                   <>
                     <Table.Td>
                       {t.type === 'expense' || t.type === 'income' ? (
-                        <Badge variant="light" color={categoryColor(cats.data, t.category_id)} size="sm" style={{ textTransform: 'none' }}>
+                        <Badge variant="light" color={categoryColor(cats.data, t.category_id)} size="md" className="pfd-cat-badge">
                           {categoryLabel(cats.data, t.category_id)}
                         </Badge>
                       ) : (

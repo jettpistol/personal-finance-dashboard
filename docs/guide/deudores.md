@@ -15,12 +15,11 @@ Loans don't touch your accounts, balances or reports. Each of you only sees your
   - **Cosas prestadas**: things lent and not yet returned.
   - **Vencidos**: loans past their **Devolver antes de** date, in red when there are any.
 - **One card per person**, people with something overdue first, then whoever owes more. The title strip shows the name and what they still owe (for example *$ 70.000,00 · 1 cosa*).
-- **One row per loan**:
-  - the amount (or the thing, with an **OBJETO** tag);
-  - what it was for, the date and how long ago (*hace 2 meses*), and **devolver antes del** date if you set one;
-  - **VENCIDO** when that date passed;
-  - for partly returned money, a bar and *Devolvió $ X · falta $ Y*;
-  - **DEVUELTO** or **PERDONADO** once closed (closed loans are faded).
+- **One row per loan**, kept short:
+  - the amount (or the thing, with an **OBJETO** tag), and **VENCIDO** when its date passed;
+  - one line below it: what's missing and the next date (*Falta $ 70.000 · cuota 1: 27 sep*, *Vence 27 sep*), or how long ago you lent it (*Hace 4 meses*), or *Devuelto el 3 oct* once closed (closed loans are faded);
+  - **Devolución** (or **Devuelto**) and the **⋯** menu on the right.
+- **Click a row** (the ▸ on its left) for the details: what it was for, the date you lent it, **Devolver antes del**, the plan (installments and interest), how much came back with a bar, each return with its reason, and the notes.
 
 ## What you can do
 
@@ -42,7 +41,7 @@ Once saved, **the interest, the installments, the amount and the dates are fixed
 
 ### Something came back
 
-- Money: click **Devolución** on the row and type how much (it starts with what's due now: the current installment, or the rest). If it's less, it's a partial return and **you have to say why** (*¿Por qué es parcial?*); the rest stays pending. When returns cover the whole amount, the loan closes as **DEVUELTO**. An income movement with exactly the installment amount, in your account, is recorded as a return on its own.
+- Money: click **Devolución** on the row and type how much (it starts with what's due now: the current installment, or the rest). If it's less, it's a partial return and **you have to say why** (*¿Por qué es parcial?*); the rest stays pending. When returns cover the whole amount, the loan closes (*Devuelto el …*). An income movement with exactly the installment amount, in your account, is recorded as a return on its own.
 - A thing: click **Devuelto** and confirm the date.
 
 ### Ask for it back

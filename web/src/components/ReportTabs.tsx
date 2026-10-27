@@ -7,7 +7,7 @@ import { api, qs } from '../lib/api';
 import { ACCOUNT_TYPE_LABEL, addMonths, currentMonth, money, monthName, pct } from '../lib/format';
 import type { AccountType, Currency, Scope } from '../lib/types';
 import { MonthSelect } from './Layout';
-import { Delta, Empty, Kpi, MissingRatesAlert, RealPct, change, unitFormatter, units } from './ReportBits';
+import { Delta, Empty, Kpi, MissingRatesAlert, RealPct, axisK, change, unitFormatter, units } from './ReportBits';
 
 // ---- API shapes (see server/src/lib/reports.ts) ----
 
@@ -114,7 +114,7 @@ export function TrendTab({ p }: { p: ReportParams }) {
         <Title order={5} mb={4}>
           Gastos por categoría
         </Title>
-        <BarChart h={320} data={folded.data} dataKey="month" type="stacked" series={folded.series} valueFormatter={fmt} withLegend legendProps={{ verticalAlign: 'bottom' }} gridAxis="y" maxBarWidth={44} />
+        <BarChart h={320} data={folded.data} dataKey="month" type="stacked" series={folded.series} valueFormatter={fmt} yAxisProps={axisK(p.currency)} withLegend legendProps={{ verticalAlign: 'bottom' }} gridAxis="y" maxBarWidth={44} />
       </Card>
       <Card>
         <Title order={5} mb="md">
@@ -129,6 +129,7 @@ export function TrendTab({ p }: { p: ReportParams }) {
             { name: 'Gastos', color: 'red.6' },
           ]}
           valueFormatter={fmt}
+          yAxisProps={axisK(p.currency)}
           withLegend
           legendProps={{ verticalAlign: 'bottom' }}
           gridAxis="y"
@@ -359,6 +360,7 @@ export function SavingsTab({ p }: { p: ReportParams }) {
           series={[{ name: 'Ahorro', color: 'teal.6' }]}
           getBarColor={(v) => (v < 0 ? 'red.6' : 'teal.6')}
           valueFormatter={unitFormatter(p.currency, true)}
+          yAxisProps={axisK(p.currency)}
           referenceLines={[{ y: 0, color: 'gray.6' }]}
           gridAxis="y"
           maxBarWidth={32}
@@ -404,7 +406,7 @@ export function NetWorthTab({ p }: { p: ReportParams }) {
         <Title order={5} mb={4}>
           Evolución del patrimonio
         </Title>
-        <AreaChart h={260} data={totalData} dataKey="month" series={[{ name: 'Patrimonio', color: 'blue.6' }]} valueFormatter={fmt} curveType="monotone" gridAxis="y" withDots={false} />
+        <AreaChart h={260} data={totalData} dataKey="month" series={[{ name: 'Patrimonio', color: 'blue.6' }]} valueFormatter={fmt} yAxisProps={axisK(p.currency)} curveType="monotone" gridAxis="y" withDots={false} />
       </Card>
       <SimpleGrid cols={{ base: 1, md: 2 }}>
         <Card>
@@ -418,6 +420,7 @@ export function NetWorthTab({ p }: { p: ReportParams }) {
             type="stacked"
             series={types.map((t) => ({ name: ACCOUNT_TYPE_LABEL[t as AccountType] ?? t, color: TYPE_COLORS[t] ?? 'gray.6' }))}
             valueFormatter={fmt}
+            yAxisProps={axisK(p.currency)}
             withLegend
             legendProps={{ verticalAlign: 'bottom' }}
             gridAxis="y"
@@ -437,6 +440,7 @@ export function NetWorthTab({ p }: { p: ReportParams }) {
               { name: 'Deudas', color: 'red.6' },
             ]}
             valueFormatter={fmt}
+            yAxisProps={axisK(p.currency)}
             withLegend
             legendProps={{ verticalAlign: 'bottom' }}
             curveType="monotone"
@@ -499,6 +503,7 @@ export function PeopleTab({ currency }: { currency: Currency }) {
                 { name: 'Pagó', color: 'blue.6' },
               ]}
               valueFormatter={fmt}
+              yAxisProps={axisK(currency)}
               withLegend
               legendProps={{ verticalAlign: 'bottom' }}
               gridAxis="y"
@@ -546,6 +551,7 @@ export function MerchantsTab({ p }: { p: ReportParams }) {
           orientation="vertical"
           series={[{ name: 'Total', color: 'blue.6' }]}
           valueFormatter={unitFormatter(p.currency, true)}
+          xAxisProps={axisK(p.currency)}
           yAxisProps={{ width: 170 }}
           gridAxis="x"
           maxBarWidth={22}

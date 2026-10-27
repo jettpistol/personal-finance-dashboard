@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Anchor, Button, FileButton, Group, Modal, Stack, Table, Text } from '@mantine/core';
+import { Alert, Anchor, Button, FileButton, Group, List, Modal, Stack, Table, Text } from '@mantine/core';
 import { IconDownload, IconFileUpload } from '@tabler/icons-react';
 import { api } from '../lib/api';
 import { date, money } from '../lib/format';
@@ -70,26 +70,31 @@ export function CsvImportModal({ onClose, onDone }: { onClose: () => void; onDon
   };
 
   return (
-    <Modal opened onClose={onClose} title={<Text fw={700}>Importar desde CSV</Text>} size="xl" fullScreen={window.innerWidth < 600}>
+    <Modal opened onClose={onClose} title={<Text fw={700}>Importar desde CSV</Text>} size="xl" centered fullScreen={window.innerWidth < 600}>
       <Stack gap="sm">
-        <Text size="sm">
-          Una fila por movimiento, con las columnas <b>fecha, tipo, monto, cuenta</b> y, si querés, <b>categoria, descripcion, comercio, compartido, etiquetas, notas</b>.
-        </Text>
-        <Group gap="sm">
-          <Anchor href="/ejemplo-movimientos.csv" download size="sm">
-            <Group gap={4} wrap="nowrap">
-              <IconDownload size={14} />
-              Descargar ejemplo
-            </Group>
-          </Anchor>
-          <FileButton onChange={pick} accept=".csv,text/csv,.xlsx">
-            {(props) => (
-              <Button {...props} size="xs" variant="default" leftSection={<IconFileUpload size={14} />} loading={busy && !result}>
-                {file ? file.name : 'Elegir archivo'}
-              </Button>
-            )}
-          </FileButton>
-        </Group>
+        <List size="sm" spacing={2}>
+          <List.Item>Una fila por movimiento.</List.Item>
+          <List.Item>
+            Columnas obligatorias: <b>fecha, tipo, monto, cuenta</b>.
+          </List.Item>
+          <List.Item>
+            Columnas opcionales: <b>categoria, descripcion, comercio, compartido, etiquetas, notas</b>.
+          </List.Item>
+          <List.Item>Formatos admitidos: CSV y Excel (.xlsx).</List.Item>
+        </List>
+        <Anchor href="/ejemplo-movimientos.csv" download size="sm" w="fit-content">
+          <Group gap={4} wrap="nowrap">
+            <IconDownload size={14} />
+            Descargar ejemplo
+          </Group>
+        </Anchor>
+        <FileButton onChange={pick} accept=".csv,text/csv,.xlsx">
+          {(props) => (
+            <Button {...props} variant="default" leftSection={<IconFileUpload size={16} />} loading={busy && !result} w="fit-content">
+              {file ? file.name : 'Elegir archivo'}
+            </Button>
+          )}
+        </FileButton>
 
         {result && (
           <>
@@ -97,7 +102,7 @@ export function CsvImportModal({ onClose, onDone }: { onClose: () => void; onDon
               <Text size="sm">
                 {ok} para cargar
                 {result.rows.some((r) => r.status === 'duplicate') && ` · ${result.rows.filter((r) => r.status === 'duplicate').length} repetidos (se saltean)`}
-                {result.rows.some((r) => r.status === 'error') && ` · ${result.rows.filter((r) => r.status === 'error').length} con errores (corregilos en el archivo y volvé a elegirlo)`}
+                {result.rows.some((r) => r.status === 'error') && ` · ${result.rows.filter((r) => r.status === 'error').length} con errores (deben corregirse en el archivo antes de volver a cargarlo)`}
               </Text>
             </Alert>
             <Table.ScrollContainer minWidth={680} mah={360}>

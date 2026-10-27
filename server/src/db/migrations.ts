@@ -344,4 +344,12 @@ export const migrations: string[] = [
   ALTER TABLE loans ADD COLUMN total INTEGER;
   ALTER TABLE loan_returns ADD COLUMN transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL;
   `,
+  // Objetivos (formerly "metas de ahorro"): a picture (file under DATA_DIR/goals), a link,
+  // short notes and a priority per goal.
+  `
+  ALTER TABLE goals ADD COLUMN image_file TEXT;
+  ALTER TABLE goals ADD COLUMN url TEXT;
+  ALTER TABLE goals ADD COLUMN notes TEXT;
+  ALTER TABLE goals ADD COLUMN priority TEXT CHECK (priority IN ('high', 'medium', 'low'));
+  `,
 ];

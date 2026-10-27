@@ -22,6 +22,9 @@ dayjs.extend(customParseFormat);
 import { App } from './App';
 import { theme } from './theme';
 import './lib/format';
+import { installDropdownResize } from './lib/dropdown-resize';
+
+installDropdownResize();
 
 // Switches toggle only from the lever itself: a click on the text next to it must not act as
 // a click on the control (the browser's default for <label>).

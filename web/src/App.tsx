@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { api } from './lib/api';
 import { AppStateProvider } from './lib/app-state';
-import { useUsers } from './lib/queries';
+import { setHideCents } from './lib/format';
+import { useSettings, useUsers } from './lib/queries';
 import { Layout } from './components/Layout';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -49,16 +50,20 @@ export function App() {
 
 function Authed({ me }: { me: NonNullable<Status['user']> }) {
   const users = useUsers();
-  if (!users.data) {
+  const settings = useSettings();
+  if (!users.data || !settings.data) {
     return (
       <Center h="100vh">
         <Loader />
       </Center>
     );
   }
+  // Every amount is formatted through money(), which reads this; the key redraws the screens when it changes.
+  setHideCents(settings.data.hide_cents);
+  const cents = JSON.stringify(settings.data.hide_cents ?? null);
   return (
     <AppStateProvider me={me} users={users.data}>
-      <Routes>
+      <Routes key={cents}>
         {/* The help wiki has its own screens, outside the app's frame. */}
         <Route path="/ayuda/*" element={<WikiPage />} />
         <Route path="*" element={<AppScreens />} />

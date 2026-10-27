@@ -16,7 +16,7 @@ How you get into the app, and the parts of the screen that are there on every pa
 
 ### The top bar, left to right
 
-- **Dashboard tabs**: **Hogar**, **Mío** and your partner's name (for example **Milagros**). They decide whose money the page shows. Your partner's tab only appears if they share their personal dashboard (**Ajustes → Perfil**). The tabs only appear on pages whose content depends on them: **Inicio**, **Movimientos**, **Presupuestos**, **Metas de ahorro**, **Reportes** and **Cierre de mes**. On the other pages they are hidden.
+- **Dashboard tabs**: **Hogar**, **Mío** and your partner's name (for example **Milagros**). They decide whose money the page shows. Your partner's tab only appears if they share their personal dashboard (**Ajustes → Perfil**). The tabs only appear on pages whose content depends on them: **Inicio**, **Movimientos**, **Presupuestos**, **Objetivos**, **Reportes** and **Cierre de mes**. On the other pages they are hidden.
 - **Profile switcher**: a database icon with the name of the data profile in use, for example **Prueba (demo)**. See [Perfil de datos](perfil-de-datos.md).
 - **ARS / USD**: the display currency. Hovering shows *Convertir montos al dólar BNA del día de cada movimiento*.
 - **Bell**: your notifications, with a blue badge counting the unread ones.
@@ -28,7 +28,7 @@ How you get into the app, and the parts of the screen that are there on every pa
 - **Nuevo movimiento**: opens the form to record a movement from any page.
 - The sections, in order:
   - **General**: **Inicio**, **Movimientos**, **Cuentas**, **Gastos compartidos**.
-  - **Planificación**: **Presupuestos**, **Metas de ahorro**, **Reportes**, **Cierre de mes**.
+  - **Planificación**: **Presupuestos**, **Objetivos**, **Reportes**, **Cierre de mes**.
   - **Automatización**: **Importar**, **Reglas**, **Recurrentes**.
   - Then, set apart: **Perfil de datos** and **Ajustes**.
 - The page you are on is highlighted in white.

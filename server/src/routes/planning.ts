@@ -1,6 +1,10 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { db } from '../db/index.js';
+import { config } from '../config.js';
 import { HttpError } from '../lib/http.js';
 import { budgetStatus, currentBaseMonth } from '../lib/budgets.js';
 import { accountBalances, loadAccounts, loadUsers, parseScope, scopeVisible, type Scope } from '../lib/domain.js';
@@ -18,6 +22,22 @@ const budgetSchema = z.object({
   currency: z.enum(['ARS', 'USD']).default('ARS'),
 });
 
+const httpUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((s) => {
+    try {
+      const u = new URL(s);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }, 'El enlace tiene que empezar con http:// o https://');
+
+// Empty text fields from the form mean "none".
+const blankToNull = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? null : v);
+
 const goalSchema = z.object({
   name: z.string().trim().min(1).max(80),
   target_amount: z.number().int().positive(),
@@ -27,10 +47,20 @@ const goalSchema = z.object({
   scope: scopeField.default('household'),
   color: z.string().max(20).nullish(),
   archived: z.boolean().default(false),
+  url: z.preprocess(blankToNull, httpUrl.nullish()),
+  notes: z.preprocess(blankToNull, z.string().trim().max(500).nullish()),
+  priority: z.enum(['high', 'medium', 'low']).nullish(),
 });
 
+// Goal pictures live next to the receipts, under DATA_DIR/goals (random file names, shared by all profiles).
+const goalsDir = () => path.join(config.dataDir, 'goals');
+const IMAGE_TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const removeGoalImage = (file: string | null | undefined) => {
+  if (file) fs.rm(path.join(goalsDir(), path.basename(file)), { force: true }, () => {});
+};
+
 function assertScopeWritable(scope: Scope, viewer: number) {
-  if (scope !== 'household' && scope !== `user:${viewer}`) throw new HttpError(403, 'Solo podés editar tus propios presupuestos y metas.');
+  if (scope !== 'household' && scope !== `user:${viewer}`) throw new HttpError(403, 'Solo podés editar tus propios presupuestos y objetivos.');
 }
 
 export default async function planningRoutes(app: FastifyInstance) {
@@ -84,11 +114,12 @@ export default async function planningRoutes(app: FastifyInstance) {
     const goals = db().prepare('SELECT * FROM goals ORDER BY archived, deadline IS NULL, deadline, id').all() as (z.infer<typeof goalSchema> & {
       id: number;
       account_id: number | null;
+      image_file: string | null;
     })[];
     const contrib = db().prepare('SELECT COALESCE(SUM(amount), 0) AS s FROM goal_contributions WHERE goal_id = ?');
     return goals
       .filter((g) => scopeVisible(g.scope as Scope, req.userId, users))
-      .map((g) => {
+      .map(({ image_file, ...g }) => {
         const account = g.account_id ? accounts.get(g.account_id) : undefined;
         const saved = account
           ? (fx.convert(balances.get(account.id) ?? 0, account.currency, g.currency, today()) ?? 0)
@@ -103,27 +134,34 @@ export default async function planningRoutes(app: FastifyInstance) {
           months_left: monthsLeft,
           monthly_needed: monthsLeft ? Math.ceil(remaining / monthsLeft) : null,
           account_name: account?.name ?? null,
+          // Changes whenever the picture is replaced, so the browser cache never shows the old one.
+          image_version: image_file ? path.parse(image_file).name : null,
         };
       });
   });
 
   const goalValues = (g: z.infer<typeof goalSchema>) => [
     g.name, g.target_amount, g.currency, g.deadline ?? null, g.account_id ?? null, g.scope, g.color ?? null, g.archived ? 1 : 0,
+    g.url ?? null, g.notes ?? null, g.priority ?? null,
   ];
 
   app.post('/goals', async (req) => {
     const g = parse(goalSchema, req.body);
     assertScopeWritable(g.scope as Scope, req.userId);
     const id = db()
-      .prepare('INSERT INTO goals (name, target_amount, currency, deadline, account_id, scope, color, archived) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .prepare('INSERT INTO goals (name, target_amount, currency, deadline, account_id, scope, color, archived, url, notes, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .run(...goalValues(g)).lastInsertRowid;
     return { id: Number(id) };
   });
 
   // Goals are writable by the viewer when they belong to the household or to the viewer.
+  const visibleGoal = (id: number, viewer: number) => {
+    const g = db().prepare('SELECT scope, image_file FROM goals WHERE id = ?').get(id) as { scope: Scope; image_file: string | null } | undefined;
+    if (!g || !scopeVisible(g.scope, viewer, loadUsers())) throw new HttpError(404, 'Objetivo no encontrado');
+    return g;
+  };
   const writableGoal = (id: number, viewer: number) => {
-    const g = db().prepare('SELECT scope FROM goals WHERE id = ?').get(id) as { scope: Scope } | undefined;
-    if (!g || !scopeVisible(g.scope, viewer, loadUsers())) throw new HttpError(404, 'Meta no encontrada');
+    const g = visibleGoal(id, viewer);
     assertScopeWritable(g.scope, viewer);
     return g;
   };
@@ -134,22 +172,59 @@ export default async function planningRoutes(app: FastifyInstance) {
     const g = parse(goalSchema, req.body);
     assertScopeWritable(g.scope as Scope, req.userId);
     db()
-      .prepare('UPDATE goals SET name = ?, target_amount = ?, currency = ?, deadline = ?, account_id = ?, scope = ?, color = ?, archived = ? WHERE id = ?')
+      .prepare('UPDATE goals SET name = ?, target_amount = ?, currency = ?, deadline = ?, account_id = ?, scope = ?, color = ?, archived = ?, url = ?, notes = ?, priority = ? WHERE id = ?')
       .run(...goalValues(g), id);
     return { ok: true };
   });
 
   app.delete('/goals/:id', async (req) => {
     const id = idParam(req.params);
-    writableGoal(id, req.userId);
+    const g = writableGoal(id, req.userId);
     db().prepare('DELETE FROM goals WHERE id = ?').run(id);
+    removeGoalImage(g.image_file);
+    return { ok: true };
+  });
+
+  // ---- Goal picture (same visibility as the goal; only editable goals take a new one) ----
+  app.post('/goals/:id/image', async (req) => {
+    const id = idParam(req.params);
+    const g = writableGoal(id, req.userId);
+    const file = await req.file();
+    if (!file) throw new HttpError(400, 'Falta el archivo');
+    const ext = IMAGE_TYPES[file.mimetype];
+    if (!ext) throw new HttpError(400, 'Solo imágenes (JPG, PNG, WEBP).');
+    const data = await file.toBuffer();
+    if (data.length > config.maxReceiptBytes) throw new HttpError(400, 'La imagen supera los 3 MB.');
+    const name = `${crypto.randomUUID()}.${ext}`;
+    fs.mkdirSync(goalsDir(), { recursive: true });
+    fs.writeFileSync(path.join(goalsDir(), name), data);
+    db().prepare('UPDATE goals SET image_file = ? WHERE id = ?').run(name, id);
+    removeGoalImage(g.image_file);
+    return { ok: true, image_version: path.parse(name).name };
+  });
+
+  app.get('/goals/:id/image', async (req, reply) => {
+    const id = idParam(req.params);
+    const g = visibleGoal(id, req.userId);
+    const file = g.image_file ? path.join(goalsDir(), path.basename(g.image_file)) : null;
+    if (!file || !fs.existsSync(file)) throw new HttpError(404, 'Sin imagen');
+    const types: Record<string, string> = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+    reply.header('content-type', types[file.split('.').pop()!] ?? 'application/octet-stream');
+    reply.header('cache-control', 'private, max-age=86400');
+    return reply.send(fs.createReadStream(file));
+  });
+
+  app.delete('/goals/:id/image', async (req) => {
+    const id = idParam(req.params);
+    const g = writableGoal(id, req.userId);
+    db().prepare('UPDATE goals SET image_file = NULL WHERE id = ?').run(id);
+    removeGoalImage(g.image_file);
     return { ok: true };
   });
 
   app.get('/goals/:id/contributions', async (req) => {
     const id = idParam(req.params);
-    const g = db().prepare('SELECT scope FROM goals WHERE id = ?').get(id) as { scope: Scope } | undefined;
-    if (!g || !scopeVisible(g.scope, req.userId, loadUsers())) throw new HttpError(404, 'Meta no encontrada');
+    visibleGoal(id, req.userId);
     return db().prepare('SELECT * FROM goal_contributions WHERE goal_id = ? ORDER BY date DESC, id DESC').all(id);
   });
 

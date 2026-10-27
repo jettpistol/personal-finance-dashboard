@@ -38,7 +38,7 @@ Loans from [Deudores](deudores.md) with a return date or installments appear her
 ### Mark it as done
 
 - **Registrar** opens **Nuevo movimiento** already filled in: a **Transf. propia** to the savings account, a payment to that person, or the money that came back. Save it and the item updates.
-  - For a dollar target when you have no other dollar account to pay from, the form fills the **US$** to receive: type the pesos you paid and the rate is calculated. That's the conversion; only dollars count for a dollar target.
+  - For a dollar target when you have no other dollar account to pay from, the form becomes a conversion from pesos: the rate starts at today's BNA quote and the pesos are set so that exactly the target arrives (US$ 200 at 1.450 = $ 290.000). Change the rate to the one you got and the pesos follow. Only dollars count for a dollar target.
 - **Vincular** lists movements of the last 90 days in the same currency, exact amounts first (**EXACTO**). Pick one and click **Vincular**.
 
 You often don't need either: **a movement with exactly the amount** (what's missing, or the monthly amount) is **linked automatically** when you save it, import it or load it from a CSV.

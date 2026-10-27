@@ -260,4 +260,5 @@ export type Settings = {
   fx_side: 'sell' | 'buy' | 'avg';
   budget_thresholds: number[];
   budget_indexing: boolean;
+  hide_cents: Record<Currency, boolean>;
 };
