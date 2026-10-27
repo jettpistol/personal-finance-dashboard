@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.7.0</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.8.0</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.8.0"><b>0.8.0</b><span class="date">Oct 27, 2026</span></a>
         <a class="idx" href="#v0.7.0"><b>0.7.0</b><span class="date">Oct 27, 2026</span></a>
         <a class="idx" href="#v0.6.1"><b>0.6.1</b><span class="date">Oct 27, 2026</span></a>
         <a class="idx" href="#v0.6.0"><b>0.6.0</b><span class="date">Oct 27, 2026</span></a>
@@ -74,6 +75,36 @@
       <td class="main">
         <p class="lead">What changed in each version</p>
 
+        <a name="v0.8.0"></a>
+        <h2>0.8.0 <span class="date">&middot; Oct 27, 2026</span></h2>
+        <h3>New: Pagos pendientes</h3>
+        <ul>
+          <li>For commitments you carry out yourself: monthly savings (e.g. US$ 200 to the savings account every 6th), debts you pay back, and loans from Deudores with a date or installments.</li>
+          <li>A movement with the exact amount, in the same currency, is linked by itself when you save, import or load it from a CSV. <b>Registrar</b> opens the form already filled in; <b>Vincular</b> picks an existing movement.</li>
+          <li>Partial payments need a written reason. What's missing rolls over to next month; paying extra lowers it.</li>
+          <li>Reminders every day from 8 to 18 (around 8, 12 and 16), in the bell and by email, only to whoever is responsible, until it's done.</li>
+          <li>Red counter next to <b>Pagos pendientes</b> in the sidebar.</li>
+        </ul>
+        <h3>Deudores</h3>
+        <ul>
+          <li><b>Con interés o en cuotas</b> when lending money: monthly interest (or last month's inflation with one click), number of installments and first due date, with the total calculated.</li>
+          <li>Interest, installments, amount and dates are fixed once the loan is saved.</li>
+          <li>A partial return needs a reason. An income with exactly the installment amount is recorded as a return by itself.</li>
+        </ul>
+        <h3>Email setup in Ajustes</h3>
+        <ul>
+          <li><b>Ajustes &rarr; Notificaciones</b> has a card for the account that sends the emails: Gmail address and app password, <b>Guardar</b> and <b>Probar</b>, without editing any file.</li>
+        </ul>
+        <h3>Help wiki</h3>
+        <ul>
+          <li><b>Ayuda</b> in the footer opens the user guide as a wiki, in the style of Apple's developer help, with search and dark mode. Includes a new article on setting up email.</li>
+        </ul>
+        <h3>Other</h3>
+        <ul>
+          <li>Date fields accept typed dates (e.g. 27/11/2026), not only picking from the calendar.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
         <a name="v0.7.0"></a>
         <h2>0.7.0 <span class="date">&middot; Oct 27, 2026</span></h2>
         <h3>Email notifications</h3>
@@ -90,7 +121,7 @@
         <h3>Suggested rules</h3>
         <ul>
           <li><b>Reglas sugeridas</b> in Reglas: about 120 ready-made rules for Buenos Aires (supermarkets, delivery, transport, services, subscriptions, health, shops, outings, travel, taxes and fees, income), with categories and tags.</li>
-          <li>Browse by section or search, tick what you use, and add it. Rules you already have show "Ya está". Nothing is applied until you add it.</li>
+          <li>Browse by section or search, tick what you use, and add it. Rules you already have show "Ya está", and none are applied until you add them.</li>
           <li>"Aplicar reglas a movimientos sin categoría" is now just <b>Aplicar reglas</b> (the explanation is in its tooltip).</li>
         </ul>
         <p class="top"><a href="#top">&uarr; Back to top</a></p>
@@ -110,7 +141,7 @@
           <li>Partial returns with a progress bar; the loan closes itself when it's fully paid. You can also forgive the rest or reopen it.</li>
           <li>Totals of what you're owed (pesos and dollars), things lent, and overdue loans in red.</li>
           <li><b>Recordar</b> copies a friendly message listing what that person still has, ready for WhatsApp.</li>
-          <li>Standalone for now: not linked to accounts or reports. Each of you only sees your own list.</li>
+          <li>It isn't linked to accounts or reports yet, and each of you only sees your own list.</li>
         </ul>
         <h3>General</h3>
         <ul>
@@ -219,7 +250,7 @@
         <h2>0.3.1 to 0.3.3 <span class="date">&middot; Oct 24, 2026</span></h2>
         <ul>
           <li>The user guide was uploaded in parts while it was being written: index and screenshots (0.3.1), first sections (0.3.2), Perfil de datos (0.3.3).</li>
-          <li>No changes to the app.</li>
+          <li>The app itself didn't change in these versions.</li>
         </ul>
         <p class="top"><a href="#top">&uarr; Back to top</a></p>
 

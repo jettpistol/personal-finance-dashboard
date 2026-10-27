@@ -122,7 +122,14 @@ export function TxFormModal() {
   const tags = useTags();
   const refresh = useRefreshData();
   const existing = useQuery({ queryKey: ['transactions', 'one', editId], queryFn: () => api.get<Tx>(`/transactions/${editId}`), enabled: !!editId });
-  const [form, setForm] = useState<Form>(() => ({ ...empty(txModal?.type ?? 'expense', txModal?.accountId ?? null), installments: !!txModal?.installments }));
+  const [form, setForm] = useState<Form>(() => ({
+    ...empty(txModal?.type ?? 'expense', txModal?.accountId ?? null),
+    installments: !!txModal?.installments,
+    amount: txModal?.prefill?.amount ?? '',
+    to_account_id: txModal?.prefill?.toAccountId ?? null,
+    to_amount: txModal?.prefill?.toAmount ?? '',
+    description: txModal?.prefill?.description ?? '',
+  }));
   const [saving, setSaving] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [suggested, setSuggested] = useState<string | null>(null);
@@ -357,6 +364,8 @@ export function TxFormModal() {
               onChange={(v) => {
                 set('amount', v);
                 if (crossCurrency && form.rate) setForm((f) => ({ ...f, amount: v, to_amount: received(v, f.rate) || f.to_amount }));
+                // Amount received already known (e.g. US$ 200 to save): the rate follows from what you paid.
+                else if (crossCurrency && form.to_amount) setReceived(form.to_amount);
               }}
               allowNegative={form.type === 'adjustment'}
               description={form.type === 'adjustment' ? 'Negativo para restar del saldo' : undefined}

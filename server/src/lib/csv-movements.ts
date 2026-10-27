@@ -3,6 +3,7 @@ import { HttpError } from './http.js';
 import { accountVisible, loadAccounts, loadCategories, type Account, type Category } from './domain.js';
 import { importHash, insertTx, normaliseTx, type TxInput } from './transactions.js';
 import { parseAmount, parseDate, readTable } from './importer.js';
+import { autoLink } from './commitments.js';
 
 // Bulk upload of movements from a simple CSV with fixed, named columns (the downloadable
 // ejemplo-movimientos.csv). Unlike Importar, there is no per-bank setup: one row is one movement.
@@ -118,9 +119,8 @@ export async function processMovementsCsv(data: Buffer, fileName: string, viewer
   });
 
   if (commit && valid.length) {
-    db().transaction(() => {
-      for (const v of valid) insertTx({ ...v.tx, import_hash: v.hash });
-    })();
+    const ids = db().transaction(() => valid.map((v) => insertTx({ ...v.tx, import_hash: v.hash })))();
+    for (const id of ids) autoLink(id);
   }
   return { rows, created: commit ? valid.length : 0 };
 }

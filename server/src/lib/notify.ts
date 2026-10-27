@@ -4,7 +4,7 @@ import { loadUsers } from './domain.js';
 import { escapeHtml, sendTelegramDocument, sendTelegramMessage } from './telegram.js';
 import { mailEnabled, sendMail } from './mail.js';
 
-export type NotifyKind = 'budget' | 'recurring' | 'review' | 'system';
+export type NotifyKind = 'budget' | 'recurring' | 'review' | 'pending' | 'system';
 
 type Notice = {
   kind: NotifyKind;
@@ -20,6 +20,8 @@ const PREF: Record<NotifyKind, 'notify_budget' | 'notify_recurring' | 'notify_re
   budget: 'notify_budget',
   recurring: 'notify_recurring',
   review: 'notify_review',
+  // Pagos pendientes chase you until done: always sent.
+  pending: null,
   system: null,
 };
 

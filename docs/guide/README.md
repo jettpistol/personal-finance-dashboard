@@ -35,6 +35,7 @@ The order follows the sidebar.
 | | |
 | [Perfil de datos](perfil-de-datos.md) | Separate sets of data (for example test data vs your real data). |
 | [Ajustes](ajustes.md) | Your profile and password, email alerts, the household, categories, exchange rates and inflation, export and backups. |
+| [Set up email notifications](configurar-correo.md) | Connecting a Gmail account with an app password so the app can send alerts, and choosing which ones you get. |
 
 How every figure is calculated (currency conversion, inflation, what counts in each dashboard, how shared amounts are split) is collected in [How the numbers are worked out](como-se-calcula.md).
 

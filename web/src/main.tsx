@@ -14,6 +14,11 @@ import { DatesProvider } from '@mantine/dates';
 import { Notifications } from '@mantine/notifications';
 import { ModalsProvider } from '@mantine/modals';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+// Lets date fields read what people type in their display format (e.g. 27/11/2026), not only picks.
+dayjs.extend(customParseFormat);
 import { App } from './App';
 import { theme } from './theme';
 import './lib/format';

@@ -7,7 +7,7 @@ import { accountBalances, accountVisible, loadAccounts, loadUsers } from '../lib
 import { loadConverter } from '../lib/fx.js';
 import { today } from '../lib/dates.js';
 import { telegramEnabled, findChatIdByCode, sendTelegramMessage } from '../lib/telegram.js';
-import { mailEnabled, sendMail } from '../lib/mail.js';
+import { activeSmtp, clearSmtp, describeMailError, mailEnabled, saveSmtp, sendMail, storedSmtp, verifyMail } from '../lib/mail.js';
 import { idParam, parse } from './util.js';
 import crypto from 'node:crypto';
 
@@ -56,6 +56,35 @@ const profileSchema = z
   })
   .partial();
 
+const mailSettingsSchema = z.object({
+  user: z.string({ error: 'Falta el correo.' }).trim().pipe(z.email('El correo no es válido.')),
+  pass: z.string('La contraseña no es válida.').max(200, 'La contraseña es demasiado larga.').optional(),
+  host: z
+    .string('El servidor no es válido.')
+    .trim()
+    .max(200, 'El servidor no es válido.')
+    .regex(/^[A-Za-z0-9.-]*$/, 'El servidor no es válido.')
+    .optional(),
+  port: z.coerce.number('El puerto no es válido.').int('El puerto no es válido.').min(1, 'El puerto no es válido.').max(65535, 'El puerto no es válido.').optional(),
+  from: z.string('El remitente no es válido.').trim().max(200, 'El remitente es demasiado largo.').optional(),
+});
+
+/** Like parse(), but answers with the schema's own message and the field to mark in red. */
+function parseField<T extends z.ZodType>(schema: T, data: unknown): z.infer<T> {
+  const r = schema.safeParse(data);
+  if (r.success) return r.data;
+  const issue = r.error.issues[0];
+  throw new HttpError(400, issue?.message ?? 'Hay datos inválidos.', issue?.path[0] === undefined ? undefined : String(issue.path[0]));
+}
+
+const mailTestSchema = z.object({
+  to: z
+    .string('El correo no es válido.')
+    .trim()
+    .refine((v) => v === '' || z.email().safeParse(v).success, 'El correo no es válido.')
+    .optional(),
+});
+
 // Pending Telegram link codes: code -> user id.
 const linkCodes = new Map<string, { userId: number; expires: number }>();
 
@@ -82,15 +111,56 @@ export default async function coreRoutes(app: FastifyInstance) {
   });
 
   app.post('/me/email/test', async (req) => {
-    if (!mailEnabled()) throw new HttpError(400, 'El correo no está configurado en el servidor (SMTP_HOST, SMTP_USER, SMTP_PASS).');
+    if (!mailEnabled()) throw new HttpError(400, 'Falta configurar la cuenta que envía los avisos.');
     const u = loadUsers().find((x) => x.id === req.userId)!;
     if (!u.email) throw new HttpError(400, 'Primero guardá tu correo.', 'email');
     try {
       await sendMail(u.email, 'Correo de prueba', `Hola ${u.display_name}: los avisos de Finanzas te van a llegar a este correo.`);
     } catch (e) {
-      throw new HttpError(502, `No se pudo enviar el correo: ${(e as Error).message}`);
+      throw new HttpError(502, describeMailError(e).message);
     }
     return { ok: true };
+  });
+
+  // ---- Sending account (shared by everyone; either person can change it) ----
+  app.get('/mail/settings', async () => {
+    const active = activeSmtp();
+    if (!active) return { configured: false, source: null, host: 'smtp.gmail.com', port: 465, user: '', from: '', has_password: false };
+    const { host, port, user, from } = active.settings;
+    return { configured: true, source: active.source, host, port, user, from, has_password: true };
+  });
+
+  app.put('/mail/settings', async (req) => {
+    const input = parseField(mailSettingsSchema, req.body);
+    const host = input.host || 'smtp.gmail.com';
+    const gmail = /(^|\.)(gmail|googlemail|google)\.com$/i.test(host);
+    // Google shows app passwords as four groups of four letters; the spaces aren't part of it.
+    const typed = input.pass === undefined ? '' : gmail ? input.pass.replace(/\s+/g, '') : input.pass.trim();
+    const pass = typed || storedSmtp()?.pass || '';
+    if (!pass) throw new HttpError(400, 'Falta la contraseña de aplicación.', 'pass');
+    saveSmtp({ host, port: input.port ?? 465, user: input.user, pass, from: input.from ?? '' });
+    return { ok: true };
+  });
+
+  app.delete('/mail/settings', async () => {
+    clearSmtp();
+    return { ok: true };
+  });
+
+  app.post('/mail/settings/test', async (req) => {
+    const input = parseField(mailTestSchema, req.body ?? {});
+    if (!mailEnabled()) throw new HttpError(400, 'Falta configurar la cuenta que envía los avisos.');
+    const u = loadUsers().find((x) => x.id === req.userId)!;
+    const to = input.to || u.email;
+    if (!to) throw new HttpError(400, 'Indicá a qué correo mandar la prueba.', 'to');
+    try {
+      await verifyMail();
+      await sendMail(to, 'Correo de prueba', `Hola ${u.display_name}: la cuenta que envía los avisos de Finanzas funciona.`);
+    } catch (e) {
+      const { message, field } = describeMailError(e);
+      throw new HttpError(400, message, field);
+    }
+    return { ok: true, to };
   });
 
   app.post('/me/telegram/code', async (req) => {

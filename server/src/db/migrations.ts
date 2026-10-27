@@ -304,4 +304,44 @@ export const migrations: string[] = [
   `
   ALTER TABLE users ADD COLUMN email TEXT;
   `,
+  // Pagos pendientes: commitments the household has to carry out each month (savings plans and
+  // debts paid to people), the movements linked to each month, and why a month was paid in part.
+  // Loans gain interest and installments, fixed when the loan is created.
+  `
+  CREATE TABLE commitments (
+    id INTEGER PRIMARY KEY,
+    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('savings', 'owe')),
+    title TEXT NOT NULL,
+    person TEXT,
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    currency TEXT NOT NULL CHECK (currency IN ('ARS', 'USD')),
+    account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
+    day INTEGER NOT NULL CHECK (day BETWEEN 1 AND 31),
+    start_month TEXT NOT NULL,
+    months INTEGER,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE TABLE commitment_payments (
+    id INTEGER PRIMARY KEY,
+    commitment_id INTEGER NOT NULL REFERENCES commitments(id) ON DELETE CASCADE,
+    month TEXT NOT NULL,
+    transaction_id INTEGER UNIQUE REFERENCES transactions(id) ON DELETE CASCADE,
+    amount INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    reason TEXT,
+    auto INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX commitment_payments_by_month ON commitment_payments (commitment_id, month);
+  CREATE TABLE reminders_sent (
+    key TEXT PRIMARY KEY,
+    sent_at TEXT NOT NULL
+  );
+  ALTER TABLE loans ADD COLUMN interest_rate REAL;
+  ALTER TABLE loans ADD COLUMN installments INTEGER;
+  ALTER TABLE loans ADD COLUMN first_due TEXT;
+  ALTER TABLE loans ADD COLUMN total INTEGER;
+  ALTER TABLE loan_returns ADD COLUMN transaction_id INTEGER REFERENCES transactions(id) ON DELETE SET NULL;
+  `,
 ];

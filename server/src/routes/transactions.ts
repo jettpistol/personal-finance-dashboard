@@ -18,6 +18,7 @@ import {
 } from '../lib/transactions.js';
 import { checkBudgetAlerts } from '../lib/budgets.js';
 import { processMovementsCsv } from '../lib/csv-movements.js';
+import { autoLink } from '../lib/commitments.js';
 import { applyRules, loadRules } from '../lib/rules.js';
 import { today } from '../lib/dates.js';
 import { bool, idParam, parse } from './util.js';
@@ -53,6 +54,8 @@ function editable(id: number, viewer: number): Tx {
 function afterWrite(tx: Tx) {
   // Fire and forget: alerts must never fail the request.
   checkBudgetAlerts(tx).catch((e) => console.error('budget alert failed', e));
+  // A movement with exactly the amount a pending payment waits for settles it.
+  autoLink(tx.id);
 }
 
 export default async function transactionRoutes(app: FastifyInstance) {

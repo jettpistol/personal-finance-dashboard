@@ -2,6 +2,7 @@ import { config } from '../config.js';
 import { db, getSetting, setSetting, withDb } from '../db/index.js';
 import { addMonthsToMonth, currentMonth, monthLabel, today } from './dates.js';
 import { generateDueRecurring } from './recurring.js';
+import { sendPendingReminders } from './commitments.js';
 import { refreshRates } from './fx.js';
 import { refreshCpi } from './cpi.js';
 import { runBackup, todaysBackupExists } from './backup.js';
@@ -58,6 +59,7 @@ async function sendMonthlyReviews() {
 
 async function tickProfile() {
   await step('recurring', () => generateDueRecurring());
+  await step('pending reminders', () => sendPendingReminders());
   if (due('fx_last_refresh', FX_EVERY_MS)) await step('fx', () => refreshRates());
   if (due('cpi_last_refresh', CPI_EVERY_MS)) await step('cpi', () => refreshCpi());
   await step('backup', async () => {

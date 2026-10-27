@@ -7,6 +7,7 @@ import { accountVisible, loadAccounts } from '../lib/domain.js';
 import { parseRows, presetConfigSchema, readTable, type Cell } from '../lib/importer.js';
 import { applyRules, loadRules } from '../lib/rules.js';
 import { assertWritable, importHash, insertTx, normaliseTx } from '../lib/transactions.js';
+import { autoLink } from '../lib/commitments.js';
 import { loadConverter } from '../lib/fx.js';
 import { idParam, parse } from './util.js';
 
@@ -151,6 +152,7 @@ export default async function importRoutes(app: FastifyInstance) {
     if (!account || !accountVisible(account, req.userId)) throw new HttpError(400, 'Cuenta inválida');
     assertWritable(account, req.userId);
     const fx = loadConverter();
+    const created: number[] = [];
     const result = db().transaction(() => {
       const batchId = Number(
         db().prepare('INSERT INTO import_batches (file_name, preset_id, account_id, created_by) VALUES (?, ?, ?, ?)').run(file_name, preset_id ?? null, account_id, req.userId)
@@ -200,7 +202,7 @@ export default async function importRoutes(app: FastifyInstance) {
             },
             req.userId,
           );
-          insertTx({ ...tx, import_batch_id: batchId, import_hash: r.import_hash });
+          created.push(insertTx({ ...tx, import_batch_id: batchId, import_hash: r.import_hash }));
           count++;
         } catch (e) {
           failures.push({ description: r.description, error: (e as Error).message });
@@ -209,6 +211,7 @@ export default async function importRoutes(app: FastifyInstance) {
       db().prepare('UPDATE import_batches SET row_count = ? WHERE id = ?').run(count, batchId);
       return { batch_id: batchId, imported: count, failures };
     })();
+    for (const id of created) autoLink(id);
     return result;
   });
 

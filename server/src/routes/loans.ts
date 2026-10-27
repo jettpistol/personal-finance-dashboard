@@ -3,27 +3,13 @@ import { z } from 'zod';
 import { db } from '../db/index.js';
 import { HttpError } from '../lib/http.js';
 import { isValidDate, today } from '../lib/dates.js';
+import { loadCpi } from '../lib/cpi.js';
+import { loanSchedule } from '../lib/loan-schedule.js';
+import { closeIfPaid, own, presentLoan, recordLoanReturn, type LoanRow, type ReturnRow } from '../lib/loans.js';
 import { idParam, parse } from './util.js';
 
 // Deudores: what you lent to whom (money or things), what came back, and what is still out.
 // Standalone for now: loans don't touch accounts, balances or reports. Each user only sees their own.
-
-type LoanRow = {
-  id: number;
-  owner_id: number;
-  person: string;
-  kind: 'money' | 'item';
-  item: string | null;
-  amount: number | null;
-  currency: 'ARS' | 'USD';
-  lent_on: string;
-  due_on: string | null;
-  notes: string | null;
-  closed_on: string | null;
-  closed_reason: 'returned' | 'forgiven' | null;
-  created_at: string;
-};
-type ReturnRow = { id: number; loan_id: number; date: string; amount: number | null; note: string | null };
 
 const dateStr = z.string().refine(isValidDate, 'Fecha inválida');
 
@@ -37,47 +23,26 @@ const loanSchema = z
     lent_on: dateStr,
     due_on: dateStr.nullish(),
     notes: z.string().max(2000).nullish(),
+    // Monthly interest (percent) and installments; fixed once the loan exists.
+    interest_rate: z.number().min(0).max(50).nullish(),
+    installments: z.number().int().min(1).max(60).nullish(),
+    first_due: dateStr.nullish(),
   })
   .superRefine((l, ctx) => {
     if (l.kind === 'money' && !l.amount) ctx.addIssue({ code: 'custom', path: ['amount'], message: 'Indicá cuánto prestaste.' });
     if (l.kind === 'item' && !l.item) ctx.addIssue({ code: 'custom', path: ['item'], message: 'Indicá qué prestaste.' });
     if (l.due_on && l.due_on < l.lent_on) ctx.addIssue({ code: 'custom', path: ['due_on'], message: 'La fecha de devolución no puede ser anterior al préstamo.' });
+    if (l.kind === 'item' && (l.interest_rate || (l.installments ?? 1) > 1)) ctx.addIssue({ code: 'custom', path: ['installments'], message: 'Los objetos no llevan interés ni cuotas.' });
+    if ((l.interest_rate || (l.installments ?? 1) > 1) && !l.first_due) ctx.addIssue({ code: 'custom', path: ['first_due'], message: 'Indicá cuándo vence la primera cuota.' });
+    if (l.first_due && l.first_due <= l.lent_on) ctx.addIssue({ code: 'custom', path: ['first_due'], message: 'La primera cuota tiene que ser después del préstamo.' });
   });
 
 const returnSchema = z.object({
   date: dateStr.default(() => today()),
   amount: z.number().int().positive().nullish(),
-  note: z.string().max(300).nullish(),
+  note: z.string().trim().max(300).nullish(),
+  transaction_id: z.number().int().nullish(),
 });
-
-function own(id: number, viewer: number): LoanRow {
-  const loan = db().prepare('SELECT * FROM loans WHERE id = ? AND owner_id = ?').get(id, viewer) as LoanRow | undefined;
-  if (!loan) throw new HttpError(404, 'Préstamo no encontrado');
-  return loan;
-}
-
-function present(loan: LoanRow, returns: ReturnRow[]) {
-  const mine = returns.filter((r) => r.loan_id === loan.id).sort((a, b) => (a.date < b.date ? -1 : 1));
-  const returned = mine.reduce((s, r) => s + (r.amount ?? 0), 0);
-  const outstanding = loan.closed_on ? 0 : loan.kind === 'money' ? Math.max(0, (loan.amount ?? 0) - returned) : null;
-  return {
-    ...loan,
-    returns: mine,
-    returned,
-    outstanding,
-    overdue: !loan.closed_on && !!loan.due_on && loan.due_on < today(),
-  };
-}
-
-/** Closes a money loan once returns cover it. */
-function closeIfPaid(loan: LoanRow) {
-  if (loan.kind !== 'money' || loan.closed_on) return;
-  const { total } = db().prepare('SELECT COALESCE(SUM(amount), 0) AS total FROM loan_returns WHERE loan_id = ?').get(loan.id) as { total: number };
-  if (total >= (loan.amount ?? 0)) {
-    const last = db().prepare('SELECT MAX(date) AS d FROM loan_returns WHERE loan_id = ?').get(loan.id) as { d: string };
-    db().prepare(`UPDATE loans SET closed_on = ?, closed_reason = 'returned' WHERE id = ?`).run(last.d ?? today(), loan.id);
-  }
-}
 
 export default async function loanRoutes(app: FastifyInstance) {
   app.get('/loans', async (req) => {
@@ -85,21 +50,55 @@ export default async function loanRoutes(app: FastifyInstance) {
     const returns = db()
       .prepare('SELECT r.* FROM loan_returns r JOIN loans l ON l.id = r.loan_id WHERE l.owner_id = ?')
       .all(req.userId) as ReturnRow[];
-    return loans.map((l) => present(l, returns));
+    return loans.map((l) => presentLoan(l, returns));
+  });
+
+  // A starting point for the interest: last month's inflation, so the money keeps its value.
+  app.get('/loans/suggested-rate', async () => {
+    const cpi = loadCpi();
+    const month = cpi.latestMonth;
+    return { month, monthly: month ? cpi.pct.get(month)! : null };
   });
 
   app.post('/loans', async (req) => {
     const l = parse(loanSchema, req.body);
+    const scheduled = l.kind === 'money' && !!l.first_due;
+    const terms = scheduled ? { interest_rate: l.interest_rate ?? 0, installments: l.installments ?? 1, first_due: l.first_due! } : null;
+    const plan = terms ? loanSchedule({ amount: l.amount ?? 0, lent_on: l.lent_on, due_on: null, ...terms }, 0) : [];
     const id = db()
-      .prepare('INSERT INTO loans (owner_id, person, kind, item, amount, currency, lent_on, due_on, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(req.userId, l.person, l.kind, l.kind === 'item' ? l.item : l.item || null, l.kind === 'money' ? l.amount : null, l.currency, l.lent_on, l.due_on ?? null, l.notes || null)
-      .lastInsertRowid;
+      .prepare(
+        'INSERT INTO loans (owner_id, person, kind, item, amount, currency, lent_on, due_on, notes, interest_rate, installments, first_due, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        req.userId,
+        l.person,
+        l.kind,
+        l.kind === 'item' ? l.item : l.item || null,
+        l.kind === 'money' ? l.amount : null,
+        l.currency,
+        l.lent_on,
+        plan.length ? plan.at(-1)!.due : (l.due_on ?? null),
+        l.notes || null,
+        terms?.interest_rate ?? null,
+        terms?.installments ?? null,
+        terms?.first_due ?? null,
+        plan.length ? plan.reduce((t, i) => t + i.amount, 0) : null,
+      ).lastInsertRowid;
     return { id: Number(id) };
   });
 
   app.put('/loans/:id', async (req) => {
     const loan = own(idParam(req.params), req.userId);
     const l = parse(loanSchema, req.body);
+    // Interest and installments are agreed once: amount, currency, dates and terms can't change afterwards.
+    if (loan.first_due) {
+      const changed =
+        l.kind !== loan.kind || l.amount !== loan.amount || l.currency !== loan.currency || l.lent_on !== loan.lent_on ||
+        (l.interest_rate ?? 0) !== (loan.interest_rate ?? 0) || (l.installments ?? 1) !== (loan.installments ?? 1) || (l.first_due ?? null) !== loan.first_due;
+      if (changed) throw new HttpError(400, 'El interés y las cuotas quedaron fijos al crear el préstamo: solo se pueden cambiar la persona, el motivo y las notas.', 'interest_rate');
+      db().prepare('UPDATE loans SET person = ?, item = ?, notes = ? WHERE id = ?').run(l.person, l.item || null, l.notes || null, loan.id);
+      return { ok: true };
+    }
     db()
       .prepare('UPDATE loans SET person = ?, kind = ?, item = ?, amount = ?, currency = ?, lent_on = ?, due_on = ?, notes = ? WHERE id = ?')
       .run(l.person, l.kind, l.kind === 'item' ? l.item : l.item || null, l.kind === 'money' ? l.amount : null, l.currency, l.lent_on, l.due_on ?? null, l.notes || null, loan.id);
@@ -120,8 +119,7 @@ export default async function loanRoutes(app: FastifyInstance) {
     const r = parse(returnSchema, req.body);
     if (loan.kind === 'money') {
       if (!r.amount) throw new HttpError(400, 'Indicá cuánto te devolvieron.', 'amount');
-      db().prepare('INSERT INTO loan_returns (loan_id, date, amount, note) VALUES (?, ?, ?, ?)').run(loan.id, r.date, r.amount, r.note || null);
-      closeIfPaid(loan);
+      recordLoanReturn(loan, { date: r.date, amount: r.amount, note: r.note, transaction_id: r.transaction_id });
     } else {
       db().prepare('INSERT INTO loan_returns (loan_id, date, amount, note) VALUES (?, ?, NULL, ?)').run(loan.id, r.date, r.note || null);
       db().prepare(`UPDATE loans SET closed_on = ?, closed_reason = 'returned' WHERE id = ?`).run(r.date, loan.id);

@@ -9,6 +9,7 @@ import { createProfile, initProfiles, profileDb, syncUsers } from './lib/profile
 const DEMO_PROFILE = 'Prueba (demo)';
 import { hashPassword } from './lib/auth.js';
 import { addDays, addMonths, addMonthsToMonth, currentMonth, monthEnd, today } from './lib/dates.js';
+import { installmentAmounts } from './lib/loan-schedule.js';
 import { createInstallmentPlan, createTx, type TxInput } from './lib/transactions.js';
 import { upsertRate } from './lib/fx.js';
 
@@ -137,6 +138,24 @@ for (let m = start; m <= currentMonth(); m = addMonthsToMonth(m, 1)) {
   const lucas = id(loan.run(ivan, 'Lucas', 'money', 'Cena de cumpleaños', $(35_000), 'ARS', addMonths(today(), -3), null, null, addMonths(today(), -2), 'returned'));
   back.run(lucas, addMonths(today(), -2), $(35_000), null);
   loan.run(ivan, 'Caro', 'money', null, $(15_000), 'ARS', addMonths(today(), -5), null, 'Le dije que no hacía falta', addMonths(today(), -1), 'forgiven');
+}
+
+// Pagos pendientes: a monthly dollar savings plan, a debt Iván is paying back, and a loan with interest.
+{
+  const thisMonth = currentMonth();
+  const lastMonth = addMonthsToMonth(thisMonth, -1);
+  const twoAgo = addMonthsToMonth(thisMonth, -2);
+  const commitment = db().prepare('INSERT INTO commitments (owner_id, kind, title, person, amount, currency, account_id, day, start_month, months) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const pay = db().prepare('INSERT INTO commitment_payments (commitment_id, month, amount, date, reason) VALUES (?, ?, ?, ?, ?)');
+  const savings = Number(commitment.run(ivan, 'savings', 'Ahorro en dólares', null, $(200), 'USD', ivanUsd, 6, twoAgo, null).lastInsertRowid);
+  pay.run(savings, twoAgo, $(200), `${twoAgo}-06`, null);
+  pay.run(savings, lastMonth, $(200), `${lastMonth}-07`, null);
+  const papa = Number(commitment.run(ivan, 'owe', 'Préstamo de papá', 'Papá', $(50_000), 'ARS', ivanBank, 10, lastMonth, 6).lastInsertRowid);
+  pay.run(papa, lastMonth, $(30_000), `${lastMonth}-10`, 'Me atrasé con la tarjeta: el resto va el mes que viene');
+  const plan = installmentAmounts($(300_000), 4, 4);
+  db()
+    .prepare('INSERT INTO loans (owner_id, person, kind, item, amount, currency, lent_on, due_on, interest_rate, installments, first_due, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(ivan, 'Nico', 'money', 'Para la seña del depto', $(300_000), 'ARS', `${lastMonth}-15`, addMonths(`${thisMonth}-15`, 3), 4, 4, `${thisMonth}-15`, plan.reduce((x, y) => x + y, 0));
 }
 
 // Income in installments: the old bike, sold in 3 cuotas. The first one was already collected.

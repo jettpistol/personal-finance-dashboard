@@ -43,6 +43,7 @@ import {
   IconSun,
   IconTarget,
   IconUserDollar,
+  IconAlarm,
   IconWand,
 } from '@tabler/icons-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -63,6 +64,7 @@ const NAV = [
   { to: '/cuentas', label: 'Cuentas', icon: IconBuildingBank },
   { to: '/saldos', label: 'Gastos compartidos', icon: IconArrowsExchange },
   { to: '/deudores', label: 'Deudores', icon: IconUserDollar },
+  { to: '/pendientes', label: 'Pagos pendientes', icon: IconAlarm },
   { section: 'Planificación' },
   { to: '/presupuestos', label: 'Presupuestos', icon: IconPigMoney },
   { to: '/metas', label: 'Metas de ahorro', icon: IconTarget },
@@ -202,6 +204,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const [opened, { toggle, close }] = useDisclosure();
   const { me, openTx, txModal } = useApp();
   const location = useLocation();
+  // What's due or late in Pagos pendientes, as a counter next to the menu entry.
+  const pendingDue = useQuery({ queryKey: ['pending', 'summary'], queryFn: () => api.get<{ due: number }>('/pending/summary'), refetchInterval: 60_000 }).data?.due ?? 0;
   const qc = useQueryClient();
   const isMobile = useMediaQuery('(max-width: 48em)');
   const { colorScheme, setColorScheme } = useMantineColorScheme();
@@ -304,6 +308,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 to={item.to}
                 label={item.label}
                 leftSection={<item.icon size={17} stroke={1.6} />}
+                rightSection={item.to === '/pendientes' && pendingDue > 0 ? <span className="pfd-nav-count">{pendingDue}</span> : undefined}
                 active={location.pathname === item.to}
                 onClick={close}
               />
@@ -378,6 +383,7 @@ function AppFooter() {
       <Link to="/ajustes">Ajustes</Link>
       <Link to="/importar">Importar</Link>
       <Link to="/cierre">Cierre de mes</Link>
+      <Link to="/ayuda">Ayuda</Link>
       <a href="/patch-notes.html">Patch notes</a>
     </footer>
   );

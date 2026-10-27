@@ -15,7 +15,14 @@ type AppState = {
   closeTx: () => void;
 };
 
-export type TxModalOptions = { id?: number; type?: 'expense' | 'income' | 'transfer' | 'adjustment'; accountId?: number; installments?: boolean };
+export type TxModalOptions = {
+  id?: number;
+  type?: 'expense' | 'income' | 'transfer' | 'adjustment';
+  accountId?: number;
+  installments?: boolean;
+  /** Pre-filled values, e.g. from a pending payment: amount in units, destination account, description. */
+  prefill?: { amount?: number; toAccountId?: number; toAmount?: number; description?: string };
+};
 
 const Ctx = createContext<AppState | null>(null);
 

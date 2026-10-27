@@ -193,7 +193,9 @@ describe('money flows', () => {
     const id = (await call('ana', 'POST', '/api/loans', { person: 'Juan', kind: 'money', amount: 100_00, currency: 'ARS', lent_on: D(1), due_on: D(2) })).body.id;
     const item = (await call('ana', 'POST', '/api/loans', { person: 'Juan', kind: 'item', item: 'Taladro', lent_on: D(1) })).body.id;
     expect((await call('ana', 'POST', '/api/loans', { person: 'X', kind: 'money', lent_on: D(1) })).status).toBe(400);
-    await call('ana', 'POST', `/api/loans/${id}/returns`, { date: D(2), amount: 40_00 });
+    // A partial return needs a reason.
+    expect((await call('ana', 'POST', `/api/loans/${id}/returns`, { date: D(2), amount: 40_00 })).status).toBe(400);
+    await call('ana', 'POST', `/api/loans/${id}/returns`, { date: D(2), amount: 40_00, note: 'El resto a fin de mes' });
     let list = (await call('ana', 'GET', '/api/loans')).body;
     expect(list.find((l: { id: number }) => l.id === id)).toMatchObject({ returned: 40_00, outstanding: 60_00, closed_on: null });
     await call('ana', 'POST', `/api/loans/${id}/returns`, { date: D(3), amount: 60_00 });

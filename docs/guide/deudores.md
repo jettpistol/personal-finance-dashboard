@@ -4,7 +4,7 @@ Keep track of money and things you lent to other people, what came back, and wha
 
 ![Deudores page with totals and one card per person](img/deudores.png)
 
-Deudores is standalone for now: loans don't touch your accounts, balances or reports. Each of you only sees your own list.
+Loans don't touch your accounts, balances or reports. Each of you only sees your own list. Loans with a return date or installments also appear in [Pagos pendientes](pagos-pendientes.md) as **TE DEBEN**, so the app chases you until they come back.
 
 ## What you see
 
@@ -31,11 +31,18 @@ Deudores is standalone for now: loans don't touch your accounts, balances or rep
 3. **¿A quién?**: type a name. People you've used before are suggested, so the same person always groups together.
 4. For money: **Monto** and the currency, and optionally **¿Para qué?**. For a thing: **¿Qué le prestaste?**
 5. **Fecha** (today by default) and, if you agreed on one, **Devolver antes de**.
-6. **Guardar**.
+6. Optionally **Con interés o en cuotas** (money only):
+   - **Interés mensual**: a percentage, or **Usar la inflación de …** to fill in last month's CPI so the money keeps its value.
+   - **Cuotas**: how many payments (1 for a single one).
+   - **Primera cuota**: when the first one is due; the rest fall on the same day of the following months.
+   - A line shows the result, for example *3 cuotas de $ 35.421,03 · total $ 106.263,09 (interés $ 6.263,09)*. With interest, the installments are fixed (French system); a single payment accrues compound interest for the months until it's due.
+7. **Guardar**.
+
+Once saved, **the interest, the installments, the amount and the dates are fixed**: **Editar** only changes the person, the reason and the notes.
 
 ### Something came back
 
-- Money: click **Devolución** on the row and type how much. If it's less than what's missing, it stays open as a partial return; when returns cover the whole amount, the loan closes as **DEVUELTO**.
+- Money: click **Devolución** on the row and type how much (it starts with what's due now: the current installment, or the rest). If it's less, it's a partial return and **you have to say why** (*¿Por qué es parcial?*); the rest stays pending. When returns cover the whole amount, the loan closes as **DEVUELTO**. An income movement with exactly the installment amount, in your account, is recorded as a return on its own.
 - A thing: click **Devuelto** and confirm the date.
 
 ### Ask for it back

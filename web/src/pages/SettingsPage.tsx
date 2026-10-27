@@ -36,6 +36,7 @@ import { date, MANTINE_COLORS, monthName, today } from '../lib/format';
 import { errorFields, notifyError, notifyOk, useCategories, useMe, useSettings, useUsers } from '../lib/queries';
 import type { Category, FxRate, Settings } from '../lib/types';
 import { PageHeader } from '../components/Layout';
+import { MailSetupCard } from '../components/MailSetupCard';
 
 export function SettingsPage() {
   const [tab, setTab] = useState<string | null>('profile');
@@ -253,17 +254,9 @@ function NotificationsTab() {
             {!me.data.email ? <Badge color="gray">Sin correo</Badge> : me.data.mail_available ? <Badge color="teal">Activo</Badge> : <Badge color="yellow">Falta configurar</Badge>}
           </Group>
           {!me.data.mail_available && (
-            <Alert color="yellow" title="El envío de correos no está configurado">
-              <List size="sm" spacing={4} type="ordered">
-                <List.Item>
-                  En tu cuenta de Google, activá la verificación en 2 pasos y creá una <b>contraseña de aplicación</b> (myaccount.google.com/apppasswords). Es gratis.
-                </List.Item>
-                <List.Item>
-                  En la carpeta <Code>server</Code>, creá el archivo <Code>.env</Code> con <Code>SMTP_HOST=smtp.gmail.com</Code>, <Code>SMTP_USER=tu-correo@gmail.com</Code> y{' '}
-                  <Code>SMTP_PASS=la-contraseña-de-aplicación</Code>, y reiniciá la app.
-                </List.Item>
-              </List>
-            </Alert>
+            <Text size="sm" c="dimmed">
+              Falta configurar la cuenta que envía los avisos.
+            </Text>
           )}
           <Group align="flex-end" wrap="nowrap">
             <TextInput
@@ -291,6 +284,7 @@ function NotificationsTab() {
           )}
         </Stack>
       </Card>
+      <MailSetupCard myEmail={me.data.email} />
       <Card>
         <Stack>
           <Title order={4}>Qué avisos recibir</Title>

@@ -7,11 +7,13 @@ import {
   Group,
   Menu,
   Modal,
+  NumberInput,
   Progress,
   SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
+  Switch,
   Text,
   Textarea,
   TextInput,
@@ -46,11 +48,29 @@ type Loan = {
   notes: string | null;
   closed_on: string | null;
   closed_reason: 'returned' | 'forgiven' | null;
+  interest_rate: number | null;
+  installments: number | null;
+  first_due: string | null;
+  total: number | null;
   returns: LoanReturn[];
   returned: number;
   outstanding: number | null;
+  schedule: { n: number; due: string; amount: number; paid: number; remaining: number }[];
+  next_installment: { n: number; due: string; amount: number; remaining: number } | null;
   overdue: boolean;
 };
+
+/** Same maths as the server: fixed installments at a monthly rate, compound interest for a single payment. */
+function installmentAmounts(principal: number, ratePct: number, n: number, monthsToFirst: number): number[] {
+  const r = ratePct / 100;
+  if (n <= 1) return [Math.round(principal * Math.pow(1 + r, Math.max(1, monthsToFirst)))];
+  if (!r) {
+    const base = Math.floor(principal / n);
+    return Array.from({ length: n }, (_, i) => base + (i < principal - base * n ? 1 : 0));
+  }
+  const each = Math.round((principal * r) / (1 - Math.pow(1 + r, -n)));
+  return Array.from({ length: n }, () => each);
+}
 
 type View = 'open' | 'closed' | 'all';
 
@@ -257,6 +277,13 @@ function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void
               </span>
             )}
           </Group>
+          {l.first_due && (
+            <Text size="xs" className="num">
+              {(l.installments ?? 1) > 1 ? `${l.installments} cuotas de ${money(l.schedule[0]?.amount, l.currency)}` : `Un pago de ${money(l.total, l.currency)}`}
+              {l.interest_rate ? ` · ${String(l.interest_rate).replace('.', ',')}% mensual` : ' · sin interés'}
+              {l.next_installment && !l.closed_on && ` · próxima: ${date(l.next_installment.due, 'D MMM')}`}
+            </Text>
+          )}
           <Text size="xs" c="dimmed">
             {l.kind === 'money' && l.item ? `${l.item} · ` : ''}
             {date(l.lent_on, 'D MMM YYYY')} ({ago(l.lent_on)})
@@ -265,7 +292,7 @@ function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void
           </Text>
           {partial && (
             <>
-              <Progress value={(l.returned / (l.amount ?? 1)) * 100} size={6} mt={6} color="teal" aria-label="Devuelto" />
+              <Progress value={(l.returned / (l.total ?? l.amount ?? 1)) * 100} size={6} mt={6} color="teal" aria-label="Devuelto" />
               <Text size="xs" mt={2} className="num">
                 Devolvió {money(l.returned, l.currency)} · falta <b>{money(l.outstanding, l.currency)}</b>
               </Text>
@@ -314,6 +341,18 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
   const [lentOn, setLentOn] = useState<string>(loan?.lent_on ?? today());
   const [dueOn, setDueOn] = useState<string | null>(loan?.due_on ?? null);
   const [notes, setNotes] = useState(loan?.notes ?? '');
+  // Interest and installments: agreed when the loan is created, fixed afterwards.
+  const locked = !!loan?.first_due;
+  const [terms, setTerms] = useState(!!loan?.first_due);
+  const [rate, setRate] = useState<number | string>(loan?.interest_rate ?? '');
+  const [count, setCount] = useState<number | string>(loan?.installments ?? 1);
+  const [firstDue, setFirstDue] = useState<string | null>(loan?.first_due ?? null);
+  const suggested = useQuery({ queryKey: ['loans', 'suggested-rate'], queryFn: () => api.get<{ month: string | null; monthly: number | null }>('/loans/suggested-rate'), enabled: terms && !locked });
+  const plan =
+    terms && kind === 'money' && toCents(amount) > 0 && firstDue
+      ? installmentAmounts(toCents(amount), Number(rate) || 0, Number(count) || 1, dayjs(firstDue).diff(dayjs(lentOn).startOf('month'), 'month'))
+      : [];
+  const planTotal = plan.reduce((a, b) => a + b, 0);
   const [bad, setBad] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -325,8 +364,22 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
     if (!person.trim()) return fail(new FieldError('Escribí a quién le prestaste.', ['person']));
     if (kind === 'money' && !(toCents(amount) > 0)) return fail(new FieldError('Indicá cuánto prestaste.', ['amount']));
     if (kind === 'item' && !item.trim()) return fail(new FieldError('Indicá qué prestaste.', ['item']));
+    if (terms && kind === 'money' && !firstDue) return fail(new FieldError('Indicá cuándo vence la primera cuota.', ['first_due']));
     setSaving(true);
-    const body = { person, kind, item: item || null, amount: kind === 'money' ? toCents(amount) : null, currency, lent_on: lentOn, due_on: dueOn, notes: notes || null };
+    const withTerms = terms && kind === 'money';
+    const body = {
+      person,
+      kind,
+      item: item || null,
+      amount: kind === 'money' ? toCents(amount) : null,
+      currency,
+      lent_on: lentOn,
+      due_on: withTerms ? null : dueOn,
+      notes: notes || null,
+      interest_rate: withTerms ? Number(rate) || 0 : null,
+      installments: withTerms ? Number(count) || 1 : null,
+      first_due: withTerms ? firstDue : null,
+    };
     try {
       if (loan) await api.put(`/loans/${loan.id}`, body);
       else await api.post('/loans', body);
@@ -356,8 +409,8 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
         {kind === 'money' ? (
           <>
             <Group gap="sm" wrap="nowrap" align="flex-end">
-              <MoneyInput label="Monto" currency={currency} value={amount} onChange={setAmount} error={bad.includes('amount')} required style={{ flex: 1 }} />
-              <Select w={96} aria-label="Moneda" data={['ARS', 'USD']} value={currency} onChange={(v) => v && setCurrency(v as Currency)} allowDeselect={false} />
+              <MoneyInput label="Monto" currency={currency} value={amount} onChange={setAmount} error={bad.includes('amount')} required style={{ flex: 1 }} disabled={locked} />
+              <Select w={96} aria-label="Moneda" data={['ARS', 'USD']} value={currency} onChange={(v) => v && setCurrency(v as Currency)} allowDeselect={false} disabled={locked} />
             </Group>
             <TextInput label="¿Para qué? (opcional)" placeholder="Ej: el seguro del auto" value={item} onChange={(e) => setItem(e.currentTarget.value)} />
           </>
@@ -365,9 +418,56 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
           <TextInput label="¿Qué le prestaste?" placeholder="Ej: taladro, libro, carpa" value={item} onChange={(e) => setItem(e.currentTarget.value)} error={bad.includes('item')} required />
         )}
         <SimpleGrid cols={2}>
-          <DateInput label="Fecha" valueFormat="DD/MM/YYYY" value={lentOn} onChange={(v) => v && setLentOn(v)} required />
-          <DateInput label="Devolver antes de" placeholder="Opcional" valueFormat="DD/MM/YYYY" value={dueOn} onChange={setDueOn} clearable error={bad.includes('due_on')} />
+          <DateInput label="Fecha" valueFormat="DD/MM/YYYY" value={lentOn} onChange={(v) => v && setLentOn(v)} required disabled={locked} />
+          {!(terms && kind === 'money') && (
+            <DateInput label="Devolver antes de" placeholder="Opcional" valueFormat="DD/MM/YYYY" value={dueOn} onChange={setDueOn} clearable error={bad.includes('due_on')} />
+          )}
         </SimpleGrid>
+        {kind === 'money' && (
+          <Stack gap="xs" className="pfd-loan-terms">
+            <Switch
+              label="Con interés o en cuotas"
+              checked={terms}
+              disabled={locked}
+              onChange={(e) => setTerms(e.currentTarget.checked)}
+            />
+            {terms && (
+              <>
+                <SimpleGrid cols={3}>
+                  <NumberInput
+                    label="Interés mensual"
+                    suffix="%"
+                    min={0}
+                    max={50}
+                    decimalScale={2}
+                    decimalSeparator=","
+                    hideControls
+                    placeholder="0"
+                    value={rate}
+                    onChange={setRate}
+                    disabled={locked}
+                  />
+                  <NumberInput label="Cuotas" min={1} max={60} hideControls value={count} onChange={setCount} disabled={locked} />
+                  <DateInput label="Primera cuota" valueFormat="DD/MM/YYYY" value={firstDue} onChange={setFirstDue} error={bad.includes('first_due')} disabled={locked} required />
+                </SimpleGrid>
+                {!locked && suggested.data?.monthly != null && (
+                  <Button size="compact-xs" variant="subtle" w="fit-content" onClick={() => setRate(suggested.data!.monthly!)}>
+                    Usar la inflación de {date(`${suggested.data.month}-01`, 'MMMM')} ({String(suggested.data.monthly).replace('.', ',')}%)
+                  </Button>
+                )}
+                {plan.length > 0 && (
+                  <Text size="sm" className="num">
+                    {plan.length > 1 ? `${plan.length} cuotas de ${money(plan[0], currency)}` : `Un pago de ${money(plan[0], currency)}`} · total {money(planTotal, currency)}
+                    {planTotal > toCents(amount) && ` (interés ${money(planTotal - toCents(amount), currency)})`}
+                  </Text>
+                )}
+                <Text size="xs" c="dimmed">
+                  {locked ? 'El interés y las cuotas quedaron fijos al crear el préstamo.' : 'Una vez guardado, el interés y las cuotas no se pueden cambiar. Cada cuota aparece en Pagos pendientes.'}
+                </Text>
+              </>
+            )}
+          </Stack>
+        )}
         <Textarea label="Notas" autosize minRows={1} value={notes} onChange={(e) => setNotes(e.currentTarget.value)} />
         <Group justify="flex-end" mt="sm">
           <Button variant="default" onClick={onClose}>
@@ -384,13 +484,20 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
 
 function ReturnModal({ loan, onClose }: { loan: Loan; onClose: () => void }) {
   const qc = useQueryClient();
-  const [amount, setAmount] = useState<number | string>(fromCents(loan.outstanding));
+  const dueNow = loan.next_installment?.remaining ?? loan.outstanding ?? 0;
+  const [amount, setAmount] = useState<number | string>(fromCents(dueNow));
+  const [noteBad, setNoteBad] = useState(false);
   const [when, setWhen] = useState<string>(today());
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const money_ = loan.kind === 'money';
 
+  const partial = money_ && toCents(amount) > 0 && toCents(amount) < dueNow;
   const save = async () => {
+    if (partial && !note.trim()) {
+      setNoteBad(true);
+      return notifyError(new FieldError('Es un pago parcial: escribí por qué no se devolvió todo.', ['note']));
+    }
     setSaving(true);
     try {
       await api.post(`/loans/${loan.id}/returns`, { date: when, amount: money_ ? toCents(amount) : null, note: note || null });
@@ -410,7 +517,11 @@ function ReturnModal({ loan, onClose }: { loan: Loan; onClose: () => void }) {
         {money_ && (
           <MoneyInput
             label="¿Cuánto te devolvió?"
-            description={`Falta ${money(loan.outstanding, loan.currency)}. Si es menos, queda anotado como parcial.`}
+            description={
+              loan.next_installment && (loan.installments ?? 1) > 1
+                ? `Cuota ${loan.next_installment.n}: ${money(loan.next_installment.remaining, loan.currency)}. En total falta ${money(loan.outstanding, loan.currency)}.`
+                : `Falta ${money(loan.outstanding, loan.currency)}. Si es menos, queda anotado como parcial.`
+            }
             currency={loan.currency}
             value={amount}
             onChange={setAmount}
@@ -418,7 +529,17 @@ function ReturnModal({ loan, onClose }: { loan: Loan; onClose: () => void }) {
           />
         )}
         <DateInput label="Fecha" valueFormat="DD/MM/YYYY" value={when} onChange={(v) => v && setWhen(v)} />
-        <TextInput label="Nota (opcional)" placeholder="Ej: por transferencia" value={note} onChange={(e) => setNote(e.currentTarget.value)} />
+        <TextInput
+          label={partial ? '¿Por qué es parcial?' : 'Nota (opcional)'}
+          placeholder={partial ? 'Ej: me dijo que el resto a fin de mes' : 'Ej: por transferencia'}
+          value={note}
+          onChange={(e) => {
+            setNoteBad(false);
+            setNote(e.currentTarget.value);
+          }}
+          error={noteBad}
+          required={partial}
+        />
         <Group justify="flex-end" mt="sm">
           <Button variant="default" onClick={onClose}>
             Cancelar

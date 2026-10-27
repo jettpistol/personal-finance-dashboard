@@ -21,6 +21,8 @@ import { ReviewPage } from './pages/ReviewPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { DebtorsPage } from './pages/DebtorsPage';
+import { PendingPaymentsPage } from './pages/PendingPaymentsPage';
+import { WikiPage } from './wiki/WikiPage';
 
 type Status = { needsSetup: boolean; user: { id: number; username: string; display_name: string; color: string } | null };
 
@@ -56,25 +58,36 @@ function Authed({ me }: { me: NonNullable<Status['user']> }) {
   }
   return (
     <AppStateProvider me={me} users={users.data}>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/movimientos" element={<TransactionsPage />} />
-          <Route path="/cuentas" element={<AccountsPage />} />
-          <Route path="/saldos" element={<BalancesPage />} />
-          <Route path="/presupuestos" element={<BudgetsPage />} />
-          <Route path="/metas" element={<GoalsPage />} />
-          <Route path="/reportes" element={<ReportsPage />} />
-          <Route path="/importar" element={<ImportPage />} />
-          <Route path="/reglas" element={<RulesPage />} />
-          <Route path="/recurrentes" element={<RecurringPage />} />
-          <Route path="/cierre" element={<ReviewPage />} />
-          <Route path="/ajustes" element={<SettingsPage />} />
-          <Route path="/perfiles" element={<ProfilesPage />} />
-          <Route path="/deudores" element={<DebtorsPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* The help wiki has its own screens, outside the app's frame. */}
+        <Route path="/ayuda/*" element={<WikiPage />} />
+        <Route path="*" element={<AppScreens />} />
+      </Routes>
     </AppStateProvider>
+  );
+}
+
+function AppScreens() {
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/movimientos" element={<TransactionsPage />} />
+        <Route path="/cuentas" element={<AccountsPage />} />
+        <Route path="/saldos" element={<BalancesPage />} />
+        <Route path="/presupuestos" element={<BudgetsPage />} />
+        <Route path="/metas" element={<GoalsPage />} />
+        <Route path="/reportes" element={<ReportsPage />} />
+        <Route path="/importar" element={<ImportPage />} />
+        <Route path="/reglas" element={<RulesPage />} />
+        <Route path="/recurrentes" element={<RecurringPage />} />
+        <Route path="/cierre" element={<ReviewPage />} />
+        <Route path="/ajustes" element={<SettingsPage />} />
+        <Route path="/perfiles" element={<ProfilesPage />} />
+        <Route path="/deudores" element={<DebtorsPage />} />
+        <Route path="/pendientes" element={<PendingPaymentsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Layout>
   );
 }

@@ -14,7 +14,7 @@ export const useTags = () => useQuery({ queryKey: ['tags'], queryFn: () => api.g
 export function useRefreshData() {
   const qc = useQueryClient();
   return () => {
-    for (const key of ['transactions', 'dashboard', 'accounts', 'budgets', 'balances', 'reports', 'goals', 'installments', 'tags', 'recurring', 'notifications', 'imports']) {
+    for (const key of ['transactions', 'dashboard', 'accounts', 'budgets', 'balances', 'reports', 'goals', 'installments', 'tags', 'recurring', 'notifications', 'imports', 'pending', 'loans']) {
       qc.invalidateQueries({ queryKey: [key] });
     }
   };
