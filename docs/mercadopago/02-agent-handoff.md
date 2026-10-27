@@ -1,0 +1,207 @@
+# Agent Brief: Mercado Pago Integration for the Personal Finance Dashboard
+
+**Audience:** the coding agent building the website.
+**Goal:** show balance, transactions, and spending/income insights for one or two **personal** Mercado Pago accounts (a couple), individually and combined.
+
+Read [`01-setup-guide.md`](./01-setup-guide.md) first for context on what the account owner sets up.
+
+> ⚠️ Endpoint paths and field names below come from Mercado Pago's public docs as of late 2026 and were **not live-tested** while writing this brief. Before building on any of them, verify each one with a real token (step "Verification" below) and check the current docs at `https://www.mercadopago.com.ar/developers/en/reference`.
+
+---
+
+## 1. What you'll get from the owner
+
+| Item | Format | Where it lives | Sensitive? |
+|---|---|---|---|
+| Production Access Token, one per account | `APP_USR-<digits>-<date>-<hex>-<user_id>` | Env var / hosting secret only | **Yes.** Never log, commit, return to the client, or ask for it in chat. |
+| User ID per account | integer (e.g. `123456789`) | Config / DB | No |
+| Account label | string (e.g. `"Taiel"`, `"Partner"`) | Config / DB | No |
+| Site ID & currency | `MLA` / `ARS` (Argentina assumed) | Config | No |
+| History start date | ISO date | Config | No |
+| Report notification email (optional) | email | Report config | Low |
+| Whether "Reportes" is available in their web account | yes/no | n/a | No |
+
+**Env var convention (please follow it):**
+
+```
+MP_ACCOUNTS=taiel,partner
+MP_ACCESS_TOKEN_TAIEL=APP_USR-...
+MP_ACCESS_TOKEN_PARTNER=APP_USR-...
+MP_SITE_ID=MLA
+MP_CURRENCY=ARS
+MP_HISTORY_START=2024-01-01
+```
+
+Ship a `.env.example` with placeholders, and make sure `.env` is in `.gitignore`.
+
+**How to ask the owner for the token:** tell them which secret name to create and where (e.g. "In Vercel → Project → Settings → Environment Variables, add `MP_ACCESS_TOKEN_TAIEL`"). Don't ask them to paste it into the conversation.
+
+---
+
+## 2. Hard rules
+
+1. **Server-side only.** All Mercado Pago calls go through your backend (API routes / serverless functions / a cron worker). The token never reaches the browser bundle, client logs, or error messages.
+2. **Read-only behavior.** The token has write power (payments, refunds). Only issue `GET` requests, plus the report-generation `POST`/`PUT` calls listed in section 3. Never call payment-creation, refund, or cancellation endpoints.
+3. **Protect the dashboard itself.** This is private financial data. Put authentication in front of every page and API route (e.g. auth limited to the two owners' emails). No public routes that return financial data.
+4. **Cache and store locally.** Sync into your own DB (Postgres/SQLite/Supabase) and serve the UI from it. Don't hit MP on each page load. Respect rate limits: back off on `429`, and keep it under ~1 request/second per token for bulk sync.
+5. **Redact.** Strip tokens from logs; mask payer emails/IDs in any debug output.
+
+---
+
+## 3. API surface to use
+
+Base URL: `https://api.mercadopago.com`
+Header on every call: `Authorization: Bearer <ACCESS_TOKEN>`
+
+### 3.1 Identity — `GET /users/me`
+Use it for the startup health check and to confirm the user ID matches config. Fields: `id`, `nickname`, `email`, `site_id`, `country_id`.
+
+### 3.2 Received payments (near real time) — `GET /v1/payments/search`
+Returns payments where the account is the **collector** (money received: transfers in, QR, links).
+
+Useful params:
+```
+sort=date_created&criteria=desc
+range=date_created&begin_date=2024-01-01T00:00:00.000-03:00&end_date=NOW
+status=approved            # optional
+limit=100&offset=0         # paginate; offset caps around 10,000 so chunk by date range
+```
+Response: `results[]` + `paging {total, limit, offset}`.
+Key fields per payment: `id`, `date_created`, `date_approved`, `status`, `status_detail`, `operation_type` (`regular_payment`, `money_transfer`, `account_fund`, …), `payment_method_id`, `payment_type_id`, `transaction_amount`, `transaction_details.net_received_amount`, `fee_details[]`, `currency_id`, `description`, `payer {id, email, first_name, last_name}`, `external_reference`.
+
+Detail: `GET /v1/payments/{id}`.
+
+⚠️ This does **not** reliably list money the owner **spent** or **sent**. Use the reports for that.
+
+### 3.3 Full ledger: Reports API (primary source of truth)
+Two report families share the same shape. Implement both and keep whichever works for each account (availability varies by account type/country).
+
+| Report | Base path | Content |
+|---|---|---|
+| Released money | `/v1/account/release_report` | Money that became available, with running balance; withdrawals if `include_withdrawal: true` |
+| Account money (all transactions) | `/v1/account/settlement_report` | Every operation affecting the account balance (in/out, refunds, chargebacks, fees) |
+
+Endpoints (same for both, swap the base path):
+```
+GET  {base}/config             # current config
+POST {base}/config             # create config (first time)
+PUT  {base}/config             # update config
+POST {base}                    # generate a report: {"begin_date": "...Z", "end_date": "...Z"}
+GET  {base}/list               # list generated reports (file_name, status, dates)
+GET  {base}/{file_name}        # download the CSV
+POST {base}/schedule           # enable automatic generation
+DELETE {base}/schedule         # disable automatic generation
+```
+
+Suggested config body (check the current docs for exact field names):
+```json
+{
+  "file_name_prefix": "pfd",
+  "include_withdrawal": true,
+  "display_timezone": "GMT-03",
+  "report_translation": "en",
+  "separator": ",",
+  "notification_email_list": ["<owner email, optional>"],
+  "frequency": { "type": "daily", "value": 1, "hour": 6 },
+  "columns": [ { "key": "DATE" }, { "key": "SOURCE_ID" }, { "key": "EXTERNAL_REFERENCE" },
+               { "key": "RECORD_TYPE" }, { "key": "DESCRIPTION" },
+               { "key": "NET_CREDIT_AMOUNT" }, { "key": "NET_DEBIT_AMOUNT" },
+               { "key": "GROSS_AMOUNT" }, { "key": "FEE_AMOUNT" },
+               { "key": "BALANCE_AMOUNT" }, { "key": "PAYMENT_METHOD" },
+               { "key": "TRANSACTION_TYPE" } ]
+}
+```
+Use `GET {base}/config` first to see which column keys the account actually supports.
+
+Generation is **async**. `POST` returns right away; poll `/list` until the file appears (seconds to minutes), then download. Report windows have a max span (typically ~60 days for settlement, longer for release), so backfill in chunks.
+
+**Balance:** take `BALANCE_AMOUNT` from the most recent row (or the report's closing-balance row) as the current available balance. Show "as of <report end time>".
+
+### 3.4 Balance endpoint (legacy, try it, don't depend on it)
+```
+GET /users/{user_id}/mercadopago_account/balance
+```
+Historically returns `total_amount`, `available_balance`, `unavailable_balance`. It's often restricted or deprecated. If it returns 200, use it for a live balance tile. If it returns 401/403/404, fall back to the report-derived balance. Same for the legacy `GET /mercadopago_account/movements/search`.
+
+### 3.5 Not available via API → manual import
+Tarjeta Mercado Pago (credit card), Mercado Crédito, investment yield detail, crypto. Build a **CSV/XLSX upload** screen that parses the export from *mercadopago.com.ar → Actividad → Descargar*, and a manual-entry form. Tag those rows `source = "manual_import"`.
+
+---
+
+## 4. Suggested data model
+
+```
+accounts(id, label, mp_user_id, site_id, currency, created_at)
+
+transactions(
+  id PK,                    -- "<account_id>:<source>:<source_id>"
+  account_id FK,
+  source,                   -- 'payments_api' | 'release_report' | 'settlement_report' | 'manual_import'
+  source_id,                -- MP payment id / SOURCE_ID
+  occurred_at timestamptz,
+  direction,                -- 'in' | 'out'
+  amount numeric(14,2),     -- always positive; direction decides sign
+  fee numeric(14,2),
+  currency,
+  type,                     -- transfer, payment, withdrawal, refund, fee, chargeback, yield...
+  description,
+  counterparty,             -- payer/payee name when available
+  category,                 -- user-editable (groceries, rent...); start rule-based
+  raw jsonb,                -- original payload/CSV row
+  UNIQUE(account_id, source, source_id)
+)
+
+balances(account_id, as_of timestamptz, available numeric, unavailable numeric, source)
+
+sync_runs(id, account_id, kind, started_at, finished_at, status, error, cursor)
+```
+
+**Dedup:** the same money movement can show up in both `payments_api` and a report. Treat the reports as authoritative and match on `SOURCE_ID == payment.id`. Keep the payments-API row only until the report row arrives.
+
+---
+
+## 5. Sync strategy
+
+1. **Backfill (one-time per account):** generate reports in date chunks from `MP_HISTORY_START` to now, download, parse, upsert. Also page `payments/search` over the same range.
+2. **Incremental (cron):**
+   - Every 15–30 min: `payments/search` with `begin_date = last_sync - 1 day` (overlap, then dedupe).
+   - Daily: rely on the scheduled report (or `POST` a report for the last 2 days), download, upsert, refresh the balance.
+3. **Webhooks (optional, later):** MP notifications can push `payment` events to a public HTTPS endpoint (configured under the app's *Webhooks* section). You must validate the `x-signature` HMAC-SHA256 header with the app's webhook secret. This isn't needed for v1; cron polling is enough for a personal dashboard.
+
+Use a scheduler your hosting supports (Vercel Cron, GitHub Actions schedule, Supabase pg_cron, etc.).
+
+---
+
+## 6. Verification (do this first, report back to the owner)
+
+With each token, run and record the HTTP status:
+
+1. `GET /users/me` → expect 200; confirm `id` matches config.
+2. `GET /v1/payments/search?limit=5&sort=date_created&criteria=desc` → expect 200.
+3. `GET /users/{id}/mercadopago_account/balance` → note 200 vs 4xx.
+4. `GET /v1/account/release_report/config` and `GET /v1/account/settlement_report/config` → note which work (404 can just mean "not configured yet". Try `POST` config next).
+5. Generate one small report (last 7 days) and confirm the CSV downloads and parses.
+
+Then tell the owner, in plain language, which data sources work for their account and which items (if any) need manual import.
+
+---
+
+## 7. Dashboard features this enables
+
+- Current balance per person + combined (with "as of" time).
+- Income vs. spending by month; net cash flow.
+- Transaction list with search, filters (account, direction, type, category, date), and CSV export.
+- Category breakdown (rule-based auto-categorization from description/counterparty, user-overridable).
+- Fees paid over time.
+- Top counterparties (who you pay / who pays you).
+- Data-freshness indicator and a "Sync now" button (server-side, rate-limited).
+
+---
+
+## 8. Open questions to ask the owner (only if not already answered)
+
+- Country/site if not Argentina?
+- One account or two? Labels?
+- How much history?
+- Hosting preference (affects where secrets live and which cron to use)?
+- Do they also want to import other banks/cards later? If so, keep `source` generic.
