@@ -196,16 +196,21 @@ export function importHash(accountId: number, date: string, amount: number, desc
 export const installmentSchema = txInputSchema
   .omit({ type: true, status: true, to_account_id: true, to_amount: true, is_settlement: true, date: true })
   .extend({
+    // Income in installments is money to collect: each cuota is pending until someone confirms it was paid.
+    type: z.enum(['expense', 'income']).default('expense'),
     purchase_date: dateStr,
     first_date: dateStr,
     count: z.number().int().min(2).max(72),
   });
 export type InstallmentInput = z.infer<typeof installmentSchema>;
 
-/** Creates a plan and one expense per month. Future installments are future-dated, so they show as committed spending. */
+/**
+ * Creates a plan and one movement per month. Expense installments are future-dated, so they show
+ * as committed spending. Income installments are created pending: they count once confirmed as paid.
+ */
 export function createInstallmentPlan(input: InstallmentInput, viewer: number): number {
   return db().transaction(() => {
-    const description = input.description.trim() || 'Compra en cuotas';
+    const description = input.description.trim() || (input.type === 'income' ? 'Cobro en cuotas' : 'Compra en cuotas');
     const planId = Number(
       db()
         .prepare('INSERT INTO installment_plans (description, total_amount, count, first_date, purchase_date, created_by) VALUES (?, ?, ?, ?, ?, ?)')
@@ -220,7 +225,14 @@ export function createInstallmentPlan(input: InstallmentInput, viewer: number): 
         : input.split;
     parts.forEach((amount, i) => {
       const tx = normaliseTx(
-        { ...input, split, type: 'expense', date: addMonths(input.first_date, i, day), amount, description: `${description} (cuota ${i + 1}/${input.count})` },
+        {
+          ...input,
+          split,
+          status: input.type === 'income' ? 'pending' : 'confirmed',
+          date: addMonths(input.first_date, i, day),
+          amount,
+          description: `${description} (cuota ${i + 1}/${input.count})`,
+        },
         viewer,
       );
       insertTx({ ...tx, installment_plan_id: planId, installment_number: i + 1 });

@@ -21,7 +21,7 @@ import {
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
-import { IconAlertCircle, IconPaperclip, IconTrash } from '@tabler/icons-react';
+import { IconAlertCircle, IconFileImport, IconPaperclip, IconTrash } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { useApp } from '../lib/app-state';
@@ -31,6 +31,7 @@ import { errorFields, FieldError, notifyError, notifyOk, useAccounts, useRefresh
 import type { SplitMethod, Tx, TxType } from '../lib/types';
 import { AccountSelect, CategorySelect, MoneyInput } from './inputs';
 import { SplitEditor, splitProblem } from './SplitEditor';
+import { CsvImportModal } from './CsvImportModal';
 
 type Form = {
   type: TxType;
@@ -114,6 +115,7 @@ export function TxFormModal() {
   const [saving, setSaving] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [suggested, setSuggested] = useState<string | null>(null);
+  const [csvOpen, setCsvOpen] = useState(false);
   const [bad, setBad] = useState<Set<string>>(new Set());
   const clearBad = (field: string) =>
     setBad((b) => {
@@ -144,6 +146,8 @@ export function TxFormModal() {
     setForm((f) => ({ ...f, [k]: v }));
   };
   const splittable = form.type === 'expense' || form.type === 'income';
+  // Purchases and sales in installments: expense cuotas are committed spending, income cuotas are pending until collected.
+  const inCuotas = form.installments && splittable && !editId;
   const account = accounts.data?.find((a) => a.id === form.account_id);
   const toAccount = accounts.data?.find((a) => a.id === form.to_account_id);
   const crossCurrency = form.type === 'transfer' && account && toAccount && account.currency !== toAccount.currency;
@@ -209,9 +213,9 @@ export function TxFormModal() {
         is_private: form.is_private,
       };
       let id = editId;
-      if (form.installments && !editId && form.type === 'expense') {
-        await api.post('/transactions/installments', { ...base, count: Number(form.count), purchase_date: form.date, first_date: form.first_date });
-        notifyOk(`Compra en ${form.count} cuotas registrada`);
+      if (inCuotas) {
+        await api.post('/transactions/installments', { ...base, type: form.type, count: Number(form.count), purchase_date: form.date, first_date: form.first_date });
+        notifyOk(form.type === 'income' ? `Cobro en ${form.count} cuotas registrado: confirmá cada cuota cuando la cobres` : `Compra en ${form.count} cuotas registrada`);
       } else {
         const body = {
           ...base,
@@ -292,8 +296,19 @@ export function TxFormModal() {
             </Alert>
           )}
           {readOnly && <Alert color="gray">Este movimiento está en una cuenta privada o de solo lectura.</Alert>}
-          {tx?.installment_plan_id && <Alert color="blue">Cuota {tx.installment_number} de una compra en cuotas. Los cambios afectan solo a esta cuota.</Alert>}
+          {tx?.installment_plan_id && (
+            <Alert color="blue">
+              Cuota {tx.installment_number} de {tx.type === 'income' ? 'un cobro' : 'una compra'} en cuotas. Los cambios afectan solo a esta cuota.
+            </Alert>
+          )}
 
+          {!editId && (
+            <Group justify="flex-end" mb={-6}>
+              <Button variant="subtle" size="compact-xs" leftSection={<IconFileImport size={14} />} onClick={() => setCsvOpen(true)}>
+                Importar CSV
+              </Button>
+            </Group>
+          )}
           <SegmentedControl
             fullWidth
             disabled={!!editId}
@@ -302,14 +317,14 @@ export function TxFormModal() {
             data={[
               { value: 'expense', label: 'Gasto' },
               { value: 'income', label: 'Ingreso' },
-              { value: 'transfer', label: 'Transferencia' },
+              { value: 'transfer', label: 'Transf. propia' },
               { value: 'adjustment', label: 'Ajuste' },
             ]}
           />
 
           <SimpleGrid cols={{ base: 1, xs: 2 }}>
             <MoneyInput
-              label={form.installments ? 'Monto total de la compra' : 'Monto'}
+              label={inCuotas ? (form.type === 'income' ? 'Monto total a cobrar' : 'Monto total de la compra') : 'Monto'}
               currency={account?.currency}
               value={form.amount}
               onChange={(v) => set('amount', v)}
@@ -320,7 +335,7 @@ export function TxFormModal() {
               error={bad.has('amount')}
             />
             <DateInput
-              label={form.installments ? 'Fecha de compra' : 'Fecha'}
+              label={inCuotas ? (form.type === 'income' ? 'Fecha de venta' : 'Fecha de compra') : 'Fecha'}
               value={form.date}
               onChange={(v) => v && set('date', v)}
               valueFormat="DD/MM/YYYY"
@@ -379,13 +394,24 @@ export function TxFormModal() {
             </>
           )}
 
-          {form.type === 'expense' && !editId && (
-            <Switch label="Compra en cuotas" checked={form.installments} onChange={(e) => set('installments', e.currentTarget.checked)} />
+          {splittable && !editId && (
+            <Switch
+              label={form.type === 'income' ? 'Cobro en cuotas' : 'Compra en cuotas'}
+              description={form.type === 'income' ? 'Cada cuota queda pendiente hasta que confirmes que la cobraste.' : undefined}
+              checked={form.installments}
+              onChange={(e) => set('installments', e.currentTarget.checked)}
+            />
           )}
-          <Collapse in={form.installments && form.type === 'expense' && !editId}>
+          <Collapse in={inCuotas}>
             <SimpleGrid cols={2}>
               <NumberInput label="Cantidad de cuotas" min={2} max={72} value={form.count} onChange={(v) => set('count', v)} error={bad.has('count')} />
-              <DateInput label="Primera cuota" description="Mes en que llega el primer resumen" value={form.first_date} onChange={(v) => v && set('first_date', v)} valueFormat="DD/MM/YYYY" />
+              <DateInput
+                label={form.type === 'income' ? 'Primer cobro' : 'Primera cuota'}
+                description={form.type === 'income' ? 'Las demás vencen el mismo día de cada mes' : 'Mes en que llega el primer resumen'}
+                value={form.first_date}
+                onChange={(v) => v && set('first_date', v)}
+                valueFormat="DD/MM/YYYY"
+              />
             </SimpleGrid>
             {Number(form.count) > 1 && toCents(form.amount) > 0 && (
               <Text size="sm" c="dimmed" mt={4}>
@@ -491,6 +517,7 @@ export function TxFormModal() {
           </Group>
         </Stack>
       )}
+      {csvOpen && <CsvImportModal onClose={() => setCsvOpen(false)} onDone={() => { setCsvOpen(false); closeTx(); }} />}
     </Modal>
   );
 }

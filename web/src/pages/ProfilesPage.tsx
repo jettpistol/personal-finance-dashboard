@@ -95,7 +95,6 @@ export function ProfilesPage() {
                     <Table.Td>
                       <Group gap={8}>
                         <Text fw={p.id === current ? 700 : 500}>{p.name}</Text>
-                        {p.is_default && <span className="pfd-tag" data-tone="gray">Por defecto</span>}
                         {p.id === current && <Badge size="sm">En uso</Badge>}
                       </Group>
                     </Table.Td>

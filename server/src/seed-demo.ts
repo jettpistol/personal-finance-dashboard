@@ -83,6 +83,12 @@ for (let m = start; m <= currentMonth(); m = addMonthsToMonth(m, 1)) {
   tx(milagros, { type: 'income', date: d(2), amount: $(1_100_000 * inflation), account_id: milagrosBank, category_id: cat['Sueldo'], description: 'Sueldo Milagros' });
   if (rnd() > 0.4) tx(milagros, { type: 'income', date: d(18), amount: $(between(150_000, 400_000)), account_id: milagrosMp, category_id: cat['Freelance'], description: 'Proyecto freelance' });
 
+  // Shared income: received in one person's account, half belongs to the other.
+  tx(ivan, { type: 'income', date: d(7), amount: $(60_000 * inflation), account_id: ivanBank, category_id: cat['Otros ingresos'], description: 'Alquiler de la cochera', is_shared: true });
+  if (rnd() > 0.5) tx(milagros, { type: 'income', date: d(13), amount: $(between(20_000, 45_000)), account_id: milagrosMp, category_id: cat['Reintegros'], description: 'Reintegro obra social', is_shared: true });
+  tx(ivan, { type: 'income', date: d(28), amount: $(between(8_000, 15_000)), account_id: joint, category_id: cat['Intereses'], description: 'Intereses cuenta remunerada' });
+  if (rnd() > 0.6) tx(ivan, { type: 'income', date: d(22), amount: $(between(30_000, 90_000)), account_id: ivanMp, category_id: cat['Ventas'], description: 'Venta en Mercado Libre' });
+
   // Contributions to the joint pot.
   tx(ivan, { type: 'transfer', date: d(3), amount: $(700_000 * inflation), account_id: ivanBank, to_account_id: joint, description: 'Aporte a la cuenta común' });
   tx(milagros, { type: 'transfer', date: d(3), amount: $(550_000 * inflation), account_id: milagrosBank, to_account_id: joint, description: 'Aporte a la cuenta común' });
@@ -118,9 +124,31 @@ for (let m = start; m <= currentMonth(); m = addMonthsToMonth(m, 1)) {
   }
 }
 
+// Deudores: what Iván lent around (money and things), some partly returned.
+{
+  const loan = db().prepare('INSERT INTO loans (owner_id, person, kind, item, amount, currency, lent_on, due_on, notes, closed_on, closed_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const back = db().prepare('INSERT INTO loan_returns (loan_id, date, amount, note) VALUES (?, ?, ?, ?)');
+  const id = (r: { lastInsertRowid: number | bigint }) => Number(r.lastInsertRowid);
+  const juan = id(loan.run(ivan, 'Juan', 'money', 'Para el seguro del auto', $(120_000), 'ARS', addMonths(today(), -2), addMonths(today(), -1), null, null, null));
+  back.run(juan, addMonths(today(), -1), $(50_000), 'Me pasó por transferencia');
+  loan.run(ivan, 'Juan', 'item', 'Taladro Bosch', null, 'ARS', addMonths(today(), -4), null, 'Con la caja de mechas', null, null);
+  loan.run(ivan, 'Sofi (hermana)', 'money', 'Pasajes a Córdoba', $(200), 'USD', addMonths(today(), -1), addMonths(today(), 2), null, null, null);
+  loan.run(ivan, 'Martín', 'item', 'Libro «Sapiens»', null, 'ARS', addMonths(today(), -7), null, null, null, null);
+  const lucas = id(loan.run(ivan, 'Lucas', 'money', 'Cena de cumpleaños', $(35_000), 'ARS', addMonths(today(), -3), null, null, addMonths(today(), -2), 'returned'));
+  back.run(lucas, addMonths(today(), -2), $(35_000), null);
+  loan.run(ivan, 'Caro', 'money', null, $(15_000), 'ARS', addMonths(today(), -5), null, 'Le dije que no hacía falta', addMonths(today(), -1), 'forgiven');
+}
+
+// Income in installments: the old bike, sold in 3 cuotas. The first one was already collected.
+const bikePlan = createInstallmentPlan(
+  { type: 'income', amount: $(450_000), count: 3, purchase_date: addMonths(today(), -1), first_date: addMonths(today(), -1), account_id: ivanBank, category_id: cat['Ventas'], description: 'Venta de la bici a Tomás', tags: [], is_shared: false, is_private: false },
+  ivan,
+);
+db().prepare(`UPDATE transactions SET status = 'confirmed' WHERE installment_plan_id = ? AND installment_number = 1`).run(bikePlan);
+
 // Installments: a fridge in 6 cuotas, shared.
 createInstallmentPlan(
-  { amount: $(1_200_000), count: 6, purchase_date: addMonths(today(), -2), first_date: addMonths(today(), -1), account_id: ivanCard, category_id: cat['Hogar'], description: 'Heladera', tags: ['hogar'], is_shared: true, is_private: false },
+  { type: 'expense', amount: $(1_200_000), count: 6, purchase_date: addMonths(today(), -2), first_date: addMonths(today(), -1), account_id: ivanCard, category_id: cat['Hogar'], description: 'Heladera', tags: ['hogar'], is_shared: true, is_private: false },
   ivan,
 );
 

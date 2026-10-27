@@ -42,6 +42,7 @@ import {
   IconSettings,
   IconSun,
   IconTarget,
+  IconUserDollar,
   IconWand,
 } from '@tabler/icons-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -52,6 +53,8 @@ import type { Notification, Scope } from '../lib/types';
 import { TxFormModal } from './TxFormModal';
 import { useProfiles, useSelectProfile } from '../lib/profiles';
 import { date } from '../lib/format';
+import { logoutAccount } from '../lib/accounts';
+import { AccountMenuSection, AddAccountModal, LogoutAllItem } from './AccountSwitcher';
 
 const NAV = [
   { section: 'General' },
@@ -59,6 +62,7 @@ const NAV = [
   { to: '/movimientos', label: 'Movimientos', icon: IconListDetails },
   { to: '/cuentas', label: 'Cuentas', icon: IconBuildingBank },
   { to: '/saldos', label: 'Gastos compartidos', icon: IconArrowsExchange },
+  { to: '/deudores', label: 'Deudores', icon: IconUserDollar },
   { section: 'Planificación' },
   { to: '/presupuestos', label: 'Presupuestos', icon: IconPigMoney },
   { to: '/metas', label: 'Metas de ahorro', icon: IconTarget },
@@ -203,11 +207,9 @@ export function Layout({ children }: { children: ReactNode }) {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const scoped = SCOPED.includes(location.pathname);
 
-  const logout = async () => {
-    await api.post('/auth/logout');
-    qc.clear();
-    qc.invalidateQueries({ queryKey: ['auth'] });
-  };
+  const [addAccountOpen, addAccount] = useDisclosure();
+  // Logs out the active user; if another account is logged in on this browser, the app continues as it.
+  const logout = () => logoutAccount(qc);
 
   return (
     <AppShell layout="alt" header={{ height: 52 }} navbar={{ width: 224, breakpoint: 'sm', collapsed: { mobile: !opened } }} padding="lg">
@@ -242,6 +244,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 </UnstyledButton>
               </Menu.Target>
               <Menu.Dropdown>
+                <AccountMenuSection onAdd={addAccount.open} />
                 <Menu.Item
                   leftSection={colorScheme === 'dark' ? <IconSun size={16} /> : <IconMoon size={16} />}
                   onClick={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
@@ -254,8 +257,10 @@ export function Layout({ children }: { children: ReactNode }) {
                 <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={logout}>
                   Cerrar sesión
                 </Menu.Item>
+                <LogoutAllItem />
               </Menu.Dropdown>
             </Menu>
+            <AddAccountModal opened={addAccountOpen} onClose={addAccount.close} />
           </Group>
         </Group>
       </AppShell.Header>

@@ -274,4 +274,30 @@ export const migrations: string[] = [
   UPDATE settings SET key = 'budget_indexing' WHERE key = 'budget_auto_index';
   DELETE FROM settings WHERE key = 'budget_indexed_cpi_month';
   `,
+  // Deudores: money and things lent to other people, with partial returns. Private to whoever lent.
+  `
+  CREATE TABLE loans (
+    id INTEGER PRIMARY KEY,
+    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    person TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('money', 'item')),
+    item TEXT,
+    amount INTEGER,
+    currency TEXT NOT NULL DEFAULT 'ARS' CHECK (currency IN ('ARS', 'USD')),
+    lent_on TEXT NOT NULL,
+    due_on TEXT,
+    notes TEXT,
+    closed_on TEXT,
+    closed_reason TEXT CHECK (closed_reason IN ('returned', 'forgiven')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX loans_owner ON loans (owner_id, closed_on);
+  CREATE TABLE loan_returns (
+    id INTEGER PRIMARY KEY,
+    loan_id INTEGER NOT NULL REFERENCES loans(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    amount INTEGER,
+    note TEXT
+  );
+  `,
 ];

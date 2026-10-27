@@ -39,7 +39,8 @@ export default async function reportRoutes(app: FastifyInstance) {
       .filter((t) => t.status === 'confirmed' && t.date <= d && (scopeEntry(t, scope, accounts) || (t.type !== 'expense' && t.type !== 'income' && scopeAccs.some((a) => a.id === t.account_id || a.id === t.to_account_id))))
       .slice(0, 8)
       .map((t) => presentTx(t, viewer, accounts));
-    const pending = all.filter((t) => t.status === 'pending').length;
+    // Only what is already due: future income installments wait until their date.
+    const pending = all.filter((t) => t.status === 'pending' && t.date <= today()).length;
     const upcoming = fetchTxs({ from: d })
       .filter((t) => t.installment_plan_id && t.date > d && scopeEntry(t, scope, accounts) && txVisibility(t, viewer, accounts) !== 'hidden')
       .reduce<Record<string, number>>((acc, t) => {

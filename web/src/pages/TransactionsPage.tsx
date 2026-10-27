@@ -15,11 +15,14 @@ import type { TxList } from '../lib/types';
 import { PageHeader } from '../components/Layout';
 import { TxTable } from '../components/TxTable';
 import { AccountSelect, CategorySelect } from '../components/inputs';
+import { GroupedSelect } from '../components/GroupedSelect';
 
 const PAGE_SIZE = 50;
 
 export function TransactionsPage() {
-  const { scope, openTx } = useApp();
+  const { scope, openTx, users } = useApp();
+  // The dashboard tab the list is grouped by, by name: Hogar, Iván, Milagros.
+  const boardName = scope === 'household' ? 'Hogar' : (users.find((u) => `user:${u.id}` === scope)?.display_name ?? 'Personal');
   const [params, setParams] = useSearchParams();
   const cats = useCategories();
   const tags = useTags();
@@ -76,7 +79,7 @@ export function TransactionsPage() {
       title: `Categorizar ${selected.size} movimientos`,
       children: (
         <Stack>
-          <Select
+          <GroupedSelect
             searchable
             label="Categoría"
             data={[...categorySelectData(cats.data, 'expense'), ...categorySelectData(cats.data, 'income').map((g) => ({ ...g, group: `${g.group} (ingreso)` }))]}
@@ -141,7 +144,7 @@ export function TransactionsPage() {
               data={[
                 { value: 'expense', label: 'Gastos' },
                 { value: 'income', label: 'Ingresos' },
-                { value: 'transfer', label: 'Transferencias' },
+                { value: 'transfer', label: 'Transf. propias' },
                 { value: 'adjustment', label: 'Ajustes' },
               ]}
             />
@@ -177,7 +180,7 @@ export function TransactionsPage() {
               );
             })}
             <Button size="compact-xs" variant="default" className="pfd-toggle" data-on={onlyScope || undefined} aria-pressed={onlyScope} onClick={() => setOnlyScope(!onlyScope)}>
-              Solo del tablero seleccionado
+              Tablero: {boardName}
             </Button>
           </Group>
         </Stack>
@@ -204,7 +207,7 @@ export function TransactionsPage() {
             </Menu>
           )}
         </Group>
-        <TxTable rows={data?.items ?? []} selectable selected={selected} onSelect={setSelected} />
+        <TxTable rows={data?.items ?? []} selectable selected={selected} onSelect={setSelected} hideOwner={onlyScope} />
         {data && data.total > PAGE_SIZE && (
           <Group justify="center" p="md">
             <Pagination total={Math.ceil(data.total / PAGE_SIZE)} value={page} onChange={setPage} size="sm" />

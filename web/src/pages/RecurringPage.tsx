@@ -74,7 +74,7 @@ export function RecurringPage() {
 function PendingAlert() {
   const pending = useQuery({
     queryKey: ['transactions', 'pending'],
-    queryFn: () => api.get<TxList>(`/transactions${qs({ status: 'pending', page_size: 100 })}`),
+    queryFn: () => api.get<TxList>(`/transactions${qs({ status: 'pending', to: today(), page_size: 100 })}`),
   });
   const [open, setOpen] = useState(false);
   const count = pending.data?.items.length ?? 0;
@@ -87,7 +87,7 @@ function PendingAlert() {
       <Alert color="yellow" icon={<IconAlertCircle size={16} />} p="xs">
         <Group justify="space-between" wrap="nowrap" gap="sm">
           <Text size="sm">
-            {count === 1 ? 'Hay 1 recurrente vencido para confirmar con el monto real.' : `Hay ${count} recurrentes vencidos para confirmar con el monto real.`}
+            {count === 1 ? 'Hay 1 movimiento vencido para confirmar con el monto real.' : `Hay ${count} movimientos vencidos para confirmar con el monto real.`}
           </Text>
           <Button size="xs" variant="default" onClick={() => setOpen(true)}>
             Revisar

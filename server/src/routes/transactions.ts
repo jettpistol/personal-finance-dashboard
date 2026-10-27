@@ -17,6 +17,7 @@ import {
   updateTx,
 } from '../lib/transactions.js';
 import { checkBudgetAlerts } from '../lib/budgets.js';
+import { processMovementsCsv } from '../lib/csv-movements.js';
 import { applyRules, loadRules } from '../lib/rules.js';
 import { today } from '../lib/dates.js';
 import { bool, idParam, parse } from './util.js';
@@ -117,6 +118,19 @@ export default async function transactionRoutes(app: FastifyInstance) {
     return presentTx(tx, req.userId, loadAccounts());
   });
 
+  // Bulk upload from the simple movements CSV (see ejemplo-movimientos.csv). ?commit=1 saves the valid rows.
+  app.post('/transactions/csv', async (req) => {
+    const file = await req.file();
+    if (!file) throw new HttpError(400, 'Falta el archivo');
+    const commit = bool((req.query as { commit?: string }).commit);
+    try {
+      return await processMovementsCsv(await file.toBuffer(), file.filename, req.userId, commit);
+    } catch (e) {
+      if (e instanceof HttpError) throw e;
+      throw new HttpError(400, `No se pudo leer el archivo: ${(e as Error).message}`);
+    }
+  });
+
   app.post('/transactions/installments', async (req) => {
     const input = parse(installmentSchema, req.body);
     const planId = createInstallmentPlan(input, req.userId);
@@ -209,7 +223,7 @@ export default async function transactionRoutes(app: FastifyInstance) {
   app.get('/installments/upcoming', async (req) => {
     const accounts = loadAccounts();
     const rows = fetchTxs({ from: today() })
-      .filter((t) => t.installment_plan_id && t.date > today() && txVisibility(t, req.userId, accounts) !== 'hidden');
+      .filter((t) => t.installment_plan_id && t.type === 'expense' && t.date > today() && txVisibility(t, req.userId, accounts) !== 'hidden');
     const byMonth = new Map<string, { month: string; ARS: number; USD: number; count: number }>();
     for (const t of rows) {
       const m = t.date.slice(0, 7);
@@ -221,7 +235,7 @@ export default async function transactionRoutes(app: FastifyInstance) {
     const plans = db()
       .prepare(
         `SELECT p.*, COUNT(t.id) AS remaining, MIN(t.date) AS next_date, SUM(t.amount) AS remaining_amount, MAX(t.currency) AS currency, MAX(t.account_id) AS account_id
-         FROM installment_plans p JOIN transactions t ON t.installment_plan_id = p.id AND t.date > ?
+         FROM installment_plans p JOIN transactions t ON t.installment_plan_id = p.id AND t.type = 'expense' AND t.date > ?
          GROUP BY p.id ORDER BY next_date`,
       )
       .all(today()) as { account_id: number }[];

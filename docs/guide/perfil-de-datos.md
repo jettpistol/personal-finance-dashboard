@@ -29,7 +29,7 @@ The page has two boxes.
 **Perfiles**: a table with one row per profile.
 
 - First column (no title): a round button, filled for the profile you are using.
-- **Nombre**: the profile's name. The one in use is in bold with an **En uso** label. The default profile carries a grey **Por defecto** label.
+- **Nombre**: the profile's name. The one in use is in bold with an **En uso** label.
 - **Cuentas** and **Movimientos**: how many accounts and movements it holds, so you can tell an empty profile from a full one.
 - On the right, a pencil button (rename) and, except on the default profile, a bin button (delete).
 
@@ -39,7 +39,7 @@ The profile in use is also shown in the top bar, next to the **ARS / USD** switc
 
 ## The profiles you start with
 
-- **Vacío**: created automatically on a new installation, marked **Por defecto** and empty (default categories only). It can be renamed but never deleted. It is what the app opens on until you pick something else.
+- **Vacío**: created automatically on a new installation, the default one and empty (default categories only). It can be renamed but never deleted. It is what the app opens on until you pick something else.
 - **Prueba (demo)**: only exists if the app was started with demo data. It holds about five months of made-up movements for Iván and Milagros. Its exchange rates and CPI are synthetic and marked `demo` in the **Fuente** column; **Actualizar desde BNA** and **Actualizar IPC** in **Ajustes → Cotizaciones e inflación** replace them with real ones (the app also does it by itself when it can reach the internet).
 - **Principal**: only on installations that existed before profiles were added. It holds the data you had then. Those installations also get an empty **Vacío** as the default, so pick **Principal** once in each browser.
 

@@ -17,9 +17,9 @@ The large figure at the top: "Suma de todas las cuentas que podés ver, converti
 
 ### Groups
 
-Accounts are grouped by owner, each group with its own subtotal on the right (same conversion, archived accounts left out):
+A list on the left picks what to show: **Todas**, **Compartido**, or one of you (with the number of accounts of each). The cards fill the space on the right, under a heading per group with its own subtotal (same conversion, archived accounts left out). On a phone the list becomes a row of tabs above the cards. The choice is kept in the address (for example `?ver=compartido`), so the page reopens the same way.
 
-- **Común**: joint accounts, belonging to both of you.
+- **Compartido**: joint accounts, belonging to both of you.
 - **Your name**: your personal accounts.
 - **Your partner's name**: their personal accounts that aren't private. Their private accounts don't appear at all, not even in the total.
 

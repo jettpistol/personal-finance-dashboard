@@ -1,4 +1,5 @@
-import { NumberInput, Select, type NumberInputProps, type SelectProps } from '@mantine/core';
+import { NumberInput, type NumberInputProps } from '@mantine/core';
+import { GroupedSelect, type GroupedSelectProps } from './GroupedSelect';
 import { accountSelectData, categorySelectData, useAccounts, useCategories } from '../lib/queries';
 import { useApp } from '../lib/app-state';
 import type { Currency } from '../lib/types';
@@ -25,7 +26,7 @@ export function AccountSelect({
   includeArchived,
   currency,
   ...props
-}: Omit<SelectProps, 'value' | 'onChange' | 'data'> & {
+}: Omit<GroupedSelectProps, 'value' | 'onChange' | 'data' | 'defaultValue'> & {
   value: number | null | undefined;
   onChange: (id: number | null) => void;
   writableOnly?: boolean;
@@ -35,7 +36,7 @@ export function AccountSelect({
   const accounts = useAccounts();
   const { users } = useApp();
   return (
-    <Select
+    <GroupedSelect
       searchable
       data={accountSelectData(accounts.data, users, { writableOnly, includeArchived, currency })}
       value={value == null ? null : String(value)}
@@ -52,10 +53,10 @@ export function CategorySelect({
   kind,
   parentsOnly,
   ...props
-}: Omit<SelectProps, 'value' | 'onChange' | 'data'> & { value: number | null | undefined; onChange: (id: number | null) => void; kind: 'expense' | 'income'; parentsOnly?: boolean }) {
+}: Omit<GroupedSelectProps, 'value' | 'onChange' | 'data' | 'defaultValue'> & { value: number | null | undefined; onChange: (id: number | null) => void; kind: 'expense' | 'income'; parentsOnly?: boolean }) {
   const cats = useCategories();
   return (
-    <Select
+    <GroupedSelect
       searchable
       clearable
       data={categorySelectData(cats.data, kind, { parentsOnly })}

@@ -20,6 +20,7 @@ import { RecurringPage } from './pages/RecurringPage';
 import { ReviewPage } from './pages/ReviewPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ProfilesPage } from './pages/ProfilesPage';
+import { DebtorsPage } from './pages/DebtorsPage';
 
 type Status = { needsSetup: boolean; user: { id: number; username: string; display_name: string; color: string } | null };
 
@@ -70,6 +71,7 @@ function Authed({ me }: { me: NonNullable<Status['user']> }) {
           <Route path="/cierre" element={<ReviewPage />} />
           <Route path="/ajustes" element={<SettingsPage />} />
           <Route path="/perfiles" element={<ProfilesPage />} />
+          <Route path="/deudores" element={<DebtorsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

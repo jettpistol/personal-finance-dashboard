@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.5.0</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.6.0</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.6.0"><b>0.6.0</b><span class="date">Oct 27, 2026</span></a>
         <a class="idx" href="#v0.5.0"><b>0.5.0</b><span class="date">Oct 26, 2026</span></a>
         <a class="idx" href="#v0.4.5"><b>0.4.5</b><span class="date">Oct 26, 2026</span></a>
         <a class="idx" href="#v0.4.4"><b>0.4.4</b><span class="date">Oct 26, 2026</span></a>
@@ -70,6 +71,40 @@
 
       <td class="main">
         <p class="lead">What changed in each version</p>
+
+        <a name="v0.6.0"></a>
+        <h2>0.6.0 <span class="date">&middot; Oct 27, 2026</span></h2>
+        <h3>New: Deudores</h3>
+        <ul>
+          <li>A section to note money and things you lend: who, how much (or what), when, and by when it should come back.</li>
+          <li>Partial returns with a progress bar; the loan closes itself when it's fully paid. You can also forgive the rest or reopen it.</li>
+          <li>Totals of what you're owed (pesos and dollars), things lent, and overdue loans in red.</li>
+          <li><b>Recordar</b> copies a friendly message listing what that person still has, ready for WhatsApp.</li>
+          <li>Standalone for now: not linked to accounts or reports. Each of you only sees your own list.</li>
+        </ul>
+        <h3>General</h3>
+        <ul>
+          <li>Switch account: from the user menu, <b>Agregar cuenta</b> logs your partner in too, and one click switches between you without a password. <b>Cerrar sesión</b> only logs out the account in use.</li>
+          <li>Pop-up messages have the close button on the left and the colored bar on the right.</li>
+          <li>Dropdowns with groups (Cuenta, Categoría): group titles span the full width and open or close their entries. Only the group of the selected entry starts open; typing searches all of them.</li>
+        </ul>
+        <h3>Movimientos</h3>
+        <ul>
+          <li><b>Importar CSV</b> in Nuevo movimiento: load many movements from one file, with a downloadable example, a row-by-row check and repeated rows skipped.</li>
+          <li><b>Cobro en cuotas</b>: income in installments. Each cuota stays pending (money to collect) until you confirm it was paid; due ones appear in the yellow alert.</li>
+          <li>"Transferencia" is now <b>Transf. propia</b>, to tell it apart from paying someone.</li>
+          <li>The board filter is called <b>Tablero: Hogar</b> / <b>Tablero: Iván</b> / <b>Tablero: Milagros</b>, and hides the Compartido / name tag while it's on.</li>
+        </ul>
+        <h3>Cuentas</h3>
+        <ul>
+          <li>A list on the left (Todas, Compartido, Iván, Milagros) picks which accounts show; cards are grouped by owner on the right.</li>
+        </ul>
+        <h3>Other</h3>
+        <ul>
+          <li>Perfil de datos: no more "Por defecto" tag.</li>
+          <li>Test data: shared income (garage rent, health insurance refund), interest, sales, a sale in 3 cuotas, and sample loans in Deudores.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.5.0"></a>
         <h2>0.5.0 <span class="date">&middot; Oct 26, 2026</span></h2>

@@ -47,13 +47,18 @@ export function createSession(userId: number): { token: string; expiresAt: numbe
   return { token, expiresAt };
 }
 
-export function sessionUser(token: string | undefined): number | null {
+/** The user and expiry of a live session, or null if the token is unknown or expired. */
+export function sessionInfo(token: string | undefined): { userId: number; expiresAt: number } | null {
   if (!token) return null;
   const row = coreDb().prepare('SELECT user_id, expires_at FROM sessions WHERE token_hash = ?').get(hashToken(token)) as
     | { user_id: number; expires_at: number }
     | undefined;
   if (!row || row.expires_at < Date.now()) return null;
-  return row.user_id;
+  return { userId: row.user_id, expiresAt: row.expires_at };
+}
+
+export function sessionUser(token: string | undefined): number | null {
+  return sessionInfo(token)?.userId ?? null;
 }
 
 export function destroySession(token: string | undefined) {

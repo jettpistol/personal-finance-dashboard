@@ -19,7 +19,10 @@ declare module 'fastify' {
 }
 
 export const SESSION_COOKIE = 'pfd_session';
-const PUBLIC_API = new Set(['/api/auth/status', '/api/auth/login', '/api/auth/setup', '/api/health']);
+/** Other accounts logged in on this browser (session tokens joined by "."), for one-click switching. */
+export const EXTRA_SESSIONS_COOKIE = 'pfd_more';
+// Logout is public so a browser whose active session expired can still sign out the other accounts.
+const PUBLIC_API = new Set(['/api/auth/status', '/api/auth/login', '/api/auth/setup', '/api/auth/logout', '/api/health']);
 
 export async function buildApp(opts: { logger?: boolean; serveWeb?: boolean } = {}): Promise<FastifyInstance> {
   const app = Fastify({

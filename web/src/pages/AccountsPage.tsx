@@ -16,7 +16,7 @@ import {
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { IconDots, IconEdit, IconListDetails, IconLock, IconPlus, IconTrash } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../components/Layout';
 import { MoneyInput } from '../components/inputs';
 import { api, ApiError } from '../lib/api';
@@ -246,20 +246,40 @@ function AccountCard({ a, onEdit }: { a: Account; onEdit: () => void }) {
   );
 }
 
+/** URL value for a group: `compartido` for joint accounts, the username for a person. */
+const JOINT = 'compartido';
+
 export function AccountsPage() {
   const { users, currency } = useApp();
   const accounts = useAccounts();
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<Account | null | 'new'>(null);
+  const [params, setParams] = useSearchParams();
 
   const list = (accounts.data ?? []).filter((a) => showArchived || !a.archived);
   const conv = (a: Account) => (currency === 'ARS' ? a.balance_ars : a.balance_usd) ?? 0;
-  const groups = [
-    { key: 'joint', title: 'Común', items: list.filter((a) => a.owner_id === null) },
-    ...users.map((u) => ({ key: `u${u.id}`, title: u.display_name, items: list.filter((a) => a.owner_id === u.id) })),
-  ].filter((g) => g.items.length);
+  const allGroups = [
+    { key: JOINT, title: 'Compartido', items: list.filter((a) => a.owner_id === null) },
+    ...users.map((u) => ({ key: u.username.toLowerCase(), title: u.display_name, items: list.filter((a) => a.owner_id === u.id) })),
+  ];
+  const requested = params.get('ver');
+  const view = allGroups.some((g) => g.key === requested) ? requested : null;
+  const groups = view ? allGroups.filter((g) => g.key === view) : allGroups.filter((g) => g.items.length);
   const total = list.filter((a) => !a.archived).reduce((s, a) => s + conv(a), 0);
   const missing = list.some((a) => !a.archived && (currency === 'ARS' ? a.balance_ars : a.balance_usd) == null);
+
+  const select = (key: string | null) =>
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        if (key) next.set('ver', key);
+        else next.delete('ver');
+        return next;
+      },
+      { replace: true },
+    );
+
+  const entries = [{ key: null as string | null, title: 'Todas', count: list.length }, ...allGroups.map((g) => ({ key: g.key as string | null, title: g.title, count: g.items.length }))];
 
   return (
     <>
@@ -289,37 +309,52 @@ export function AccountsPage() {
         </Text>
       </Card>
 
-      {accounts.isLoading && <Text c="dimmed">Cargando…</Text>}
-      {!accounts.isLoading && !groups.length && (
-        <Card>
-          <Text c="dimmed" ta="center">
-            Todavía no hay cuentas. Creá la primera para empezar a registrar movimientos.
-          </Text>
-        </Card>
-      )}
+      <div className="pfd-acct-layout">
+        <nav className="pfd-acct-nav" aria-label="Titular">
+          {entries.map((e) => (
+            <button key={e.key ?? 'all'} type="button" className="pfd-acct-nav-item" data-active={e.key === view || undefined} aria-pressed={e.key === view} onClick={() => select(e.key)}>
+              <span className="pfd-acct-nav-label">{e.title}</span>
+              <span className="pfd-acct-nav-count num">{e.count}</span>
+            </button>
+          ))}
+        </nav>
 
-      <Stack gap="xl">
-        {groups.map((g) => {
-          const sub = g.items.filter((a) => !a.archived).reduce((s, a) => s + conv(a), 0);
-          return (
-            <div key={g.key}>
-              <Group justify="space-between" mb="xs">
-                <Text fw={700} size="lg">
-                  {g.title}
-                </Text>
-                <Text className="num" fw={700} c={sub < 0 ? 'red' : 'dimmed'}>
-                  {money(sub, currency)}
-                </Text>
-              </Group>
-              <SimpleGrid cols={{ base: 1, xs: 2, md: 3, xl: 4 }}>
-                {g.items.map((a) => (
-                  <AccountCard key={a.id} a={a} onEdit={() => setEditing(a)} />
-                ))}
-              </SimpleGrid>
-            </div>
-          );
-        })}
-      </Stack>
+        <div style={{ minWidth: 0 }}>
+          {accounts.isLoading && <Text c="dimmed">Cargando…</Text>}
+          {!accounts.isLoading && !groups.some((g) => g.items.length) && (
+            <Card>
+              <Text c="dimmed" ta="center">
+                {view ? 'No hay cuentas en este grupo.' : 'Todavía no hay cuentas. Creá la primera para empezar a registrar movimientos.'}
+              </Text>
+            </Card>
+          )}
+
+          <Stack gap="xl">
+            {groups
+              .filter((g) => g.items.length)
+              .map((g) => {
+                const sub = g.items.filter((a) => !a.archived).reduce((s, a) => s + conv(a), 0);
+                return (
+                  <section key={g.key}>
+                    <Group justify="space-between" mb="xs">
+                      <Text component="h2" m={0} fw={700} size="lg">
+                        {g.title}
+                      </Text>
+                      <Text className="num" fw={700} c={sub < 0 ? 'red' : 'dimmed'}>
+                        {money(sub, currency)}
+                      </Text>
+                    </Group>
+                    <SimpleGrid type="container" cols={{ base: 1, '520px': 2, '820px': 3, '1120px': 4 }}>
+                      {g.items.map((a) => (
+                        <AccountCard key={a.id} a={a} onEdit={() => setEditing(a)} />
+                      ))}
+                    </SimpleGrid>
+                  </section>
+                );
+              })}
+          </Stack>
+        </div>
+      </div>
 
       {editing && <AccountModal account={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
     </>

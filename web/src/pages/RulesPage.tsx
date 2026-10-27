@@ -27,6 +27,7 @@ import { categoryLabel, categorySelectData, errorFields, FieldError, notifyError
 import type { Currency, Rule } from '../lib/types';
 import { PageHeader } from '../components/Layout';
 import { AccountSelect, CategorySelect, MoneyInput } from '../components/inputs';
+import { GroupedSelect } from '../components/GroupedSelect';
 
 const MATCH_LABEL: Record<Rule['match_type'], string> = {
   contains: 'contiene',
@@ -346,7 +347,7 @@ function RuleModal({ rule, onClose }: { rule: Rule | null; onClose: () => void }
           {form.set_type === 'transfer' ? (
             <AccountSelect label="Cuenta de la transferencia" description="La otra cuenta (ej: tu caja de ahorro en dólares)" value={form.set_to_account_id} onChange={(v) => set('set_to_account_id', v)} />
           ) : categoryData ? (
-            <Select
+            <GroupedSelect
               label="Categoría"
               searchable
               clearable

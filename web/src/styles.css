@@ -881,6 +881,72 @@ a {
   color: var(--mantine-color-navy-3);
 }
 
+/* Grouped dropdowns: the header strip runs edge to edge; the options keep the usual inset.
+   The dropdown drops its side padding and each option takes it back as a margin; while the
+   list scrolls, the header also reaches under the (thin, overlaid) scrollbar gutter. */
+[class*='-dropdown']:has([class*='-groupLabel']) {
+  padding-inline: 0;
+}
+
+[class*='-dropdown']:has([class*='-groupLabel']) [data-combobox-option]:not([class*='-groupLabel']),
+[class*='-dropdown']:has([class*='-groupLabel']) [class*='-empty'] {
+  margin-inline: var(--combobox-padding);
+}
+
+[class*='-dropdown'] [class*='-groupLabel'] {
+  padding-inline: calc(var(--combobox-padding) + 0.625rem);
+}
+
+[class*='-dropdown'] [data-offset-scrollbars]:not([data-vertical-hidden]) [class*='-groupLabel'] {
+  margin-inline-end: calc(var(--scrollarea-scrollbar-size) * -1);
+}
+
+/* GroupedSelect: each header is a toggle (caret ▸/▾) that collapses its group. */
+.pfd-gs-groupLabel[data-combobox-option] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pfd-gs-groupLabel[data-combobox-option]:hover,
+.pfd-gs-groupLabel[data-combobox-option][data-combobox-selected] {
+  background: var(--mantine-color-navy-0);
+  color: var(--mantine-color-navy-8);
+}
+
+.pfd-gs-groupLabel[data-combobox-option][data-combobox-selected] {
+  box-shadow: inset 3px 0 0 var(--mantine-color-navy-7);
+}
+
+[data-mantine-color-scheme='dark'] .pfd-gs-groupLabel[data-combobox-option]:hover,
+[data-mantine-color-scheme='dark'] .pfd-gs-groupLabel[data-combobox-option][data-combobox-selected] {
+  background: var(--mantine-color-dark-5);
+  color: var(--mantine-color-navy-2);
+}
+
+.pfd-gs-caret {
+  flex: none;
+  transition: transform 120ms ease;
+}
+
+.pfd-gs-groupLabel[data-open] .pfd-gs-caret {
+  transform: rotate(90deg);
+}
+
+.pfd-gs-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.pfd-gs-count {
+  font-weight: 600;
+  color: var(--mantine-color-dimmed);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Switch: only the lever is clickable; the text next to it is just a label. */
 .mantine-Switch-labelWrapper,
 .mantine-Switch-label,
@@ -997,4 +1063,140 @@ a {
 .mantine-Input-input[data-error]:focus,
 .mantine-Input-input[data-error]:focus-within {
   box-shadow: inset 0 1px 2px rgba(15, 42, 74, 0.09), 0 0 0 2px var(--mantine-color-red-1);
+}
+
+/* Toast notifications: close button on the left, colored bar on the right. */
+.mantine-Notification-root {
+  flex-direction: row-reverse;
+  padding-inline-start: var(--mantine-spacing-xs);
+  padding-inline-end: 22px;
+}
+
+.mantine-Notification-root::before {
+  inset-inline-start: auto;
+  inset-inline-end: 4px;
+}
+
+.mantine-Notification-closeButton {
+  margin-inline-end: var(--mantine-spacing-sm);
+}
+
+.mantine-Notification-body {
+  margin-inline-end: 0;
+}
+
+/* Cuentas: owner list on the left (a ruled box like the sidebar), cards on the right.
+   On a phone the list turns into a row of boxed tabs above the cards. */
+.pfd-acct-layout {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: var(--mantine-spacing-lg);
+  align-items: start;
+}
+
+.pfd-acct-nav {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--pfd-rule-strong);
+  background: var(--pfd-panel);
+  position: sticky;
+  top: 72px;
+}
+
+.pfd-acct-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  text-align: left;
+  color: var(--pfd-ink);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--pfd-rule);
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.pfd-acct-nav-item:first-child {
+  border-top: 0;
+}
+
+.pfd-acct-nav-item:hover {
+  background: var(--pfd-strip);
+}
+
+.pfd-acct-nav-item[data-active] {
+  background: var(--pfd-rail);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+  color: #fff;
+  font-weight: 700;
+}
+
+.pfd-acct-nav-item:focus-visible {
+  outline-offset: -2px;
+}
+
+.pfd-acct-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pfd-acct-nav-count {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  color: var(--pfd-ink-2);
+}
+
+.pfd-acct-nav-item[data-active] .pfd-acct-nav-count {
+  color: var(--pfd-rail-ink);
+}
+
+[data-mantine-color-scheme='dark'] .pfd-acct-nav-item[data-active] {
+  background-color: var(--pfd-rail-2);
+  box-shadow: inset 0 0 0 1px var(--mantine-color-navy-5);
+}
+
+@media (max-width: 48em) {
+  .pfd-acct-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--mantine-spacing-md);
+  }
+  .pfd-acct-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .pfd-acct-nav-item {
+    flex: 1 1 auto;
+    justify-content: center;
+    border-top: 0;
+    border-left: 1px solid var(--pfd-rule);
+  }
+  .pfd-acct-nav-item:first-child {
+    border-left: 0;
+  }
+}
+
+/* Deudores: one boxed card per person, title strip on top, one ruled row per loan. */
+.pfd-debtor-head {
+  background: linear-gradient(var(--pfd-strip-top), var(--pfd-strip-bottom));
+  border-bottom: 1px solid var(--pfd-rule);
+}
+
+.pfd-debtor-row {
+  padding: 10px var(--mantine-spacing-md);
+}
+
+.pfd-debtor-row + .pfd-debtor-row {
+  border-top: 1px solid var(--pfd-rule);
+}
+
+.pfd-debtor-row[data-closed] {
+  opacity: 0.6;
 }

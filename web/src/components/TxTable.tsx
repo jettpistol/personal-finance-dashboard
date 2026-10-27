@@ -30,12 +30,15 @@ export function TxTable({
   selectable,
   selected,
   onSelect,
+  hideOwner,
 }: {
   rows: Tx[];
   compact?: boolean;
   selectable?: boolean;
   selected?: Set<number>;
   onSelect?: (ids: Set<number>) => void;
+  /** Leave out the Compartido / person tag when the list is already grouped by it. */
+  hideOwner?: boolean;
 }) {
   const { openTx, users } = useApp();
   const accounts = useAccounts();
@@ -106,7 +109,7 @@ export function TxTable({
                         Pendiente
                       </span>
                     )}
-                    {t.owner === 'shared' ? (
+                    {hideOwner ? null : t.owner === 'shared' ? (
                       <Tooltip label={!t.is_shared ? 'Cuenta común' : `${t.type === 'income' ? 'Lo recibió' : 'Pagó'} ${payer?.display_name ?? 'la cuenta común'}`}>
                         <span className="pfd-tag" data-tone="grape">
                           Compartido

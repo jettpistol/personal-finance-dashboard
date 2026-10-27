@@ -247,7 +247,7 @@ export function DashboardPage() {
       )}
       {d.pending > 0 && (
         <Alert color="ocre" icon={<IconCalendarDue size={16} />} mb="md">
-          {d.pending === 1 ? 'Hay 1 movimiento recurrente' : `Hay ${d.pending} movimientos recurrentes`} para confirmar.{' '}
+          {d.pending === 1 ? 'Hay 1 movimiento' : `Hay ${d.pending} movimientos`} para confirmar.{' '}
           <Anchor component={Link} to="/recurrentes" fw={600}>
             Revisar ahora
           </Anchor>

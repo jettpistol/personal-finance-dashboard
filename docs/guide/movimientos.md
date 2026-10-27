@@ -20,7 +20,7 @@ The filter card has two rows of boxes and a row of toggle buttons. All filters c
 | **Buscar descripción, comercio o nota** | Finds movements whose description, merchant or notes contain the text. Upper and lower case don't matter. |
 | Date range | Starts on the current month. Click the **×** to clear it and see every date. A single day also works. |
 | **Todas las cuentas** | Shows one account only. Transfers appear whether the account is the origin or the destination. Archived accounts are listed here too. |
-| **Todos los tipos** | **Gastos**, **Ingresos**, **Transferencias** or **Ajustes**. |
+| **Todos los tipos** | **Gastos**, **Ingresos**, **Transf. propias** (between your own accounts) or **Ajustes**. |
 | **Todas las categorías** | Picking a main category also shows its subcategories. The list offers expense categories; choose **Ingresos** as the type first to get income categories. |
 | **Etiqueta** | Movements carrying that tag. |
 
@@ -29,8 +29,8 @@ Toggle buttons (click to turn on, click again to turn off):
 - **Compartidos**: only shared expenses and shared income.
 - **Pendientes**: only pending movements (recurring items waiting for confirmation).
 - **Sin categoría**: expenses and income with no category. Transfers and adjustments never have one, so they don't appear.
-- **En cuotas**: only installments from a **Compra en cuotas**.
-- **Solo del tablero seleccionado** (on by default): the dashboard tabs in the top bar pick whose movements you see. **Hogar** shows the **Compartido** ones; **Mío** shows yours (tag with your name); your partner's tab shows theirs. Turn it off to see everything you're allowed to see, whatever tab is selected.
+- **En cuotas**: only installments (from a **Compra en cuotas** or a **Cobro en cuotas**).
+- **Tablero: Hogar** / **Tablero: Iván** / **Tablero: Milagros** (on by default; the name follows the tab in the top bar): the dashboard tabs pick whose movements you see. **Hogar** shows the **Compartido** ones; a person's tab shows theirs. While it's on, the Compartido / name tag is hidden, since the whole list is one group. Turn it off to see everything you're allowed to see, with the tags.
 
 Coming from **Cuentas → Ver movimientos** opens this page already filtered to that account.
 
@@ -129,10 +129,10 @@ Fields marked with a red asterisk are required. Which fields appear depends on t
 
 ### Common fields
 
-1. **Type** (the four tabs at the top): **Gasto**, **Ingreso**, **Transferencia**, **Ajuste**.
+1. **Type** (the four tabs at the top): **Gasto**, **Ingreso**, **Transf. propia** (between your own or the household's accounts, not a payment to someone else), **Ajuste**.
 2. **Monto**: in the currency of the chosen account (the prefix switches between `$` and `US$`). Use a comma for decimals.
 3. **Fecha**: today by default.
-4. **Cuenta**: the account the money left or entered. The list is grouped by **Común**, you and your partner, and shows the currency of each account. Archived accounts aren't offered. A new form starts on your first personal account (or the first joint one if you have none).
+4. **Cuenta**: the account the money left or entered. The list is grouped by **Común**, you and your partner, and shows the currency of each account. Click a group's title to open or close it: when the list opens, only the group of the selected account is open; typing searches all groups. Archived accounts aren't offered. A new form starts on your first personal account (or the first joint one if you have none).
 5. **Descripción**: free text, for example "Supermercado". When you leave this box on a new expense or income, the app may fill in the category and more (see [Category suggestions](#category-suggestions)).
 6. **Comercio**: optional merchant name. Used by [Reportes](reportes.md) for top merchants.
 7. **Etiquetas**: type a tag and press Enter; existing tags are suggested. Up to 20 per movement.
@@ -145,7 +145,7 @@ Click **Guardar**. A confirmation message appears and the form closes.
 
 - **Categoría**: expense categories for **Gasto**, income categories for **Ingreso**. Optional; uncategorised movements can be found later with **Sin categoría**.
 - **Gasto compartido** / **Ingreso compartido** and **Privado**: see below.
-- **Compra en cuotas** (expenses only, new movements only): see below.
+- **Compra en cuotas** / **Cobro en cuotas** (new expenses and income only): see below.
 
 ### Transferencia
 
@@ -204,7 +204,7 @@ If the whole account should be hidden, make the account private instead: see [Cu
 
 ### Compra en cuotas (installments)
 
-For a card purchase paid in monthly installments. Available on a new **Gasto** only.
+For a card purchase paid in monthly installments. Available on a new **Gasto**. (For income, see **Cobro en cuotas** below.)
 
 1. Turn on **Compra en cuotas**. **Monto** becomes **Monto total de la compra** and **Fecha** becomes **Fecha de compra**.
 2. Enter the total and the purchase date.
@@ -220,6 +220,29 @@ What gets created:
 - The total is divided evenly; any leftover cents go to the first installments, so they add up exactly.
 - Category, tags, shared split and private flag are copied to every installment. A split with exact amounts is turned into the same proportions for each installment.
 - Installments dated in the future don't change account balances or who owes whom until their date arrives, but they show as committed spending on [Inicio](inicio.md).
+
+### Cobro en cuotas (income in installments)
+
+For something you sold or charged to be paid in monthly installments: it's money to collect, not money you have yet. Available on a new **Ingreso**.
+
+1. Turn on **Cobro en cuotas**. **Monto** becomes **Monto total a cobrar** and **Fecha** becomes **Fecha de venta**.
+2. **Cantidad de cuotas** and **Primer cobro** (the others fall on the same day of each following month).
+3. **Guardar**. The message reads "Cobro en 3 cuotas registrado: confirmá cada cuota cuando la cobres".
+
+Each cuota is created **pending**: it doesn't count in balances, totals or reports. When its date arrives it shows up in the yellow alert on **Inicio** and **Recurrentes** (*Hay 1 movimiento vencido para confirmar*). Click **Revisar**, check the amount you actually received and click **Confirmar**; from then on it counts like any income. If a cuota wasn't paid, leave it pending until it is.
+
+### Importar CSV (several at once)
+
+At the top of a new movement, **Importar CSV** opens a window to load many movements from one file.
+
+1. Click **Descargar ejemplo** to get a sample file with the right columns, and fill it in a spreadsheet (one row per movement).
+   - Required: **fecha** (DD/MM/AAAA or AAAA-MM-DD), **tipo** (gasto or ingreso), **monto** (positive, comma for decimals, e.g. 12.500,50), **cuenta** (the account's name exactly as in **Cuentas**).
+   - Optional: **categoria** (a category, or *Main > Sub*), **descripcion**, **comercio**, **compartido** (si/no), **etiquetas** (separated by |), **notas**.
+2. Click **Elegir archivo** and pick the CSV (an .xlsx with the same columns also works).
+3. The window lists every row with its status: **OK**, **ERROR** (with the reason, e.g. *No hay una cuenta llamada «X»*) or **REPETIDO** (a movement with the same account, date, amount and description already exists, so it's skipped).
+4. Click **Cargar N movimientos** to save the OK rows. Fix any errors in the file and pick it again to load the rest.
+
+For bank statements with their own layout, use [Importar](importar.md) instead, which remembers a setup per bank.
 
 Find them later with the **En cuotas** filter.
 
@@ -255,9 +278,9 @@ If a field is missing or invalid, it's outlined in red and a red message appears
 
 ## Tips
 
-- Turn off **Solo del tablero seleccionado** to see everyone's movements together.
+- Turn off **Tablero: …** to see everyone's movements together.
 - To review last month's uncategorised spending: set the date range, turn on **Sin categoría**, tick the rows and use **Asignar categoría**. A [rule](reglas.md) saves doing it again next month.
 - For a **Compra en cuotas**, attach the receipt afterwards: open one of the installments and use **Adjuntar comprobante** there.
-- Buying dollars is a **Transferencia**, not a **Gasto**: that way it doesn't inflate your spending and the dollars appear in the USD account.
+- Buying dollars is a **Transf. propia**, not a **Gasto**: that way it doesn't inflate your spending and the dollars appear in the USD account.
 
 See also: [Guide index](README.md) · [Inicio](inicio.md) · [Cuentas](cuentas.md) · [Gastos compartidos](gastos-compartidos.md) · [Recurrentes](recurrentes.md) · [Reglas](reglas.md) · [Importar](importar.md) · [How the numbers are worked out](como-se-calcula.md) · [Login and top bar](barra-superior.md)

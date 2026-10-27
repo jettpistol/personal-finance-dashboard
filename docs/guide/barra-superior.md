@@ -129,7 +129,9 @@ Click your name or initial:
 
 - **Modo oscuro** / **Modo claro**: switch the color scheme. Remembered in this browser.
 - **Ajustes**: open the settings.
-- **Cerrar sesión**: log out of this browser. The data profile you picked stays selected for next time.
+- **Cuentas**: the other account logged in on this browser (with its color). Click it to switch instantly, without a password; you stay on the same page and everything reloads as that person. **Agregar cuenta** logs your partner in too (usuario and contraseña, with the same lockout as the login page) and switches to them.
+- **Cerrar sesión**: log out the account in use. If the other one is still logged in, the app carries on as them. The data profile you picked stays selected.
+- **Cerrar todas las sesiones** (when both are logged in): log both out.
 
 ### Record a movement from anywhere
 

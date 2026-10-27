@@ -148,6 +148,63 @@ describe('money flows', () => {
     expect(up.by_month.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('creates income installments as pending, to confirm when each one is paid', async () => {
+    const r = await call('ana', 'POST', '/api/transactions/installments', {
+      type: 'income', amount: 90_000_00, count: 3, purchase_date: D(1), first_date: D(1), account_id: ids.anaBank, category_id: cat['Ventas'], description: 'Venta de la bici',
+    });
+    expect(r.status).toBe(200);
+    const rows = db().prepare('SELECT id, type, status, amount FROM transactions WHERE installment_plan_id = ? ORDER BY installment_number').all(r.body.plan_id) as { id: number; type: string; status: string }[];
+    expect(rows.map((x) => [x.type, x.status])).toEqual([['income', 'pending'], ['income', 'pending'], ['income', 'pending']]);
+    expect((await call('ana', 'GET', '/api/installments/upcoming')).body.plans.some((p: { id: number }) => p.id === r.body.plan_id)).toBe(false);
+    expect((await call('ana', 'POST', `/api/transactions/${rows[0].id}/confirm`, { amount: 30_000_00 })).status).toBe(200);
+    expect(db().prepare('SELECT status FROM transactions WHERE id = ?').get(rows[0].id)).toMatchObject({ status: 'confirmed' });
+    db().prepare('DELETE FROM installment_plans WHERE id = ?').run(r.body.plan_id);
+    db().prepare('DELETE FROM transactions WHERE installment_plan_id IS NULL AND description LIKE ?').run('Venta de la bici%');
+  });
+
+  it('bulk-uploads movements from the simple CSV, with preview, duplicates and errors', async () => {
+    const csv = [
+      'fecha,tipo,monto,cuenta,categoria,descripcion,comercio,compartido,etiquetas,notas',
+      `${D(2).split('-').reverse().join('/')},gasto,"1.234,50",Banco Ana,Supermercado > Almacén,Compra CSV,Coto,si,csv|prueba,`,
+      `${D(3)},ingreso,"500,00",cuenta común,Sueldo,Ingreso CSV,,no,,`,
+      `${D(3)},gasto,abc,Banco Ana,,Mal monto,,,,`,
+      `${D(3)},gasto,"10,00",No existe,,Sin cuenta,,,,`,
+    ].join('\n');
+    const upload = (commit: boolean) => {
+      const boundary = '----csvtest';
+      const payload = `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="m.csv"\r\nContent-Type: text/csv\r\n\r\n${csv}\r\n--${boundary}--\r\n`;
+      return app.inject({ method: 'POST', url: `/api/transactions/csv${commit ? '?commit=1' : ''}`, payload, headers: { cookie: cookies.ana, 'content-type': `multipart/form-data; boundary=${boundary}` } });
+    };
+    const preview = (await upload(false)).json();
+    expect(preview.created).toBe(0);
+    expect(preview.rows.map((r: { status: string }) => r.status)).toEqual(['ok', 'ok', 'error', 'error']);
+    expect(preview.rows[0]).toMatchObject({ amount: 1_234_50, type: 'expense', category: 'Almacén' });
+    const done = (await upload(true)).json();
+    expect(done.created).toBe(2);
+    const saved = db().prepare(`SELECT is_shared, tags, merchant FROM transactions WHERE description = 'Compra CSV'`).get();
+    expect(saved).toMatchObject({ is_shared: 1, tags: '["csv","prueba"]', merchant: 'Coto' });
+    const again = (await upload(true)).json();
+    expect(again.created).toBe(0);
+    expect(again.rows.slice(0, 2).map((r: { status: string }) => r.status)).toEqual(['duplicate', 'duplicate']);
+    db().prepare(`DELETE FROM transactions WHERE description IN ('Compra CSV', 'Ingreso CSV')`).run();
+  });
+
+  it('tracks loans: partial returns close a money loan, items close on return, private to the lender', async () => {
+    const id = (await call('ana', 'POST', '/api/loans', { person: 'Juan', kind: 'money', amount: 100_00, currency: 'ARS', lent_on: D(1), due_on: D(2) })).body.id;
+    const item = (await call('ana', 'POST', '/api/loans', { person: 'Juan', kind: 'item', item: 'Taladro', lent_on: D(1) })).body.id;
+    expect((await call('ana', 'POST', '/api/loans', { person: 'X', kind: 'money', lent_on: D(1) })).status).toBe(400);
+    await call('ana', 'POST', `/api/loans/${id}/returns`, { date: D(2), amount: 40_00 });
+    let list = (await call('ana', 'GET', '/api/loans')).body;
+    expect(list.find((l: { id: number }) => l.id === id)).toMatchObject({ returned: 40_00, outstanding: 60_00, closed_on: null });
+    await call('ana', 'POST', `/api/loans/${id}/returns`, { date: D(3), amount: 60_00 });
+    await call('ana', 'POST', `/api/loans/${item}/returns`, { date: D(3) });
+    list = (await call('ana', 'GET', '/api/loans')).body;
+    expect(list.find((l: { id: number }) => l.id === id)).toMatchObject({ outstanding: 0, closed_reason: 'returned', closed_on: D(3) });
+    expect(list.find((l: { id: number }) => l.id === item)).toMatchObject({ closed_reason: 'returned' });
+    expect((await call('beto', 'GET', '/api/loans')).body).toEqual([]);
+    expect((await call('beto', 'DELETE', `/api/loans/${id}`)).status).toBe(404);
+  });
+
   it('generates recurring bills as pending and confirms them with the real amount', async () => {
     const r = await call('ana', 'POST', '/api/recurring', {
       description: 'Internet', type: 'expense', amount: 25_000_00, account_id: ids.joint, category_id: cat['Servicios'], frequency: 'monthly', next_date: `${addMonthsToMonth(M, -1)}-15`,
@@ -222,5 +279,77 @@ describe('money flows', () => {
     expect(x.statusCode).toBe(200);
     const csv = await app.inject({ method: 'GET', url: '/api/export/transactions.csv', headers: { cookie: cookies.beto } });
     expect(csv.body).not.toContain('Regalo sorpresa');
+  });
+});
+
+describe('several accounts in one browser', () => {
+  // A tiny cookie jar, so both cookies (active session + other accounts) round-trip like in a browser.
+  const jar: Record<string, string> = {};
+  async function browser(method: string, url: string, payload?: unknown) {
+    const cookie = Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ');
+    const res = await app.inject({ method: method as 'GET', url, payload: payload as object, headers: cookie ? { cookie } : {} });
+    for (const c of res.cookies as { name: string; value: string; expires?: Date }[]) {
+      if (!c.value || (c.expires && c.expires.getTime() < Date.now())) delete jar[c.name];
+      else jar[c.name] = c.value;
+    }
+    return { status: res.statusCode, body: res.json() };
+  }
+  const me = async () => (await browser('GET', '/api/auth/status')).body.user?.username;
+
+  it('adds a second account without replacing the active one, lists and switches', async () => {
+    expect((await browser('POST', '/api/auth/login', { username: 'ana', password: 'contraseña-larga' })).status).toBe(200);
+    // Adding needs a logged-in browser.
+    expect((await app.inject({ method: 'POST', url: '/api/auth/accounts', payload: { username: 'beto', password: 'otra-contraseña' } })).statusCode).toBe(401);
+    expect((await browser('POST', '/api/auth/accounts', { username: 'ana', password: 'contraseña-larga' })).status).toBe(409);
+    const add = await browser('POST', '/api/auth/accounts', { username: 'beto', password: 'otra-contraseña' });
+    expect(add.status).toBe(200);
+    expect(jar.pfd_more).toBeTruthy();
+    expect(await me()).toBe('ana');
+    const list = (await browser('GET', '/api/auth/accounts')).body;
+    expect(list.map((u: { username: string; active: boolean }) => [u.username, u.active])).toEqual([['ana', true], ['beto', false]]);
+
+    const sw = await browser('POST', '/api/auth/switch', { user_id: list[1].id });
+    expect(sw.status).toBe(200);
+    expect(await me()).toBe('beto');
+    expect((await browser('GET', '/api/me')).body.username).toBe('beto');
+    expect((await browser('POST', '/api/auth/switch', { user_id: list[0].id })).status).toBe(200);
+    expect(await me()).toBe('ana');
+    expect((await browser('POST', '/api/auth/switch', { user_id: 999 })).status).toBe(404);
+  });
+
+  it('logout falls back to the other account; all: true logs out everyone', async () => {
+    const out = await browser('POST', '/api/auth/logout');
+    expect(out.body.user.username).toBe('beto');
+    expect(await me()).toBe('beto');
+    expect((await browser('GET', '/api/auth/accounts')).body).toHaveLength(1);
+    expect(jar.pfd_more).toBeUndefined();
+    // Earlier sessions of other browsers are untouched.
+    expect((await call('ana', 'GET', '/api/auth/status')).body.user.username).toBe('ana');
+
+    await browser('POST', '/api/auth/accounts', { username: 'ana', password: 'contraseña-larga', switch: true });
+    expect(await me()).toBe('ana');
+    expect((await browser('GET', '/api/auth/accounts')).body).toHaveLength(2);
+    expect((await browser('POST', '/api/auth/logout', { all: true })).body.user).toBeNull();
+    expect(await me()).toBeUndefined();
+    expect(jar).toEqual({});
+  });
+
+  it('applies the login lockout to adding an account', async () => {
+    await browser('POST', '/api/auth/login', { username: 'ana', password: 'contraseña-larga' });
+    const bad = { username: 'beto', password: 'nope-nope-nope' };
+    expect((await browser('POST', '/api/auth/accounts', bad)).status).toBe(401);
+    expect((await browser('POST', '/api/auth/accounts', bad)).status).toBe(401);
+    expect((await browser('POST', '/api/auth/accounts', bad)).status).toBe(429);
+    expect((await browser('POST', '/api/auth/accounts', { username: 'beto', password: 'otra-contraseña' })).status).toBe(429);
+    expect((await browser('GET', '/api/auth/accounts')).body).toHaveLength(1);
+    db().prepare('DELETE FROM login_attempts').run();
+    expect((await browser('POST', '/api/auth/accounts', { username: 'beto', password: 'otra-contraseña' })).status).toBe(200);
+    // If the active session expires, the status check moves on to the other account.
+    db().prepare('UPDATE sessions SET expires_at = 0 WHERE user_id = 1').run();
+    expect((await browser('GET', '/api/accounts')).status).toBe(401);
+    expect(await me()).toBe('beto');
+    expect((await browser('GET', '/api/accounts')).status).toBe(200);
+    await browser('POST', '/api/auth/logout', { all: true });
+    expect(jar).toEqual({});
   });
 });

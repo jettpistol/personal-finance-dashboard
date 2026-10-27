@@ -8,6 +8,7 @@ import planningRoutes from './planning.js';
 import reportRoutes from './reports.js';
 import exportRoutes from './exports.js';
 import profileRoutes from './profiles.js';
+import loanRoutes from './loans.js';
 import { appVersion } from '../lib/version.js';
 
 export async function registerRoutes(app: FastifyInstance) {
@@ -20,5 +21,6 @@ export async function registerRoutes(app: FastifyInstance) {
   await app.register(reportRoutes);
   await app.register(exportRoutes);
   await app.register(profileRoutes);
+  await app.register(loanRoutes);
   app.get('/health', async () => ({ ok: true, version: appVersion() }));
 }
