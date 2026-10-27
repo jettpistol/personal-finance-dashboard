@@ -886,6 +886,7 @@ a {
    list scrolls, the header also reaches under the (thin, overlaid) scrollbar gutter. */
 [class*='-dropdown']:has([class*='-groupLabel']) {
   padding-inline: 0;
+  padding-top: 0;
 }
 
 [class*='-dropdown']:has([class*='-groupLabel']) [data-combobox-option]:not([class*='-groupLabel']),
