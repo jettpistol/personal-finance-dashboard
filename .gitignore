@@ -1,9 +1,21 @@
 node_modules/
 dist/
+data/
+*.sqlite
+*.sqlite-*
 .env
+coverage/
+data-demo/
+*.tsbuildinfo
+.impeccable/review/
+.impeccable/questions/
+.impeccable/config.local.json
 
-# Real bank statements contain personal data (names, tax IDs, card numbers).
-# Keep them out of the repo; tests use the synthetic files in tests/fixtures.
+# Encryption key for stored credentials (see server/src/lib/secrets.ts)
+secret.key
+
+# Real bank statements contain names, tax ids and card numbers. The tests use the
+# synthetic files in server/test/statements/fixtures instead.
 *.pdf
 *.xlsx
 samples/

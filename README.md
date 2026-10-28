@@ -1,96 +1,118 @@
 # personal-finance-dashboard
 
-Dashboard de finanzas personales para una pareja. Por ahora contiene la base de datos: leer los
-resúmenes del Banco Galicia (cuenta y tarjetas), entender qué es cada movimiento y clasificar los gastos.
+A self-hosted finance dashboard for a couple. Free, one Docker container, SQLite. UI in Spanish (Argentina), ARS and USD.
 
-## Qué lee hoy
+**User guide:** [`docs/guide/`](docs/guide/README.md) explains every section of the app. Open problems found while writing it are in [`docs/known-issues.md`](docs/known-issues.md).
 
-| Archivo | Cómo se obtiene | Qué contiene |
-|---|---|---|
-| Extracto `.xlsx` de la Caja de Ahorro | Home banking, descarga de movimientos | Fuente principal de la cuenta |
-| Resumen mensual de la Caja de Ahorro (PDF) | Home banking | Alternativa al Excel |
-| Resumen de tarjeta Visa o American Express (PDF) | Home banking | Única fuente de las tarjetas |
+Instructions for AI agents working on the code (conventions, release routine, decisions already made) are in [`CLAUDE.md`](CLAUDE.md).
 
-Los PDF se leen con `pdftotext -layout` (paquete `poppler-utils`).
+Scope was decided with [`docs/feature-questionnaire.md`](docs/feature-questionnaire.md); the resulting design is in [`docs/design.md`](docs/design.md).
+
+## Features
+
+- **Two logins, three dashboards**: *Hogar* (joint money and shared expenses), *Mío* (your own accounts and your share of shared expenses), and your partner's, if they choose to share it. Accounts and single transactions can be **private**.
+- **Accounts**: bank, cash, credit cards, savings, investments, digital wallets (Mercado Pago…), in ARS or USD. Transfers between your own accounts never count as income or spending, and buying dollars is a transfer with two amounts.
+- **ARS ⇄ USD toggle**: every amount is converted at the **BNA quote of that transaction's day** (sell, buy or average; configurable).
+- **Inflation (INDEC CPI)**: "constant pesos" view in reports, real vs nominal change per category (vs last month and vs a year ago), your spending growth against CPI, and one click (or automatic) **budget indexing by the latest CPI**.
+- **Splitwise-style shared expenses**: 50/50 by default, configurable default ratio, per-expense equal / % / exact amounts, who owes whom, and "settle up". Expenses paid from the joint account are shared without creating debt.
+- **Installments (cuotas)**: one purchase becomes N monthly expenses; future months show as committed spending.
+- **Recurring bills**: generated as *pending* so you confirm the real amount.
+- **CSV / XLSX import** with **presets per bank** (column mapping, date format, decimal separator, split debit/credit columns, rows to skip, encoding), rule-based categorisation, duplicate detection, and undo.
+- **Statements (Resúmenes)**: upload a bank PDF or Excel file as the bank gives it; the app recognises the format by its content, checks that the numbers add up to the document's own totals, and sends the rows to the usual import review. Reads Banco Galicia's account extract (xlsx), account statement (PDF) and Visa and American Express statements (PDF); more banks and wallets will follow.
+- **Rules**: "description contains X" sets the category, merchant, shared flag, tags, or turns the row into a transfer.
+- **Budgets** per category and month (household or personal) with in-app and **Telegram** alerts at 80% and 100%.
+- **Savings goals** linked to an account or with manual contributions, showing how much to save per month.
+- **Reports**: trends per category, yearly summary, savings rate, net worth over time, spending per person, top merchants, inflation.
+- **Monthly review**: a "Cierre de mes" page with notes, plus a **.docx** report. It can be downloaded, and it is sent automatically by Telegram in the first days of each month.
+- Notes, tags, and **receipt photos** (compressed in the browser to about 200 KB).
+- **Export** to CSV and Excel. **Daily backups** of the database with rotation.
+- Login lockout: after **3 failed attempts** the username waits 30 s, then 1, 5, 15 and 60 minutes.
+
+## Run locally
+
+Requires Node 22+. Reading PDF statements (**Resúmenes**) also needs `pdftotext` from poppler (`apt install poppler-utils` or `brew install poppler`); the Docker image already includes it.
 
 ```bash
-npm install
-npm test                                  # tests y datos de prueba sintéticos
+npm ci
+npm run build            # builds web/ and server/
+npm start                # http://localhost:3000  (data in server/data/)
+```
+
+On first visit you create your user. Then add your partner in **Ajustes → Hogar**.
+
+### Try it with demo data
+
+```bash
+npm run demo
+```
+
+This builds the app, loads demo data into `server/data-demo` (only the first time) and starts it on http://localhost:3000. Users `ivan` / `milagros`, password `demo-finanzas`.
+
+Demo exchange rates and CPI are synthetic. Use **Ajustes → Cotizaciones e inflación → Actualizar** to load real ones.
+
+The demo data lives in the **Prueba (demo)** profile; the app opens on the empty **Vacío** profile until you pick another one (top bar or **Perfil de datos**).
+
+### Getting a new version
+
+```bash
+npm run update       # discards local lockfile changes, pulls, installs exactly what the lockfile says
+npm run demo:reset   # rebuilds and reloads the demo data
+```
+
+`npm run update` is the same as `git checkout -- package-lock.json && git pull --ff-only && npm ci`. Use `npm ci` rather than `npm install` to install: it never rewrites `package-lock.json`, so the next `git pull` can't be blocked by it.
+
+The footer shows the version you're running (`Finanzas v0.12.0 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
+
+### Development
+
+```bash
+npm run dev --workspace server   # API on :3000 with reload
+npm run dev --workspace web      # UI on :5173 (proxies /api to :3000)
+npm test                         # server tests
 npm run typecheck
-npm run inspect -- ruta/al/archivo.pdf    # resumen de un archivo real
-npm run inspect -- ruta/al/extracto.xlsx --unclassified   # además, comercios sin categoría
 ```
 
-`inspect` muestra si el archivo cuadra (ver "Controles de integridad"), el gasto por categoría y,
-con `--unclassified`, los comercios que las reglas no conocen.
+## Run with Docker
 
-> **Privacidad:** los resúmenes reales traen nombre, CUIL, CBU y número de tarjeta. `*.pdf`, `*.xlsx`
-> y las carpetas `samples/` y `private/` están en `.gitignore`. Los tests usan archivos inventados
-> en `tests/fixtures`. Los parsers guardan solo los últimos dígitos de cuentas y tarjetas.
+```bash
+cp .env.example .env             # optional settings
+docker compose up -d --build     # http://localhost:3000, data in ./data
+```
 
-## Decisiones de diseño
+All state lives in `./data`: the SQLite database, receipts and `backups/`. Copying that folder is a full backup.
 
-- **Montos en centavos enteros** (`amountMinor`) y con su moneda. Nunca se convierten: un gasto en USD
-  queda en USD, tal cual lo informa el resumen. La cotización que imprime el banco se guarda solo como dato.
-- **Signo:** gasto o salida de plata = negativo; ingreso, devolución o pago recibido = positivo.
-  Los resúmenes de tarjeta imprimen los cargos en positivo; los parsers lo invierten.
-- **Cuotas:** cada compra trae `installment: { number, total }` ("cuota 3 de 9") y la fecha original
-  de compra. El monto es el de esa cuota.
-- **Mes de reporte "por resumen"** (`reportingMonth`): los gastos de tarjeta cuentan en el mes de la
-  fecha de **cierre** del resumen; los de la cuenta, en su mes calendario. Ojo: un resumen que cierra
-  el 1 de octubre se informa en octubre aunque tenga sobre todo gastos de septiembre.
-- **Ninguna cuenta es "la principal".** Un resumen es un origen de datos intercambiable
-  (`source`), así que se puede sumar Mercado Pago, Naranja X, Ualá, etc. sin tocar el resto.
-- **Pareja:** las personas se identifican por CUIL, no por nombre (el mismo nombre aparece en distinto
-  orden según el archivo). Ver `src/household.ts`.
-- **Transferencias entre cuentas propias** (`own_transfer`) y las transferencias entre integrantes
-  de la pareja no son ni gasto ni ingreso. Los parsers solo las identifican; excluirlas de los
-  totales es tarea de la capa de reportes.
+## Configuration (environment variables)
 
-## Controles de integridad
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DATA_DIR` | `./data` | Database, receipts, backups |
+| `PORT` | `3000` | HTTP port |
+| `TELEGRAM_BOT_TOKEN` | – | Enables Telegram alerts and the monthly .docx (create a bot with @BotFather) |
+| `PUBLIC_URL` | – | Used for links in Telegram messages |
+| `SECURE_COOKIES` | `false` | Set `true` when served over HTTPS |
+| `TZ_APP` | `America/Argentina/Buenos_Aires` | Household timezone |
+| `BACKUP_KEEP_DAILY` / `BACKUP_KEEP_MONTHLY` | `14` / `12` | Backup rotation |
+| `FX_LATEST_URL`, `FX_HISTORY_URL`, `CPI_URL` | dolarapi.com / argentinadatos.com | Data sources for BNA quotes and CPI |
 
-Cada parser verifica que lo leído cuadre con lo que imprime el banco, y lo informa en
-`statement.integrity`. Si algo no cuadra, el archivo no debe confiarse.
+### Telegram
 
-- Cuenta: el saldo corrido de cada movimiento y, en el PDF, los totales de créditos, débitos y saldo final.
-- Tarjeta (en pesos y en dólares): `saldo anterior + pagos + consumos + cargos = TOTAL A PAGAR`, y
-  que la suma de las compras sea igual a "Total Consumos".
+1. Talk to **@BotFather** in Telegram, run `/newbot`, and copy the token into `TELEGRAM_BOT_TOKEN`.
+2. Each person opens **Ajustes → Notificaciones**, generates a code, sends `/start <code>` to the bot, and clicks "Ya lo envié".
 
-## Categorías
+## Hosting later (Oracle Cloud free VM)
 
-`src/categorization/rules.ts` trae reglas para un hogar argentino típico: supermercados, Rappi y
-PedidosYa, Uber/Cabify/DiDi/SUBE, Netflix/Spotify/YouTube, Farmacity, Edenor/Metrogas, etc.
-Reglas y limitaciones:
+The same `docker compose` setup runs on a free Oracle Cloud Arm VM:
 
-- **Lo que no se conoce queda sin clasificar** (`category: null`). No se adivina.
-- Gana la primera regla que coincide; las específicas van antes que las genéricas
-  (`UBER EATS` es delivery, `UBER` es transporte).
-- Se compara por palabra completa (`UBER` no coincide con `UBERLANDIA`). Para nombres que los
-  procesadores pegan o truncan (`MERPAGO*BURGERKING`, `SPORTCLU`) hay `contains`.
-- Solo se clasifican compras, devoluciones y reintegros, por comercio, así que una devolución
-  cae en la misma categoría que la compra. Transferencias, sueldo y pagos de tarjeta no son gasto.
-- Efectivo, impuestos e intereses se clasifican por tipo de movimiento.
-- Los ajustes manuales (`overrides`, por `merchantKey`) siempre ganan sobre las reglas.
-- La regla más agresiva es `SUPER` como palabra suelta (supermercados de barrio). Si da falsos
-  positivos, se saca de la lista.
+- **Private (recommended)**: install Tailscale on the VM and on your devices. Keep `APP_BIND=127.0.0.1` and run `tailscale serve 3000`.
+- **Public with HTTPS**: point a domain at the VM, set `DOMAIN` and `SECURE_COOKIES=true`, then run `docker compose --profile https up -d --build`. Caddy obtains the certificate automatically.
 
-## Pendiente
+Copy `data/` off the VM regularly, for example with a cron job running `rclone` to Google Drive. Backups inside the VM don't help if the VM is lost.
 
-- Cruzar los pagos de tarjeta de la cuenta con los pagos del resumen (el resumen indica en el texto el
-  total pagado en pesos cuando el pago incluye dólares).
-- Significado de las marcas `*`, `K` y `F` que el resumen Visa imprime antes del comercio: hoy se
-  guardan sin interpretar (`flag`).
-- Resúmenes con más de una tarjeta física: el código supone que las compras de cada tarjeta van
-  seguidas de su línea "Total Consumos", pero solo se probó con datos sintéticos.
-- Capa de reportes (totales por mes, por persona y de la pareja), base de datos e interfaz.
-
-## Estructura
+## Project layout
 
 ```
-src/domain/              tipos, montos (centavos) y fechas
-src/parsing/galicia/     extracto xlsx, resumen de cuenta PDF, resumen de tarjeta
-src/parsing/xlsx-reader  lector mínimo de .xlsx (el Excel de Galicia no es estándar)
-src/categorization/      categorías, reglas por defecto y clasificador
-src/household.ts         integrantes de la pareja y rol de cada contraparte
-scripts/inspect.ts       revisar un archivo real desde la terminal
+server/   Fastify + better-sqlite3 API (TypeScript). Domain logic in src/lib, routes in src/routes.
+web/      React + Mantine single-page app (TypeScript, Vite).
+deploy/   Caddyfile for the HTTPS profile.
+docs/     Questionnaire and design notes.
 ```

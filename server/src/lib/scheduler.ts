@@ -1,0 +1,83 @@
+import { config } from '../config.js';
+import { db, getSetting, setSetting, withDb } from '../db/index.js';
+import { addMonthsToMonth, currentMonth, monthLabel, today } from './dates.js';
+import { generateDueRecurring } from './recurring.js';
+import { sendPendingReminders } from './commitments.js';
+import { refreshRates } from './fx.js';
+import { refreshCpi } from './cpi.js';
+import { runBackup, todaysBackupExists } from './backup.js';
+import { listProfiles, profileDb, profilesEnabled } from './profiles.js';
+import { buildReviewDocx, reviewFileName } from './review.js';
+import { notify } from './notify.js';
+import { loadUsers, type Scope } from './domain.js';
+
+const TICK_MS = 15 * 60_000;
+const FX_EVERY_MS = 3 * 3600_000;
+const CPI_EVERY_MS = 24 * 3600_000;
+
+async function step(name: string, fn: () => Promise<unknown>) {
+  try {
+    await fn();
+  } catch (e) {
+    console.error(`[scheduler] ${name} failed:`, (e as Error).message);
+  }
+}
+
+function due(key: string, everyMs: number): boolean {
+  const last = getSetting<number | undefined>(key) ?? 0;
+  if (Date.now() - last < everyMs) return false;
+  setSetting(key, Date.now());
+  return true;
+}
+
+/** On the first days of a month, send last month's review once per scope. */
+async function sendMonthlyReviews() {
+  const month = addMonthsToMonth(currentMonth(), -1);
+  const users = loadUsers();
+  const scopes: Scope[] = ['household', ...users.map((u) => `user:${u.id}` as Scope)];
+  for (const scope of scopes) {
+    const row = db().prepare('SELECT sent_at FROM month_reviews WHERE month = ? AND scope = ?').get(month, scope) as { sent_at: string | null } | undefined;
+    if (row?.sent_at) continue;
+    const hasData = db().prepare(`SELECT 1 FROM transactions WHERE substr(date, 1, 7) = ? LIMIT 1`).get(month);
+    if (!hasData) continue;
+    const viewer = scope === 'household' ? users[0]?.id : Number(scope.slice(5));
+    if (!viewer) continue;
+    const data = await buildReviewDocx(month, scope, viewer);
+    await notify({
+      kind: 'review',
+      users: scope === 'household' ? null : [viewer],
+      title: `Cierre de ${monthLabel(month)}${scope === 'household' ? '' : ' (personal)'}`,
+      body: 'Ya está el resumen del mes. Revísenlo juntos y agreguen notas en Cierre de mes.',
+      link: '/cierre',
+      document: { fileName: reviewFileName(month, scope), data },
+    });
+    db()
+      .prepare(`INSERT INTO month_reviews (month, scope, sent_at) VALUES (?, ?, datetime('now')) ON CONFLICT(month, scope) DO UPDATE SET sent_at = datetime('now')`)
+      .run(month, scope);
+  }
+}
+
+async function tickProfile() {
+  await step('recurring', () => generateDueRecurring());
+  await step('pending reminders', () => sendPendingReminders());
+  if (due('fx_last_refresh', FX_EVERY_MS)) await step('fx', () => refreshRates());
+  if (due('cpi_last_refresh', CPI_EVERY_MS)) await step('cpi', () => refreshCpi());
+  await step('backup', async () => {
+    if (!todaysBackupExists()) await runBackup();
+  });
+  await step('monthly review', async () => {
+    if (Number(today().slice(8, 10)) <= 3 && loadUsers().length) await sendMonthlyReviews();
+  });
+}
+
+/** Every profile gets its own recurring bills, rates, backups and reviews. */
+export async function tick() {
+  if (!profilesEnabled()) return tickProfile();
+  for (const p of listProfiles()) await withDb(profileDb(p), p.id, () => tickProfile());
+}
+
+export function startScheduler() {
+  if (config.disableScheduler) return;
+  setTimeout(() => void tick(), 5_000);
+  setInterval(() => void tick(), TICK_MS).unref();
+}

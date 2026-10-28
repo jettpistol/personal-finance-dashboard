@@ -1,0 +1,11 @@
+fecha,tipo,monto,cuenta,categoria,descripcion,comercio,compartido,etiquetas,notas
+01/10/2026,ingreso,"1.450.000,00",Santander Iván,Sueldo,Sueldo octubre,,no,,
+03/10/2026,gasto,"78.450,90",Cuenta común Galicia,Supermercado > Almacén,Compra semanal,Coto,no,,
+05/10/2026,gasto,"620.000,00",Cuenta común Galicia,Alquiler,Alquiler depto,,no,,Octubre
+07/10/2026,gasto,"12.999,00",Visa Iván,Streaming,Netflix,Netflix,si,suscripciones,
+09/10/2026,gasto,"4.500,00",Mercado Pago Iván,Transporte público,Carga SUBE,,no,,
+12/10/2026,gasto,"54.300,00",BBVA Milagros,Restaurantes,Cena con amigos,La Parolaccia,si,salidas|amigos,
+15/10/2026,ingreso,"60.000,00",Santander Iván,Otros ingresos,Alquiler de la cochera,,si,,Se reparte 50/50
+18/10/2026,ingreso,"220.000,00",Mercado Pago Milagros,Freelance,Diseño de logo,,no,trabajo,
+20/10/2026,gasto,"35.000,00",Efectivo casa,Verdulería,Verdulería del barrio,,no,,
+22/10/2026,gasto,"89.990,00",Visa Iván,Ropa,Zapatillas,Dexter,no,,

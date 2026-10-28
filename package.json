@@ -1,22 +1,23 @@
 {
   "name": "personal-finance-dashboard",
-  "version": "0.1.0",
   "private": true,
-  "type": "module",
-  "description": "Personal finance dashboard for a couple",
+  "version": "0.12.0",
+  "workspaces": [
+    "server",
+    "web"
+  ],
   "scripts": {
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "inspect": "tsx scripts/inspect.ts"
+    "dev": "npm run dev --workspace server & npm run dev --workspace web",
+    "build": "npm run build --workspace web && npm run build --workspace server",
+    "start": "npm run start --workspace server",
+    "test": "npm test --workspace server",
+    "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
+    "seed:demo": "npm run seed:demo --workspace server",
+    "demo": "npm run build && npm run demo --workspace server",
+    "demo:reset": "npm run build && npm run demo:reset --workspace server",
+    "update": "git checkout -- package-lock.json && git pull --ff-only && npm ci"
   },
-  "devDependencies": {
-    "@types/node": "^26.6.5",
-    "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
-    "vitest": "^5.0.5"
-  },
-  "dependencies": {
-    "fast-xml-parser": "^5.11.2",
-    "fflate": "^0.8.3"
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

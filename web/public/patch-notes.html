@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finanzas - Patch notes</title>
+<!--
+  Patch notes, one <a name> block per version, newest first.
+  Every push that bumps the version in the root package.json adds an entry here
+  and a box in the sidebar index.
+-->
+<style>
+  body { margin: 0; background: #c0c0c0; font-family: Verdana, Tahoma, Arial, sans-serif; font-size: 14px; color: #000; }
+  a { color: #0000cc; }
+  a:visited { color: #551a8b; }
+  a:hover { color: #cc0000; }
+  .page { max-width: 980px; margin: 12px auto; background: #fff; border: 2px outset #dfdfdf; }
+  .banner { background: #000080; color: #fff; padding: 8px 12px; }
+  .banner h1 { display: inline; margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 26px; letter-spacing: 1px; }
+  .banner small { color: #c0c0ff; }
+  .menubar { background: #dcdcdc; border-top: 1px solid #fff; border-bottom: 1px solid #808080; padding: 3px 12px; font-size: 12px; }
+  .layout { width: 100%; border-collapse: collapse; }
+  .side { width: 190px; vertical-align: top; background: #eeeeee; border-right: 1px solid #808080; padding: 10px; }
+  .side h2 { margin: 0 0 6px; border: 0; font-size: 13px; background: #000080; color: #fff; padding: 2px 4px; }
+  /* Each index entry is a whole clickable box, like an old-school button. */
+  .idx { display: block; margin: 0 0 5px; padding: 5px 7px; background: #dcdcdc; border: 2px outset #f4f4f4; color: #000; text-decoration: none; font-size: 13px; }
+  .idx:visited { color: #000; }
+  .idx:hover { background: #ffffcc; color: #000; }
+  .idx:active { border-style: inset; }
+  .idx b { color: #0000cc; text-decoration: underline; }
+  .idx .date { display: block; color: #444; font-size: 12px; }
+  .main { vertical-align: top; padding: 10px 16px 16px; }
+  .lead { font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: bold; margin: 4px 0 8px; }
+  .main h2 { font-family: Arial, Helvetica, sans-serif; font-size: 18px; background: #dddddd; border: 1px solid #a0a0a0; padding: 3px 6px; margin: 22px 0 6px; }
+  h2 .date { font-weight: normal; font-size: 13px; color: #444; }
+  h3 { font-size: 14px; margin: 12px 0 2px; color: #000080; }
+  ul { margin-top: 4px; }
+  li { margin: 3px 0; line-height: 1.4; }
+  .top { font-size: 12px; text-align: right; }
+  .foot { font-size: 12px; color: #444; text-align: center; padding: 6px; background: #dcdcdc; border-top: 1px solid #808080; }
+  code { font-family: "Courier New", Courier, monospace; font-size: 13px; }
+  @media (max-width: 640px) {
+    .layout, .layout tbody, .layout tr, .side, .main { display: block; width: auto; }
+    .side { border-right: 0; border-bottom: 1px solid #808080; }
+  }
+</style>
+</head>
+<body>
+<a name="top"></a>
+<div class="page">
+  <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.12.0</b></div>
+
+  <table class="layout">
+    <tr>
+      <td class="side">
+        <h2>Index</h2>
+        <a class="idx" href="#v0.12.0"><b>0.12.0</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.11.0"><b>0.11.0</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.10.0"><b>0.10.0</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.9.1"><b>0.9.1</b><span class="date">Oct 27, 2026</span></a>
+        <a class="idx" href="#v0.9.0"><b>0.9.0</b><span class="date">Oct 27, 2026</span></a>
+        <a class="idx" href="#v0.8.1"><b>0.8.1</b><span class="date">Oct 27, 2026</span></a>
+        <a class="idx" href="#v0.8.0"><b>0.8.0</b><span class="date">Oct 27, 2026</span></a>
+        <a class="idx" href="#v0.7.0"><b>0.7.0</b><span class="date">Oct 27, 2026</span></a>
+        <a class="idx" href="#v0.6.1"><b>0.6.1</b><span class="date">Oct 27, 2026</span></a>
+        <a class="idx" href="#v0.6.0"><b>0.6.0</b><span class="date">Oct 27, 2026</span></a>
+        <a class="idx" href="#v0.5.0"><b>0.5.0</b><span class="date">Oct 26, 2026</span></a>
+        <a class="idx" href="#v0.4.5"><b>0.4.5</b><span class="date">Oct 26, 2026</span></a>
+        <a class="idx" href="#v0.4.4"><b>0.4.4</b><span class="date">Oct 26, 2026</span></a>
+        <a class="idx" href="#v0.4.3"><b>0.4.3</b><span class="date">Oct 26, 2026</span></a>
+        <a class="idx" href="#v0.4.2"><b>0.4.2</b><span class="date">Oct 25, 2026</span></a>
+        <a class="idx" href="#v0.4.1"><b>0.4.1</b><span class="date">Oct 25, 2026</span></a>
+        <a class="idx" href="#v0.4.0"><b>0.4.0</b><span class="date">Oct 24, 2026</span></a>
+        <a class="idx" href="#v0.3.3"><b>0.3.1 to 0.3.3</b><span class="date">Oct 24, 2026</span></a>
+        <a class="idx" href="#v0.3.0"><b>0.3.0</b><span class="date">Oct 24, 2026</span></a>
+        <a class="idx" href="#v0.2.0"><b>0.2.0</b><span class="date">Oct 24, 2026</span></a>
+        <a class="idx" href="#v0.1.0"><b>0.1.0</b><span class="date">Oct 24, 2026</span></a>
+      </td>
+
+      <td class="main">
+        <p class="lead">What changed in each version</p>
+
+        <a name="v0.12.0"></a>
+        <h2>0.12.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>New <b>Resúmenes</b> section: upload a bank PDF or Excel file as the bank gives it and the app recognises the format by its content.</li>
+          <li>Reads Banco Galicia's Caja de Ahorro extract (Excel) and monthly statement (PDF), and the Visa and American Express card statements (PDF).</li>
+          <li>Checks that the numbers add up to the totals the document prints itself. A file that doesn't add up is not imported.</li>
+          <li>Rows go through the same review as <b>Importar</b>, and the import can be undone from its <b>Historial</b>.</li>
+          <li>Card payments and the conversion of a USD debt start unticked, because the payment is already recorded from the bank account. Dollar purchases stay in dollars.</li>
+          <li>Card installments show <b>cuota X/Y</b> and are dated on the statement's close date; the purchase date is kept in the note.</li>
+          <li>Categories come from your rules first, then from the suggested rules bank (marked <b>Sugerida</b>). Merchants in neither stay without a category. Card interest, taxes, salary and refunds get a fixed category.</li>
+          <li>The suggested rules bank now also recognises Uber Eats, Crunchyroll, Patreon, LinkedIn, Solo Deportes, neighbourhood supermarkets, fruit shops, Granja, and the shortened names card statements print (SportClub, Burger King, Cencosud Easy, pet shops).</li>
+          <li><b>Importar</b> can now open the Excel extract that Galicia exports, which it couldn't read before.</li>
+          <li>New help article: Resúmenes. The Docker image now includes <code>pdftotext</code>, needed to read PDFs.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.11.0"></a>
+        <h2>0.11.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>Mercado Pago: a report with no settings yet now shows <b>Sin configurar</b> instead of <b>No disponible</b>.</li>
+          <li>New <b>Configurar reportes</b> button: saves the settings of the two history reports in Mercado Pago and checks again.</li>
+          <li>The app can now also ask Mercado Pago for a report, which the coming import will use. These are the only writes allowed; nothing can move money.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.10.0"></a>
+        <h2>0.10.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>New <b>Mercado Pago</b> tab in Ajustes: each person connects their own account with its production access token.</li>
+          <li>The token is checked with Mercado Pago, stored encrypted, never shown again, and visible to nobody else.</li>
+          <li><b>Probar conexión</b> shows which data your account lets the app read (account, payments received, balance, reports).</li>
+          <li>The app can only read from Mercado Pago; it can't create payments or refunds.</li>
+          <li>New help article: Connect Mercado Pago.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.9.1"></a>
+        <h2>0.9.1 <span class="date">&middot; Oct 27, 2026</span></h2>
+        <ul>
+          <li>No changes in the app. New CLAUDE.md file with the project's working rules, so any AI agent that works on the code follows the same conventions and decisions.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.9.0"></a>
+        <h2>0.9.0 <span class="date">&middot; Oct 27, 2026</span></h2>
+        <ul>
+          <li>"Metas de ahorro" is now <b>Objetivos</b>. Each objective can have a picture, a link, notes and a priority, and the card says how its progress is tracked.</li>
+          <li>The account menu lists the account you are using first, with a tick.</li>
+          <li>New <b>Monedas</b> tab in Ajustes: hide cents for ARS and USD, on by default.</li>
+          <li>Dark mode: the filter buttons in Movimientos are white with dark text, as in light mode.</li>
+          <li>Notificaciones: the fixed note about the sending account is gone. A saved email shows as text, with a pencil to change it.</li>
+          <li>Importar CSV opens in the middle of the screen, with formal instructions and the two buttons on separate lines.</li>
+          <li>Every dropdown list can be made taller by dragging its bottom-right corner. Collapsed groups no longer show a count.</li>
+          <li>Category tags in Movimientos are bigger and easier to read.</li>
+          <li>Transfers between currencies: the amount received is calculated from the amount and the exchange rate, which starts at today's BNA quote.</li>
+          <li>Charts shorten amounts on their axes (150k, 1,8M); the tooltip keeps the full figure.</li>
+          <li>Deudores: each loan is one short line. Click it for the dates, the plan, the returns and the notes.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.8.1"></a>
+        <h2>0.8.1 <span class="date">&middot; Oct 27, 2026</span></h2>
+        <ul>
+          <li>Help wiki finished: sidebar by section, search (Ctrl K), light and dark mode, previous and next article, phone layout.</li>
+          <li>New help articles: Pagos pendientes and Set up email notifications.</li>
+          <li>Every screenshot in the help was retaken from the current version.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.8.0"></a>
+        <h2>0.8.0 <span class="date">&middot; Oct 27, 2026</span></h2>
+        <h3>New: Pagos pendientes</h3>
+        <ul>
+          <li>For commitments you carry out yourself: monthly savings (e.g. US$ 200 to the savings account every 6th), debts you pay back, and loans from Deudores with a date or installments.</li>
+          <li>A movement with the exact amount, in the same currency, is linked by itself when you save, import or load it from a CSV. <b>Registrar</b> opens the form already filled in; <b>Vincular</b> picks an existing movement.</li>
+          <li>Partial payments need a written reason. What's missing rolls over to next month; paying extra lowers it.</li>
+          <li>Reminders every day from 8 to 18 (around 8, 12 and 16), in the bell and by email, only to whoever is responsible, until it's done.</li>
+          <li>Red counter next to <b>Pagos pendientes</b> in the sidebar.</li>
+        </ul>
+        <h3>Deudores</h3>
+        <ul>
+          <li><b>Con interés o en cuotas</b> when lending money: monthly interest (or last month's inflation with one click), number of installments and first due date, with the total calculated.</li>
+          <li>Interest, installments, amount and dates are fixed once the loan is saved.</li>
+          <li>A partial return needs a reason. An income with exactly the installment amount is recorded as a return by itself.</li>
+        </ul>
+        <h3>Email setup in Ajustes</h3>
+        <ul>
+          <li><b>Ajustes &rarr; Notificaciones</b> has a card for the account that sends the emails: Gmail address and app password, <b>Guardar</b> and <b>Probar</b>, without editing any file.</li>
+        </ul>
+        <h3>Help wiki</h3>
+        <ul>
+          <li><b>Ayuda</b> in the footer opens the user guide as a wiki, in the style of Apple's developer help, with search and dark mode. Includes a new article on setting up email.</li>
+        </ul>
+        <h3>Other</h3>
+        <ul>
+          <li>Date fields accept typed dates (e.g. 27/11/2026), not only picking from the calendar.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.7.0"></a>
+        <h2>0.7.0 <span class="date">&middot; Oct 27, 2026</span></h2>
+        <h3>Email notifications</h3>
+        <ul>
+          <li>Alerts (budgets, items to confirm, the monthly .docx review) can now arrive by email. Free with a Gmail app password.</li>
+          <li><b>Ajustes &rarr; Notificaciones</b>: type your address, save, and use <b>Enviar prueba</b>. The card shows whether sending is set up.</li>
+          <li>Telegram is now optional and shown last.</li>
+        </ul>
+        <h3>Exchange rate in conversions</h3>
+        <ul>
+          <li>A transfer between a peso and a dollar account has a <b>Tipo de cambio</b> box (pesos per dollar, with today's BNA quote as a reference). Type the rate or the amount received and the other is calculated.</li>
+          <li>The Movimientos list shows what came in and the rate, e.g. "&rarr; US$ 120,00 &middot; TC $ 1.250".</li>
+        </ul>
+        <h3>Suggested rules</h3>
+        <ul>
+          <li><b>Reglas sugeridas</b> in Reglas: about 120 ready-made rules for Buenos Aires (supermarkets, delivery, transport, services, subscriptions, health, shops, outings, travel, taxes and fees, income), with categories and tags.</li>
+          <li>Browse by section or search, tick what you use, and add it. Rules you already have show "Ya está", and none are applied until you add them.</li>
+          <li>"Aplicar reglas a movimientos sin categoría" is now just <b>Aplicar reglas</b> (the explanation is in its tooltip).</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.6.1"></a>
+        <h2>0.6.1 <span class="date">&middot; Oct 27, 2026</span></h2>
+        <ul>
+          <li>Grouped dropdowns: no white gap above the first group title.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.6.0"></a>
+        <h2>0.6.0 <span class="date">&middot; Oct 27, 2026</span></h2>
+        <h3>New: Deudores</h3>
+        <ul>
+          <li>A section to note money and things you lend: who, how much (or what), when, and by when it should come back.</li>
+          <li>Partial returns with a progress bar; the loan closes itself when it's fully paid. You can also forgive the rest or reopen it.</li>
+          <li>Totals of what you're owed (pesos and dollars), things lent, and overdue loans in red.</li>
+          <li><b>Recordar</b> copies a friendly message listing what that person still has, ready for WhatsApp.</li>
+          <li>It isn't linked to accounts or reports yet, and each of you only sees your own list.</li>
+        </ul>
+        <h3>General</h3>
+        <ul>
+          <li>Switch account: from the user menu, <b>Agregar cuenta</b> logs your partner in too, and one click switches between you without a password. <b>Cerrar sesión</b> only logs out the account in use.</li>
+          <li>Pop-up messages have the close button on the left and the colored bar on the right.</li>
+          <li>Dropdowns with groups (Cuenta, Categoría): group titles span the full width and open or close their entries. Only the group of the selected entry starts open; typing searches all of them.</li>
+        </ul>
+        <h3>Movimientos</h3>
+        <ul>
+          <li><b>Importar CSV</b> in Nuevo movimiento: load many movements from one file, with a downloadable example, a row-by-row check and repeated rows skipped.</li>
+          <li><b>Cobro en cuotas</b>: income in installments. Each cuota stays pending (money to collect) until you confirm it was paid; due ones appear in the yellow alert.</li>
+          <li>"Transferencia" is now <b>Transf. propia</b>, to tell it apart from paying someone.</li>
+          <li>The board filter is called <b>Tablero: Hogar</b> / <b>Tablero: Iván</b> / <b>Tablero: Milagros</b>, and hides the Compartido / name tag while it's on.</li>
+        </ul>
+        <h3>Cuentas</h3>
+        <ul>
+          <li>A list on the left (Todas, Compartido, Iván, Milagros) picks which accounts show; cards are grouped by owner on the right.</li>
+        </ul>
+        <h3>Other</h3>
+        <ul>
+          <li>Perfil de datos: no more "Por defecto" tag.</li>
+          <li>Test data: shared income (garage rent, health insurance refund), interest, sales, a sale in 3 cuotas, and sample loans in Deudores.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.5.0"></a>
+        <h2>0.5.0 <span class="date">&middot; Oct 26, 2026</span></h2>
+        <h3>Presupuestos</h3>
+        <ul>
+          <li><b>Ajustar por inflación</b> is now a checkbox instead of a button. Ticked, peso budgets are shown adjusted by the inflation published since you set them; unticked, as you entered them. Ticking it again never adds inflation twice.</li>
+          <li>The same checkbox replaces the automatic option in <b>Ajustes &rarr; Hogar</b>, which also compounded.</li>
+          <li>Each budget card says how much inflation it includes, e.g. "incluye +7,4% de inflación".</li>
+          <li>Budgets turn red above 95% (before: at 100%), here and on Inicio.</li>
+          <li>Removed the "por día" amounts and the "Pasó el …% del mes" line.</li>
+          <li>New <b>Disponible</b> card: what's left of all budgets in large type (<b>Excedido</b> in red when over), and below it what's left per category.</li>
+        </ul>
+        <h3>Movimientos</h3>
+        <ul>
+          <li>Every movement has a tag saying whose it is: <b>Compartido</b>, <b>Iván</b> or <b>Milagros</b>. Shared movements and anything in a joint account are Compartido.</li>
+          <li>The <b>Hogar / Mío / Milagros</b> tabs now filter the list by that tag: Hogar shows the shared ones, each person's tab shows their own. Turn off <b>Solo del tablero seleccionado</b> to see everything.</li>
+          <li>For shared income, the tooltip says who received it instead of "Pagó".</li>
+        </ul>
+        <h3>Reportes</h3>
+        <ul>
+          <li>"IPC últimos 12 meses" is now <b>Inflación interanual</b>.</li>
+        </ul>
+        <h3>Perfil de datos</h3>
+        <ul>
+          <li>Changing profile keeps you on the page you're on and reloads its data, from both the top bar and the Perfil de datos page.</li>
+          <li>The "En uso" column header is gone; the column stays.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.4.5"></a>
+        <h2>0.4.5 <span class="date">&middot; Oct 26, 2026</span></h2>
+        <ul>
+          <li>Patch notes are now in English only.</li>
+          <li>Each entry in the index is a whole clickable box, not just the version number.</li>
+          <li>Removed the "how to update" note and the "see your version" note.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.4.4"></a>
+        <h2>0.4.4 <span class="date">&middot; Oct 26, 2026</span></h2>
+        <ul>
+          <li>Patch notes: larger titles in the right order, easier to read and to navigate with a screen reader.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.4.3"></a>
+        <h2>0.4.3 <span class="date">&middot; Oct 26, 2026</span></h2>
+        <ul>
+          <li>New <b>Patch notes</b> page (this one), with an index of versions on the left.</li>
+          <li>Every screen's footer links to it.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.4.2"></a>
+        <h2>0.4.2 <span class="date">&middot; Oct 25, 2026</span></h2>
+        <ul>
+          <li>If the open page is older than the app, a yellow bar says so, with a <b>Recargar</b> (reload) button.</li>
+          <li>The browser no longer keeps an old copy of the page.</li>
+          <li>Starting the app while another copy is still running now prints a clear message: <i>El puerto 3000 ya está en uso…</i></li>
+          <li>The user guide has a "Still seeing an old version?" section.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.4.1"></a>
+        <h2>0.4.1 <span class="date">&middot; Oct 25, 2026</span></h2>
+        <ul>
+          <li>New <code>npm run update</code> command: discards local changes to <code>package-lock.json</code>, pulls the new version and installs it, so <code>git pull</code> can't get stuck.</li>
+          <li>Instructions use <code>npm ci</code> instead of <code>npm install</code>.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.4.0"></a>
+        <h2>0.4.0 <span class="date">&middot; Oct 24, 2026</span></h2>
+        <ul>
+          <li>Complete user guide in <code>docs/guide/</code>: one page per section, with a screenshot, step-by-step instructions and how each number is calculated.</li>
+          <li>Reference page "How the numbers are worked out": ARS/USD conversion, inflation (IPC), what counts in each dashboard, splits.</li>
+          <li>List of 51 problems found while checking the screens against the code (<code>docs/known-issues.md</code>), not fixed yet.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.3.3"></a>
+        <h2>0.3.1 to 0.3.3 <span class="date">&middot; Oct 24, 2026</span></h2>
+        <ul>
+          <li>The user guide was uploaded in parts while it was being written: index and screenshots (0.3.1), first sections (0.3.2), Perfil de datos (0.3.3).</li>
+          <li>The app itself didn't change in these versions.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.3.0"></a>
+        <h2>0.3.0 <span class="date">&middot; Oct 24, 2026</span></h2>
+        <h3>General</h3>
+        <ul>
+          <li>The title strip is the same height in every section (44px, with 30px controls), so nothing moves when you switch sections.</li>
+          <li>Switches have the familiar rounded shape; the text next to them no longer toggles them, only the lever does.</li>
+          <li>Version number in the footer.</li>
+        </ul>
+        <h3>Data profiles</h3>
+        <ul>
+          <li>New <b>Perfil de datos</b> section in the sidebar, and a button with the current profile at the top right.</li>
+          <li>Unlimited profiles, each with its own data and the same users. A new one starts empty.</li>
+          <li>With no previous choice the app opens on <b>Vacío</b> (empty); after that it remembers the last one picked. The test data is in <b>Prueba (demo)</b>.</li>
+        </ul>
+        <h3>Forms</h3>
+        <ul>
+          <li>On an error, the fields at fault turn red (Nuevo movimiento, Nuevo recurrente, Reglas, Cambiar contraseña).</li>
+          <li>In the category dropdown, group names show as blue headings.</li>
+          <li>New <b>Ingreso compartido</b> (shared income), for movements and recurring items.</li>
+          <li>Split editor: names stacked one below the other with small boxes. The default option is called <b>Cincuenta-cincuenta</b>; <b>Partes iguales</b> only appears when the default split isn't equal.</li>
+        </ul>
+        <h3>Nuevo recurrente</h3>
+        <ul>
+          <li>The estimated amount is large and at the top, in a terminal-style font: red with <b>&minus;</b> for expenses, green with <b>+</b> for income. It stays when you switch type.</li>
+          <li><b>ARS / USD</b> next to the amount opens a menu; the account list then shows only accounts in that currency.</li>
+          <li>For income: income examples in Descripción, <b>Próximo cobro</b> instead of <i>Próximo vencimiento</i>, and <b>Quién paga</b> instead of <i>Comercio</i>.</li>
+          <li>Frecuencia without the up/down arrows.</li>
+        </ul>
+        <h3>Recurrentes</h3>
+        <ul>
+          <li><b>Para confirmar</b> is no longer a permanent section: a yellow alert with <b>Revisar</b> appears only when something is due.</li>
+          <li>No section titles: the table is the page.</li>
+          <li>Pausing or resuming a recurring item no longer shifts the columns.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.2.0"></a>
+        <h2>0.2.0 <span class="date">&middot; Oct 24, 2026</span></h2>
+        <h3>New design: "Informe del mes"</h3>
+        <ul>
+          <li>Early-2010s style: navy sidebar, dark top bar with tabs, square-cornered panels with gradient title bars.</li>
+          <li>Inicio as a monthly report: spending, income and savings with monthly and real (inflation-adjusted) change, and spending by category with <b>Nominal / Real (IPC)</b>.</li>
+        </ul>
+        <h3>Requested fixes</h3>
+        <ul>
+          <li>Test data belongs to <b>Iván</b> and <b>Milagros</b>.</li>
+          <li>No house icon, no subtitles, no explainer boxes.</li>
+          <li>Month picker with arrows and a month + year dropdown.</li>
+          <li>Inicio: <b>Agregar</b> in the sidebar color, <b>Saldo compartido</b>, savings change shown as money.</li>
+          <li>Field help moves behind an <b>(i)</b> shown on hover.</li>
+          <li>Split pre-filled 50/50; typing one share fills in the other.</li>
+          <li>Recurrentes: a single <b>Frecuencia</b> field (number + weeks/months/years).</li>
+          <li>Server errors appear as plain sentences.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.1.0"></a>
+        <h2>0.1.0 <span class="date">&middot; Oct 24, 2026</span></h2>
+        <ul>
+          <li>First version: two password-protected users; lockout after 3 failed attempts.</li>
+          <li><b>Hogar</b> and <b>Mío</b> dashboards, plus your partner's if they share it.</li>
+          <li>Accounts in ARS and USD; conversion at the BNA rate of each movement's day.</li>
+          <li>Inflation (INDEC CPI): constant pesos, real change, indexed budgets.</li>
+          <li>Splitwise-style shared expenses, purchases in installments, and recurring items confirmed with the real amount.</li>
+          <li>CSV / Excel import with a setup per bank, and automatic rules.</li>
+          <li>Budgets with alerts (in the app and by Telegram), and savings goals.</li>
+          <li>Reports, monthly review with a .docx report, private movements, export, daily backups and Docker.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+      </td>
+    </tr>
+  </table>
+
+  <div class="foot">Finanzas &middot; private household use &middot; <a href="/">Back to the app</a></div>
+</div>
+</body>
+</html>
