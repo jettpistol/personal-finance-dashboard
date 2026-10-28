@@ -502,7 +502,7 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
                   </Text>
                 )}
                 <Text size="xs" c="dimmed">
-                  {locked ? 'El interés y las cuotas quedaron fijos al crear el préstamo.' : 'Una vez guardado, el interés y las cuotas no se pueden cambiar. Cada cuota aparece en Pagos pendientes.'}
+                  {locked ? 'El interés y las cuotas quedaron fijos al crear el préstamo.' : 'Una vez guardado, el interés y las cuotas no se pueden cambiar. Cada cuota aparece en Pendientes → Cobros.'}
                 </Text>
               </>
             )}

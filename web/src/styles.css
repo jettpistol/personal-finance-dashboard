@@ -1268,7 +1268,7 @@ a {
   opacity: 0.6;
 }
 
-/* Pagos pendientes: boxed cards; late ones carry a red rule on the left. */
+/* Pendientes: boxed cards; late ones carry a red rule on the left. */
 .pfd-pending[data-status='overdue'] {
   border-left: 4px solid var(--pfd-down);
 }
@@ -1361,6 +1361,11 @@ a {
 
 /* Every dropdown list (Select, Autocomplete, GroupedSelect…) can be stretched from its bottom-right
    corner; the drag itself is handled in lib/dropdown-resize.ts. */
+.m_88b62a41 {
+  /* Room for the corner, so it never sits on the last option's tick. */
+  padding-bottom: 12px;
+}
+
 .m_88b62a41::after {
   content: '';
   position: absolute;
@@ -1414,4 +1419,71 @@ a {
 .pfd-mp-sources {
   border-top: 1px solid var(--pfd-rule);
   padding-top: 8px;
+}
+
+/* GroupedSelect options: the selected tick sits at the end, like every other dropdown. */
+.pfd-gs-label {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Nuevo movimiento opened from Pendientes: what it pays. */
+.pfd-tx-pending {
+  padding: 8px 12px;
+  border-left: 3px solid var(--mantine-color-navy-6);
+  background: var(--pfd-strip);
+}
+
+/* Pendientes cards: the title leads (set on the Title); tags and the due line step back. */
+.pfd-pending-meta .pfd-tag {
+  font-size: 0.625rem;
+  opacity: 0.8;
+}
+
+/* Registrar: the two ways in, as large choices. */
+.pfd-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--pfd-rule-strong);
+  background: var(--pfd-strip);
+}
+
+.pfd-choice:hover {
+  border-color: var(--mantine-color-navy-6);
+}
+
+/* Completados: done items, in green. */
+.pfd-done-list {
+  margin-top: var(--mantine-spacing-lg);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-teal-6) 45%, transparent);
+  border-left: 4px solid var(--mantine-color-teal-6);
+}
+
+.pfd-done-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  color: var(--mantine-color-teal-8);
+  background: color-mix(in srgb, var(--mantine-color-teal-6) 10%, transparent);
+}
+
+[data-mantine-color-scheme='dark'] .pfd-done-head {
+  color: var(--mantine-color-teal-3);
+}
+
+.pfd-done-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--pfd-rule);
+}
+
+.pfd-done-check {
+  flex: none;
+  color: var(--mantine-color-teal-6);
 }

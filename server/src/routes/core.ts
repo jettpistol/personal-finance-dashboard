@@ -8,6 +8,7 @@ import { loadConverter } from '../lib/fx.js';
 import { today } from '../lib/dates.js';
 import { telegramEnabled, findChatIdByCode, sendTelegramMessage } from '../lib/telegram.js';
 import { activeSmtp, clearSmtp, describeMailError, mailEnabled, saveSmtp, sendMail, storedSmtp, verifyMail } from '../lib/mail.js';
+import { assertSingleMpAccount } from '../lib/mercadopago.js';
 import { idParam, parse } from './util.js';
 import crypto from 'node:crypto';
 
@@ -234,6 +235,7 @@ export default async function coreRoutes(app: FastifyInstance) {
   app.post('/accounts', async (req) => {
     const a = parse(accountSchema, req.body);
     const owner = a.owner === 'me' ? req.userId : null;
+    if (owner) assertSingleMpAccount(owner, a.name);
     const id = db()
       .prepare('INSERT INTO accounts (name, type, currency, owner_id, is_private, opening_balance, color, archived, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .run(a.name, a.type, a.currency, owner, owner && a.is_private ? 1 : 0, a.opening_balance, a.color ?? null, a.archived ? 1 : 0, a.sort).lastInsertRowid;
@@ -248,6 +250,7 @@ export default async function coreRoutes(app: FastifyInstance) {
     const hasTx = db().prepare('SELECT 1 FROM transactions WHERE account_id = ? OR to_account_id = ? LIMIT 1').get(id, id);
     if (a.currency && a.currency !== existing.currency && hasTx) throw new HttpError(400, 'No se puede cambiar la moneda de una cuenta con movimientos.');
     const owner = a.owner === undefined ? existing.owner_id : a.owner === 'me' ? req.userId : null;
+    if (owner && a.name) assertSingleMpAccount(owner, a.name, id);
     if (owner !== existing.owner_id && hasTx) throw new HttpError(400, 'No se puede cambiar el titular de una cuenta con movimientos.');
     const isPrivate = owner !== null && (a.is_private ?? !!existing.is_private);
     db()

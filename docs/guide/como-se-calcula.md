@@ -8,7 +8,7 @@ The examples use Iván and Milagros, a joint account, and made-up quotes and CPI
 
 - Every amount is kept exactly, to the cent. There is no rounding when you save a movement.
 - Each account is in **ARS** or **USD**, and every movement is in its account's currency. You can't record a dollar expense in a peso account: use a dollar account, or enter the pesos you actually paid.
-- Amounts are shown in Argentine format: `$ 1.234,56` for pesos and `US$ 1.234,56` for dollars. Some compact figures (charts, budget cards) drop the cents or show millions as **M**.
+- Amounts are shown in Argentine format: `$ 1.234,56` for pesos and `USD 1.234,56` for dollars (never `US$`). Some compact figures (charts, budget cards) drop the cents or show millions as **M**.
 - Percentage changes are (this period − previous period) ÷ previous period. When the previous period is zero there is no percentage and a dash is shown.
 
 ## Converting between ARS and USD
@@ -25,9 +25,9 @@ The **ARS / USD** switch in the top bar never changes what's stored. It converts
 
 **Example.** Friday 16/10 the BNA quote is buy 1.400 / sell 1.450, and there is no quote on the weekend.
 
-- A US$ 20,00 expense on Saturday 17/10, viewed in ARS with **Vendedor**: 20,00 × 1.450 = **$ 29.000,00**. With **Promedio** (1.425): **$ 28.500,00**.
-- A $ 10.000 expense on the same Saturday, viewed in USD: 10.000 ÷ 1.450 = 6,8966 → **US$ 6,90** (rounded to the cent).
-- Two $ 29.000 expenses, one on 1/10 at 1.400 and one on 30/10 at 1.450, viewed in USD: US$ 20,71 + US$ 20,00 = **US$ 40,71**. The same pesos are worth fewer dollars later in the month.
+- A USD 20,00 expense on Saturday 17/10, viewed in ARS with **Vendedor**: 20,00 × 1.450 = **$ 29.000,00**. With **Promedio** (1.425): **$ 28.500,00**.
+- A $ 10.000 expense on the same Saturday, viewed in USD: 10.000 ÷ 1.450 = 6,8966 → **USD 6,90** (rounded to the cent).
+- Two $ 29.000 expenses, one on 1/10 at 1.400 and one on 30/10 at 1.450, viewed in USD: USD 20,71 + USD 20,00 = **USD 40,71**. The same pesos are worth fewer dollars later in the month.
 
 Because each movement is rounded on its own, a converted total can differ by a cent or two from converting the total in one go.
 
@@ -98,7 +98,7 @@ Rules:
 - Saving a new amount resets its starting month to the latest CPI.
 - The adjustment never lowers a budget.
 
-**How much of a budget is used**: the confirmed expenses of that month that count in the budget's dashboard, in the budget's category or its subcategories, converted to the budget's currency at each expense's own day quote. Example: a $ 300.000 **Supermercado** budget with $ 250.000 in peso expenses plus a US$ 20 expense on a day quoted 1.450 ($ 29.000) is at $ 279.000, **93%**. Percentages are shown with one decimal.
+**How much of a budget is used**: the confirmed expenses of that month that count in the budget's dashboard, in the budget's category or its subcategories, converted to the budget's currency at each expense's own day quote. Example: a $ 300.000 **Supermercado** budget with $ 250.000 in peso expenses plus a USD 20 expense on a day quoted 1.450 ($ 29.000) is at $ 279.000, **93%**. Percentages are shown with one decimal.
 
 ## What counts in each dashboard
 
@@ -172,7 +172,7 @@ If you split the purchase with exact amounts, they're turned into percentages an
 
 ## Transfers, settlements and adjustments
 
-- A **transfer** moves money between two accounts and is never income or spending. Between currencies it stores both amounts: buying US$ 100 for $ 145.000 takes $ 145.000 out of the peso account and puts US$ 100 into the dollar one.
+- A **transfer** moves money between two accounts and is never income or spending. Between currencies it stores both amounts: buying USD 100 for $ 145.000 takes $ 145.000 out of the peso account and puts USD 100 into the dollar one.
 - A transfer from one person's account to the other person's account is a **settlement** by default (you can untick it). Settlements need both accounts in the same currency and can't be private. Unticked, it's a plain transfer that doesn't change who owes whom.
 - Transfers into a joint account are contributions (see above), not settlements, and create no debt.
 - An **adjustment** corrects an account's balance up or down. It never counts as income or spending.

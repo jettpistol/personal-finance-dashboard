@@ -53,7 +53,7 @@ Newest first, 50 rows per page, with page numbers at the bottom when there are m
 | **Descripción** | The description (or the merchant if there's no description, or **(sin descripción)**), followed by labels: **Pendiente**; whose it is (**Compartido**, or the person's name, see below); **Privado**; **Recurrente**; and a paperclip if a receipt is attached. Tags appear underneath. |
 | **Categoría** | For expenses and income, the category as **Main › Sub**, in a coloured tag. Otherwise **Transferencia**, **Pago de deuda** (a settlement between you two) or **Ajuste**. |
 | **Cuenta** | The account. Transfers show **origin → destination**. **Cuenta privada** means the account belongs to your partner and is private: you see the movement only because it's a shared expense or a payment to you. |
-| **Monto** | In the account's own currency (`$` or `US$`). Expenses carry a minus sign, income a plus sign in green, transfers no sign in grey (the amount that left the origin), adjustments their own sign. |
+| **Monto** | In the account's own currency (`$` or `USD`). Expenses carry a minus sign, income a plus sign in green, transfers no sign in grey (the amount that left the origin), adjustments their own sign. |
 
 **Whose a movement is.** Every movement carries one tag:
 
@@ -130,7 +130,7 @@ Fields marked with a red asterisk are required. Which fields appear depends on t
 ### Common fields
 
 1. **Type** (the four tabs at the top): **Gasto**, **Ingreso**, **Transf. propia** (between your own or the household's accounts, not a payment to someone else), **Ajuste**.
-2. **Monto**: in the currency of the chosen account (the prefix switches between `$` and `US$`). Use a comma for decimals.
+2. **Monto**: in the currency of the chosen account (the box always shows `$`; the account says the currency). Use a comma for decimals.
 3. **Fecha**: today by default.
 4. **Cuenta**: the account the money left or entered. The list is grouped by **Común**, you and your partner, and shows the currency of each account. Click a group's title to open or close it: when the list opens, only the group of the selected account is open; typing searches all groups. If a list is too short, drag its bottom-right corner down to make it taller (this works on every list in the app). Archived accounts aren't offered. A new form starts on your first personal account (or the first joint one if you have none).
 5. **Descripción**: free text, for example "Supermercado". When you leave this box on a new expense or income, the app may fill in the category and more (see [Category suggestions](#category-suggestions)).
@@ -159,7 +159,7 @@ Money moving between two accounts. It never counts as income or spending.
 **Buying or selling dollars (two currencies).** When **Desde** and **Hacia** are in different currencies, two boxes appear:
 
 - **Tipo de cambio**: pesos per dollar. It starts at today's BNA quote (sell when buying dollars, buy when selling them); change it to the rate you actually got.
-- **Monto recibido en USD** (or **en ARS**): not editable, it's calculated from **Monto** and **Tipo de cambio**. With $ 150.000 and a rate of 1.250 it shows US$ 120. The origin balance goes down by the first amount and the destination goes up by the second. In the list, these transfers show what came in and the rate, for example *→ US$ 120,00 · TC $ 1.250*.
+- **Monto recibido en USD** (or **en ARS**): not editable, it's calculated from **Monto** and **Tipo de cambio**. With $ 150.000 and a rate of 1.250 it shows USD 120. The origin balance goes down by the first amount and the destination goes up by the second. In the list, these transfers show what came in and the rate, for example *→ USD 120,00 · TC $ 1.250*.
 
 To pay something in dollars with pesos, first record this conversion into a dollar account at the rate you got, then pay from that account.
 

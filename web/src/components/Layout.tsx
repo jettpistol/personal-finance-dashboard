@@ -56,6 +56,7 @@ import { useProfiles, useSelectProfile } from '../lib/profiles';
 import { date } from '../lib/format';
 import { logoutAccount } from '../lib/accounts';
 import { AccountMenuSection, AddAccountModal, LogoutAllItem } from './AccountSwitcher';
+import { MercadoPagoAccountPrompt } from './MercadoPagoSettings';
 
 const NAV = [
   { section: 'General' },
@@ -64,7 +65,7 @@ const NAV = [
   { to: '/cuentas', label: 'Cuentas', icon: IconBuildingBank },
   { to: '/saldos', label: 'Gastos compartidos', icon: IconArrowsExchange },
   { to: '/deudores', label: 'Deudores', icon: IconUserDollar },
-  { to: '/pendientes', label: 'Pagos pendientes', icon: IconAlarm },
+  { to: '/pendientes', label: 'Pendientes', icon: IconAlarm },
   { section: 'Planificación' },
   { to: '/presupuestos', label: 'Presupuestos', icon: IconPigMoney },
   { to: '/metas', label: 'Objetivos', icon: IconTarget },
@@ -204,7 +205,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const [opened, { toggle, close }] = useDisclosure();
   const { me, openTx, txModal } = useApp();
   const location = useLocation();
-  // What's due or late in Pagos pendientes, as a counter next to the menu entry.
+  // What's due or late in Pendientes (Pagos plus Cobros), as a counter next to the menu entry.
   const pendingDue = useQuery({ queryKey: ['pending', 'summary'], queryFn: () => api.get<{ due: number }>('/pending/summary'), refetchInterval: 60_000 }).data?.due ?? 0;
   const qc = useQueryClient();
   const isMobile = useMediaQuery('(max-width: 48em)');
@@ -265,6 +266,7 @@ export function Layout({ children }: { children: ReactNode }) {
               </Menu.Dropdown>
             </Menu>
             <AddAccountModal opened={addAccountOpen} onClose={addAccount.close} />
+            <MercadoPagoAccountPrompt />
           </Group>
         </Group>
       </AppShell.Header>

@@ -1,7 +1,8 @@
 import { config } from '../config.js';
-import { coreDb } from '../db/index.js';
+import { coreDb, db } from '../db/index.js';
 import { HttpError } from './http.js';
 import { decryptSecret, encryptSecret } from './secrets.js';
+import { logAction } from './audit.js';
 
 // Mercado Pago, one personal account per person. See docs/mercadopago/ for what the API offers.
 //
@@ -214,6 +215,56 @@ export async function requestReport(token: string, kind: ReportKind, begin: stri
   return mpWrite(token, 'POST', `/v1/account/${kind}`, { begin_date: begin, end_date: end });
 }
 
+// ---- The Mercado Pago account in Cuentas (per data profile, one per person) ----
+
+/** "Mercado Pago Iván", "MercadoPago", "MP": names that already mean a Mercado Pago account. */
+export const MP_NAME = /mercado\s*pago|(^|[^a-z])mp([^a-z]|$)/i;
+export const MP_ACCOUNT_NAME = 'Mercado Pago';
+
+type AccountRow = { id: number; name: string; owner_id: number | null; archived: number };
+
+/** The account this person's connection fills in the active profile, and the ones it could be. */
+export function mpAccountState(userId: number) {
+  const link = db().prepare('SELECT a.id, a.name FROM mp_links l JOIN accounts a ON a.id = l.account_id WHERE l.user_id = ?').get(userId) as
+    | { id: number; name: string }
+    | undefined;
+  const candidates = (db().prepare('SELECT id, name, owner_id, archived FROM accounts WHERE owner_id = ? AND archived = 0 ORDER BY id').all(userId) as AccountRow[])
+    .filter((a) => MP_NAME.test(a.name))
+    .map(({ id, name }) => ({ id, name }));
+  return { account: link ?? null, candidates: link ? [] : candidates };
+}
+
+/**
+ * Ties the connection to an account. With no Mercado Pago account yet, `accountId` null creates
+ * one; when there are some, it must be one of them (there's no way to skip or make another).
+ */
+export function linkMpAccount(userId: number, accountId: number | null): { id: number; name: string; created: boolean } {
+  const state = mpAccountState(userId);
+  if (state.account) return { ...state.account, created: false };
+  if (accountId === null) {
+    if (state.candidates.length) throw new HttpError(400, 'Elegí cuál de tus cuentas es la de Mercado Pago.', 'account_id');
+    const id = Number(
+      db()
+        .prepare(`INSERT INTO accounts (name, type, currency, owner_id, is_private, opening_balance, sort) VALUES (?, 'wallet', 'ARS', ?, 0, 0, 0)`)
+        .run(MP_ACCOUNT_NAME, userId).lastInsertRowid,
+    );
+    db().prepare('INSERT INTO mp_links (user_id, account_id) VALUES (?, ?)').run(userId, id);
+    logAction({ userId, section: 'Mercado Pago', action: 'crear', summary: `Se creó la cuenta «${MP_ACCOUNT_NAME}» en Cuentas para la conexión con Mercado Pago`, entity: 'account', entityId: id, privateTo: userId });
+    return { id, name: MP_ACCOUNT_NAME, created: true };
+  }
+  const chosen = state.candidates.find((c) => c.id === accountId);
+  if (!chosen) throw new HttpError(400, 'Esa cuenta no es una de tus cuentas de Mercado Pago.', 'account_id');
+  db().prepare('INSERT INTO mp_links (user_id, account_id) VALUES (?, ?)').run(userId, chosen.id);
+  return { ...chosen, created: false };
+}
+
+/** One Mercado Pago account per person: a second one is refused once the connection has its account. */
+export function assertSingleMpAccount(userId: number, name: string, exceptId?: number) {
+  if (!MP_NAME.test(name)) return;
+  const linked = mpAccountState(userId).account;
+  if (linked && linked.id !== exceptId) throw new HttpError(400, `Ya tenés una cuenta de Mercado Pago («${linked.name}»). Cada persona tiene una sola.`, 'name');
+}
+
 // ---- Storage (core database, one row per person) ----
 
 type Row = {
@@ -229,6 +280,7 @@ type Row = {
 };
 
 const context = (userId: number) => `mp:${userId}`;
+export const DEFAULT_HISTORY_START = '2026-10-01';
 
 function row(userId: number): Row | undefined {
   return coreDb().prepare('SELECT * FROM mp_connections WHERE user_id = ?').get(userId) as Row | undefined;
@@ -243,7 +295,9 @@ export function connectionView(userId: number) {
     mp_user_id: r.mp_user_id,
     nickname: r.nickname,
     site_id: r.site_id,
-    history_start: r.history_start,
+    // The owner chose 1 October 2026 as where the history starts, unless a date was set.
+    history_start: r.history_start ?? DEFAULT_HISTORY_START,
+    ...mpAccountState(userId),
     connected_at: r.connected_at,
     checked_at: r.checked_at,
     checks: r.checks ? (JSON.parse(r.checks) as MpCheck[]) : null,

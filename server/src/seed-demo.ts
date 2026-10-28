@@ -150,7 +150,7 @@ for (let m = start; m <= currentMonth(); m = addMonthsToMonth(m, 1)) {
   loan.run(ivan, 'Caro', 'money', null, $(15_000), 'ARS', addMonths(today(), -5), null, 'Le dije que no hacía falta', addMonths(today(), -1), 'forgiven');
 }
 
-// Pagos pendientes: a monthly dollar savings plan, a debt Iván is paying back, and a loan with interest.
+// Pendientes: a monthly dollar savings plan, a debt Iván is paying back, and a loan with interest.
 {
   const thisMonth = currentMonth();
   const lastMonth = addMonthsToMonth(thisMonth, -1);

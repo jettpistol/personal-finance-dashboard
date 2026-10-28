@@ -291,7 +291,7 @@ describe('money flows', () => {
     expect((await call('ana', 'GET', '/api/settings')).body.hide_cents).toEqual({ ARS: true, USD: true });
     expect(formatMoney(123456, 'ARS')).toBe('$ 1.235');
     expect((await call('ana', 'PATCH', '/api/settings', { hide_cents: { ARS: true, USD: false } })).status).toBe(200);
-    expect(formatMoney(123456, 'USD')).toBe('US$ 1.234,56');
+    expect(formatMoney(123456, 'USD')).toBe('USD 1.234,56');
     expect((await call('ana', 'PATCH', '/api/settings', { hide_cents: { ARS: 'no' } })).status).toBe(400);
     await call('ana', 'PATCH', '/api/settings', { hide_cents: { ARS: true, USD: true } });
   });

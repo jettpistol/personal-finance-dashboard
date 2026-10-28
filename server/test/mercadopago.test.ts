@@ -203,6 +203,25 @@ describe('Mercado Pago connection', () => {
     expect((await call('mili', 'PUT', '/api/me/mercadopago', { history_start: '2025-03-01' })).status).toBe(404);
   });
 
+  it('ties the connection to one Mercado Pago account in Cuentas', async () => {
+    // Iván had none: connecting made one and tied it.
+    const ivan = (await call('ivan', 'GET', '/api/me/mercadopago')).body;
+    expect(ivan.account).toMatchObject({ name: 'Mercado Pago' });
+    expect(ivan.history_start).toBeTruthy();
+    // A second Mercado Pago account for him is refused.
+    expect((await call('ivan', 'POST', '/api/accounts', { name: 'MP Iván', type: 'wallet', currency: 'ARS', owner: 'me' })).status).toBe(400);
+    // Milagros already has one: connecting asks which, with no way to make another.
+    const mine = (await call('mili', 'POST', '/api/accounts', { name: 'Mercado Pago Mili', type: 'wallet', currency: 'ARS', owner: 'me' })).body.id;
+    await call('mili', 'POST', '/api/accounts', { name: 'Galicia', type: 'bank', currency: 'ARS', owner: 'me' });
+    const connected = (await call('mili', 'PUT', '/api/me/mercadopago', { access_token: TOKEN })).body;
+    expect(connected).toMatchObject({ connected: true, account: null, candidates: [{ id: mine, name: 'Mercado Pago Mili' }] });
+    expect((await call('mili', 'POST', '/api/me/mercadopago/account', {})).status).toBe(400);
+    expect((await call('mili', 'POST', '/api/me/mercadopago/account', { account_id: ivan.account.id })).status).toBe(400);
+    const linked = await call('mili', 'POST', '/api/me/mercadopago/account', { account_id: mine });
+    expect(linked.body).toMatchObject({ account: { id: mine }, candidates: [], linked: { created: false } });
+    await call('mili', 'DELETE', '/api/me/mercadopago');
+  });
+
   it('disconnects, deleting the token', async () => {
     expect((await call('ivan', 'DELETE', '/api/me/mercadopago')).body).toEqual({ connected: false });
     expect(coreDb().prepare('SELECT COUNT(*) AS n FROM mp_connections').get()).toEqual({ n: 0 });

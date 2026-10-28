@@ -72,6 +72,9 @@ export const theme = createTheme({
     Menu: { defaultProps: { shadow: 'md', radius: 'sm' } },
     Modal: { defaultProps: { radius: 0, overlayProps: { backgroundOpacity: 0.45, color: '#0b1a2e' } } },
     Tooltip: { defaultProps: { radius: 'sm' } },
+    // The selected option's tick goes at the end, so it never pushes the option's name sideways.
+    Select: { defaultProps: { checkIconPosition: 'right' } },
+    MultiSelect: { defaultProps: { checkIconPosition: 'right' } },
     Table: { defaultProps: { verticalSpacing: 8 } },
     Tabs: { defaultProps: { variant: 'outline', radius: 0 } },
     Pagination: { defaultProps: { radius: 0 } },

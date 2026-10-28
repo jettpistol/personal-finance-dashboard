@@ -42,13 +42,17 @@ Standing instructions for any agent working in this repo. They come from the own
 - **Modals open centered.** One action per line when two would be confusing side by side.
 - **Charts:** axes shorten with k / M (`moneyShort`, `axisK` in `ReportBits`); tooltips keep the full figure.
 - **Amounts** go through `money()` in `web/src/lib/format.ts` (it honours **Ajustes → Monedas → Ocultar centavos**). Server text uses `formatMoney()`. Never format money by hand.
+- **Currency:** dollars are written `USD 1.234`, never `US$`. Amount boxes show only `$`; the currency is shown once, by its selector or account, never twice.
+- **Dropdown ticks** go at the end of the option (Select/MultiSelect default `checkIconPosition: 'right'`, GroupedSelect the same), so names never shift when selected.
 - **Dropdowns:** grouped lists use `GroupedSelect` (collapsible groups, no item counts). Every dropdown can be stretched from its corner (`lib/dropdown-resize.ts`).
 - Serious, calm tone: no gamification, no emoji in the UI.
 
 ## Product decisions already made (don't undo them)
 
 - **Recurrentes** = things that arrive on their own (bills, subscriptions, salary, card installments, purchases); you only confirm the real amount.
-- **Pagos pendientes** = commitments you carry out yourself: monthly savings, personal debts, money owed to you. No product purchases.
+- **Pendientes** (formerly Pagos pendientes) = commitments you carry out yourself: monthly savings, personal debts, money owed to you. No product purchases.
+  - Two separate lists, **Pagos** and **Cobros**, switched by a toggle in the header, each with its own counter; the sidebar counter is their sum. Done items go to **Completados** (green), never just disappear.
+  - One **Registrar** button: it asks whether the movement is already loaded (pick it with `MovementPicker`) or new (Nuevo movimiento opens linked to the item, `pending` in `POST /transactions`). Short amounts always ask why before anything is saved.
   - Exact amounts only. A partial payment must include a written reason; the rest rolls over, and overpaying lowers the next month.
   - A USD target is paid only with USD. To pay with pesos, record an ARS → USD **Transf. propia** at a specific rate first.
   - A movement with exactly the amount links automatically (`autoLink`) on every write path: form, CSV and statement import.
@@ -57,7 +61,7 @@ Standing instructions for any agent working in this repo. They come from the own
 - **Transf. propia between currencies:** the received amount is never typed. It is calculated from the amount and the **Tipo de cambio**, which starts at today's BNA quote.
 - **Objetivos:** a goal linked to an account follows that account's balance. Only unlinked goals get **Registrar aporte**.
 - **Notifications:** bell plus email (one shared Gmail with an app password, set in **Ajustes → Notificaciones**). Telegram stays optional and is not promoted; a future mobile app may carry notifications.
-- **Mercado Pago:** each person connects their own account in **Ajustes → Mercado Pago**. The owner's guidelines are in [`docs/mercadopago/`](docs/mercadopago/); the note at the top of the agent brief says how this repo deviates from it, and `03-reports-reference.md` holds the confirmed report facts (it overrides the brief). Mercado Pago's developer sites can't be reached from cloud sessions: ask the owner to paste pages instead of guessing fields.
+- **Mercado Pago:** each person connects their own account in **Ajustes → Mercado Pago**, and it fills exactly one account in Cuentas per data profile (`mp_links`): created as "Mercado Pago" if there's none, otherwise the person must pick among their existing Mercado Pago accounts (a prompt with no way out). A second Mercado Pago account per person is refused. History starts on 1 October 2026 unless set. The owner's guidelines are in [`docs/mercadopago/`](docs/mercadopago/); the note at the top of the agent brief says how this repo deviates from it, and `03-reports-reference.md` holds the confirmed report facts (it overrides the brief). Mercado Pago's developer sites can't be reached from cloud sessions: ask the owner to paste pages instead of guessing fields.
 - **Data profiles:** a new install opens on the empty **Vacío** profile; demo data lives in **Prueba (demo)**.
 - Changing the data profile or the account keeps you on the same page and refreshes it.
 
@@ -72,6 +76,7 @@ Standing instructions for any agent working in this repo. They come from the own
 - **Notifications:** `notify()` in `lib/notify.ts` sends to the bell, email and Telegram. Kinds: budget, recurring, review, pending, system.
 - **Web:** pages in `web/src/pages`, shared pieces in `web/src/components`, helpers in `web/src/lib`. Global styles in `web/src/styles.css`, with `.pfd-*` class names. The wiki is in `web/src/wiki`.
 - **Field errors:** throw `FieldError(message, [fields])` on the client or `HttpError` on the server, so the field is outlined in red.
+- **Reusable pieces:** before building a list, picker or window, check [`docs/dev/components.md`](docs/dev/components.md). Picking existing movements is always `MovementPicker` (one component with options), never a new copy; document new options and new uses there.
 
 ## Verify before pushing
 

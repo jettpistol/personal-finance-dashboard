@@ -135,6 +135,9 @@ export function TxFormModal() {
   const [suggested, setSuggested] = useState<string | null>(null);
   const [csvOpen, setCsvOpen] = useState(false);
   const [bad, setBad] = useState<Set<string>>(new Set());
+  // From Pendientes: what this movement pays, and why it's partial when it's less.
+  const pending = !editId ? txModal?.pending : undefined;
+  const [reason, setReason] = useState('');
   const clearBad = (field: string) =>
     setBad((b) => {
       if (!b.has(field)) return b;
@@ -178,7 +181,7 @@ export function TxFormModal() {
     if (!a || !r) return '';
     return Math.round((fromArs ? a / r : a * r) * 100) / 100;
   };
-  // A known amount to receive (e.g. US$ 200 to save, from Pagos pendientes): the amount sent follows the rate until you type it.
+  // A known amount to receive (e.g. USD 200 to save, from Pendientes): the amount sent follows the rate until you type it.
   const [target, setTarget] = useState(Number(txModal?.prefill?.toAmount) || 0);
   const sentFor = (want: number, rate: number | string) => (Number(rate) ? Math.round((fromArs ? want * Number(rate) : want / Number(rate)) * 100) / 100 : '');
   const setRate = (rate: number | string) =>
@@ -201,6 +204,9 @@ export function TxFormModal() {
     if (crossCurrency && !editId) setForm((f) => ({ ...f, to_amount: received(f.amount, f.rate) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [crossCurrency, fromArs, form.to_account_id]);
+  // What the movement counts for the pending item: the dollars a conversion delivers, else its amount.
+  const pendingValue = pending ? toCents(pending.kind === 'savings' && crossCurrency ? form.to_amount : form.amount) : 0;
+  const pendingPartial = !!pending && pendingValue > 0 && pendingValue < pending.remaining;
   const crossOwner = form.type === 'transfer' && account && toAccount && account.owner_id !== null && toAccount.owner_id !== null && account.owner_id !== toAccount.owner_id;
   const personalAccount = account && account.owner_id !== null;
   const tx = existing.data;
@@ -247,6 +253,7 @@ export function TxFormModal() {
     if (crossCurrency && !(toCents(form.to_amount) > 0)) return fail(new FieldError('Indicá el tipo de cambio.', ['rate']));
     const splitIssue = splittable && form.is_shared ? splitProblem(form.split_method, form.split_values, users, toCents(form.amount), account?.currency) : null;
     if (splitIssue) return fail(new FieldError(splitIssue, ['split']));
+    if (pendingPartial && !reason.trim()) return fail(new FieldError(pending!.kind === 'collect' ? 'Es un cobro parcial: escribí por qué no se cobró todo.' : 'Es un pago parcial: escribí por qué no se pagó todo.', ['reason']));
     setSaving(true);
     try {
       const base = {
@@ -274,10 +281,12 @@ export function TxFormModal() {
           to_amount: crossCurrency ? toCents(form.to_amount) : null,
           is_settlement: crossOwner ? form.is_settlement : null,
           status: tx?.status,
+          // Linked to the Pendientes item in the same save: nothing is saved if it can't count.
+          ...(pending ? { pending: { source: pending.source, id: pending.id, reason: pendingPartial ? reason.trim() : null } } : {}),
         };
         const saved = editId ? await api.put<Tx>(`/transactions/${editId}`, body) : await api.post<Tx>('/transactions', body);
         id = saved.id;
-        notifyOk(editId ? 'Movimiento actualizado' : 'Movimiento guardado');
+        notifyOk(editId ? 'Movimiento actualizado' : pending ? `Registrado en «${pending.title}»` : 'Movimiento guardado');
       }
       if (receipt && id) {
         const blob = await compressImage(receipt);
@@ -352,7 +361,14 @@ export function TxFormModal() {
             </Alert>
           )}
 
-          {!editId && (
+          {pending && (
+            <div className="pfd-tx-pending">
+              <Text size="sm">
+                Para <b>{pending.title}</b> · faltan <b className="num">{money(pending.remaining, pending.currency)}</b>
+              </Text>
+            </div>
+          )}
+          {!editId && !pending && (
             <Group justify="flex-end" mb={-6}>
               <Button variant="subtle" size="compact-xs" leftSection={<IconFileImport size={14} />} onClick={() => setCsvOpen(true)}>
                 Importar CSV
@@ -467,7 +483,23 @@ export function TxFormModal() {
             </>
           )}
 
-          {splittable && !editId && (
+          {pendingPartial && (
+            <Textarea
+              label={pending!.kind === 'collect' ? '¿Por qué es un cobro parcial?' : '¿Por qué es un pago parcial?'}
+              description={`Faltan ${money(pending!.remaining - pendingValue, pending!.currency)}: ${pending!.source === 'loan' ? 'siguen pendientes.' : 'pasan al mes siguiente.'}`}
+              autosize
+              minRows={2}
+              required
+              value={reason}
+              onChange={(e) => {
+                clearBad('reason');
+                setReason(e.currentTarget.value);
+              }}
+              error={bad.has('reason')}
+            />
+          )}
+
+          {splittable && !editId && !pending && (
             <Switch
               label={form.type === 'income' ? 'Cobro en cuotas' : 'Compra en cuotas'}
               description={form.type === 'income' ? 'Cada cuota queda pendiente hasta que confirmes que la cobraste.' : undefined}

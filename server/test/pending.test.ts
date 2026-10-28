@@ -110,4 +110,56 @@ describe('pagos pendientes', () => {
     expect(after.returned).toBe(payment);
     expect(after.returns[0].transaction_id).toBeTruthy();
   });
+
+  it('links a movement made from Registrar in the same save, and saves nothing if it fails', async () => {
+    const c = await call('ana', 'POST', '/api/commitments', { kind: 'savings', title: 'Ahorro conversión', amount: 200_00, currency: 'USD', account_id: ids.savings, day: 31, start_month: M });
+    const pending = { source: 'commitment', id: c.body.id };
+    const count = () => (db().prepare('SELECT COUNT(*) AS n FROM transactions').get() as { n: number }).n;
+    const before = count();
+    // Pesos into the dollar savings account, converted: USD 190 is partial, so it needs a reason first.
+    const conv = { type: 'transfer', date: today(), amount: 247_000_00, account_id: ids.ars, to_account_id: ids.savings, to_amount: 190_00, description: 'Compra de dólares' };
+    const noReason = await call('ana', 'POST', '/api/transactions', { ...conv, pending });
+    expect(noReason.status).toBe(400);
+    expect(noReason.body.fields).toEqual(['reason']);
+    expect(count()).toBe(before);
+    const ok = await call('ana', 'POST', '/api/transactions', { ...conv, pending: { ...pending, reason: 'El cambio no alcanzó' } });
+    expect(ok.status).toBe(200);
+    let item = (await call('ana', 'GET', '/api/pending')).body.find((i: { key: string }) => i.key === `c${c.body.id}`);
+    expect(item).toMatchObject({ paid: 190_00, remaining: 10_00 });
+    expect(item.history[0].payments[0]).toMatchObject({ amount: 190_00, reason: 'El cambio no alcanzó' });
+    // Something that can't count (an expense for a savings target) isn't saved at all.
+    const wrong = await call('ana', 'POST', '/api/transactions', { type: 'expense', date: today(), amount: 10_00, account_id: ids.usd, description: 'X', pending });
+    expect(wrong.status).toBe(400);
+    expect(count()).toBe(before + 1);
+    // Day 31 falls on the month's last day.
+    const [y, m] = M.split('-').map(Number);
+    expect(item.due).toBe(`${M}-${new Date(Date.UTC(y, m, 0)).getUTCDate()}`);
+    // The rest settles it: it shows as done this month.
+    await call('ana', 'POST', '/api/transactions', { type: 'transfer', date: today(), amount: 13_000_00, account_id: ids.ars, to_account_id: ids.savings, to_amount: 10_00, description: 'Resto', pending });
+    item = (await call('ana', 'GET', '/api/pending')).body.find((i: { key: string }) => i.key === `c${c.body.id}`);
+    expect(item).toMatchObject({ remaining: 0, status: 'done' });
+  });
+
+  it('takes a partial return with a reason, and a returned loan moves to Completados', async () => {
+    const id = (await call('ana', 'POST', '/api/loans', { person: 'Sofi', kind: 'money', item: 'Pasajes a Córdoba', amount: 200_00, currency: 'ARS', lent_on: `${prev}-10`, due_on: today() })).body.id;
+    const pending = { source: 'loan', id };
+    const income = { type: 'income', date: today(), amount: 190_00, account_id: ids.ars, description: 'Devolución de Sofi' };
+    const noReason = await call('ana', 'POST', '/api/transactions', { ...income, pending });
+    expect(noReason.status).toBe(400);
+    expect(noReason.body.fields).toEqual(['reason']);
+    expect((await call('ana', 'POST', '/api/transactions', { ...income, pending: { ...pending, reason: 'Le faltaba cambio' } })).status).toBe(200);
+    let item = (await call('ana', 'GET', '/api/pending')).body.find((i: { key: string }) => i.key === `l${id}`);
+    expect(item).toMatchObject({ remaining: 10_00 });
+    // Counters split in Pagos and Cobros.
+    const summary = (await call('ana', 'GET', '/api/pending/summary')).body;
+    expect(summary.collect).toBeGreaterThanOrEqual(1);
+    expect(summary.pay + summary.collect).toBe(summary.due);
+    // The last 10 closes it; it leaves the list for Completados.
+    await call('ana', 'POST', '/api/transactions', { type: 'income', date: today(), amount: 10_00, account_id: ids.ars, description: 'Resto', pending });
+    item = (await call('ana', 'GET', '/api/pending')).body.find((i: { key: string }) => i.key === `l${id}`);
+    expect(item).toBeUndefined();
+    const done = (await call('ana', 'GET', '/api/pending/completed')).body;
+    expect(done.find((d: { key: string }) => d.key === `l${id}`)).toMatchObject({ title: 'Pasajes a Córdoba', total: 200_00, how: 'paid', kind: 'collect' });
+    expect((await call('beto', 'GET', '/api/pending/completed')).body).toEqual([]);
+  });
 });

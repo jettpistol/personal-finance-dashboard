@@ -22,7 +22,12 @@ export type TxModalOptions = {
   installments?: boolean;
   /** Pre-filled values, e.g. from a pending payment: amount in units, destination account, description. */
   prefill?: { amount?: number; toAccountId?: number; toAmount?: number; description?: string };
+  /** Opened from Pendientes → Registrar: the new movement is linked to this item when saved. */
+  pending?: PendingTarget;
 };
+
+/** What a movement from Pendientes pays (or collects): `remaining` in cents, in `currency`. */
+export type PendingTarget = { source: 'commitment' | 'loan'; id: number; title: string; kind: 'savings' | 'owe' | 'collect'; remaining: number; currency: Currency };
 
 const Ctx = createContext<AppState | null>(null);
 

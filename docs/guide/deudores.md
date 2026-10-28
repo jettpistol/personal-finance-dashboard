@@ -4,7 +4,7 @@ Keep track of money and things you lent to other people, what came back, and wha
 
 ![Deudores page with totals and one card per person](img/deudores.png)
 
-Loans don't touch your accounts, balances or reports. Each of you only sees your own list. Loans with a return date or installments also appear in [Pagos pendientes](pagos-pendientes.md) as **TE DEBEN**, so the app chases you until they come back.
+Loans don't touch your accounts, balances or reports. Each of you only sees your own list. Loans with a return date or installments also appear in [Pendientes](pagos-pendientes.md) as **TE DEBEN**, so the app chases you until they come back.
 
 ## What you see
 

@@ -4,6 +4,7 @@ import { normaliseTx, insertTx, type SplitInput } from './transactions.js';
 import { notify } from './notify.js';
 import { formatMoney } from './money.js';
 import { loadAccounts } from './domain.js';
+import { logAction } from './audit.js';
 
 export type Recurring = {
   id: number;
@@ -81,6 +82,18 @@ export async function generateDueRecurring(asOf = today()): Promise<number> {
     if (newOnes.length) {
       const account = accounts.get(r.account_id);
       const recipients = account?.owner_id == null ? null : [account.owner_id];
+      // Actividad, as "Automático": private recurring items (or on a private account) only for their owner.
+      const n = newOnes.length;
+      logAction({
+        userId: null,
+        section: 'Recurrentes',
+        action: 'generar',
+        summary: `Generó ${n > 1 ? `${n} pendientes` : 'un pendiente'} de «${r.description}»: ${formatMoney(r.amount, account?.currency ?? 'ARS')}${n > 1 ? ' cada uno' : ''}, para confirmar`,
+        entity: 'recurring',
+        entityId: r.id,
+        details: { facts: [{ label: n > 1 ? 'Fechas' : 'Fecha', value: newOnes.map((d) => d.split('-').reverse().join('/')).join(', ') }] },
+        privateTo: account?.owner_id != null && (account.is_private || r.is_private) ? account.owner_id : null,
+      });
       await notify({
         kind: 'recurring',
         users: recipients,

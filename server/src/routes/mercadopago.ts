@@ -6,6 +6,8 @@ import {
   checkTokenFormat,
   connectionView,
   deleteConnection,
+  linkMpAccount,
+  mpAccountState,
   saveChecks,
   saveConnection,
   setHistoryStart,
@@ -45,6 +47,8 @@ export default async function mercadoPagoRoutes(app: FastifyInstance) {
     const who = await verifyToken(token);
     saveConnection(req.userId, token, who, start);
     lastCheck.delete(req.userId);
+    // No Mercado Pago account in Cuentas yet: make one. If there are some, the screen asks which.
+    if (!mpAccountState(req.userId).candidates.length) linkMpAccount(req.userId, null);
     return connectionView(req.userId);
   });
 
@@ -71,6 +75,15 @@ export default async function mercadoPagoRoutes(app: FastifyInstance) {
     const setup = await setupReports(stored.token);
     saveChecks(req.userId, await checkSources(stored.token, stored.mpUserId ?? who.id));
     return { ...connectionView(req.userId), setup };
+  });
+
+  // Which account in Cuentas is this person's Mercado Pago (in the active data profile).
+  app.post('/me/mercadopago/account', async (req) => {
+    if (!connectionView(req.userId).connected) throw new HttpError(400, 'Primero conectá tu cuenta de Mercado Pago.');
+    const raw = (req.body as { account_id?: unknown } | null)?.account_id;
+    if (raw != null && !Number.isInteger(raw)) throw new HttpError(400, 'Cuenta inválida.', 'account_id');
+    const linked = linkMpAccount(req.userId, (raw as number | null | undefined) ?? null);
+    return { ...connectionView(req.userId), linked };
   });
 
   app.delete('/me/mercadopago', async (req) => {
