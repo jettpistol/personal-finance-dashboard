@@ -309,7 +309,8 @@ function EntryDetails({ e, zone }: { e: Entry; zone: string }) {
 /** The zone in use as text with a pencil; the pencil opens a searchable list of zones. */
 function ZonePicker({ zone, onChange }: { zone: string; onChange: (z: string) => void }) {
   const [opened, setOpened] = useState(false);
-  const zones = useMemo(() => allZones().map((z) => ({ value: z, label: z.replace(/_/g, ' ') })), []);
+  // Browsers list canonical ids (e.g. America/Buenos_Aires): keep the zone in use and Argentina's in the list.
+  const zones = useMemo(() => [...new Set([DEFAULT_ZONE, zone, ...allZones()])].map((z) => ({ value: z, label: z.replace(/_/g, ' ') })), [zone]);
   const device = deviceZone();
   return (
     <Popover opened={opened} onChange={setOpened} position="bottom-end" withArrow shadow="md" width={300}>

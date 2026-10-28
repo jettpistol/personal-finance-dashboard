@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { HttpError } from '../lib/http.js';
+import { logAction } from '../lib/audit.js';
 import { isValidDate, today } from '../lib/dates.js';
 import {
   checkSources,
@@ -48,7 +49,12 @@ export default async function mercadoPagoRoutes(app: FastifyInstance) {
     saveConnection(req.userId, token, who, start);
     lastCheck.delete(req.userId);
     // No Mercado Pago account in Cuentas yet: make one. If there are some, the screen asks which.
-    if (!mpAccountState(req.userId).candidates.length) linkMpAccount(req.userId, null);
+    if (!mpAccountState(req.userId).candidates.length) {
+      const made = linkMpAccount(req.userId, null);
+      // The hook logs the connection; the account made along with it is its own entry.
+      if (made.created)
+        logAction({ userId: req.userId, section: 'Mercado Pago', action: 'crear', summary: `Se creó la cuenta «${made.name}» en Cuentas para Mercado Pago`, entity: 'account', entityId: made.id, privateTo: req.userId });
+    }
     return connectionView(req.userId);
   });
 

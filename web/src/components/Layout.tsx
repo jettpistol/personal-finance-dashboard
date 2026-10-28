@@ -45,6 +45,7 @@ import {
   IconUserDollar,
   IconAlarm,
   IconWand,
+  IconHistory,
 } from '@tabler/icons-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -77,6 +78,7 @@ const NAV = [
   { to: '/recurrentes', label: 'Recurrentes', icon: IconRepeat },
   { section: '' },
   { to: '/perfiles', label: 'Perfil de datos', icon: IconDatabase },
+  { to: '/actividad', label: 'Actividad', icon: IconHistory },
   { to: '/ajustes', label: 'Ajustes', icon: IconSettings },
 ] as const;
 

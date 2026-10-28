@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.12.0</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.12.1</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.12.1"><b>0.12.1</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.12.0"><b>0.12.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.11.3"><b>0.11.3</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.11.2"><b>0.11.2</b><span class="date">Oct 28, 2026</span></a>
@@ -84,10 +85,21 @@
       <td class="main">
         <p class="lead">What changed in each version</p>
 
+        <a name="v0.12.1"></a>
+        <h2>0.12.1 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>Fixed: archiving an account, or changing only part of it, reset its opening balance to $ 0. Check the opening balance of any account you archived or edited before this version.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
         <a name="v0.12.0"></a>
         <h2>0.12.0 <span class="date">&middot; Oct 28, 2026</span></h2>
         <ul>
-          <!-- ACTIVIDAD -->
+          <li>New <b>Actividad</b> section in the sidebar: a log of every change that affects your numbers, with who made it.</li>
+          <li>Filter the log by section (with counts), person, date range or text, across this profile or all profiles; click an entry to see what changed, before and after.</li>
+          <li>Times show in Argentina time by default, or any time zone you pick; the exact UTC time is in each entry's details and in the CSV download.</li>
+          <li>Clear one section, entries before a date, or everything from the <b>⋯</b> menu; each clearing is recorded too.</li>
+          <li>The log is kept across updates and profile resets. Entries about private accounts, Deudores, Pendientes and your own settings are only visible to you; passwords and tokens are never recorded.</li>
           <li>"Pagos pendientes" is now <b>Pendientes</b>, with two separate lists, <b>Pagos</b> and <b>Cobros</b>, each with its own counter. The sidebar counter is their sum.</li>
           <li>Done items move to a green <b>Completados</b> list instead of disappearing.</li>
           <li>Card titles are bigger; tags and the due line are smaller and lighter.</li>

@@ -78,7 +78,8 @@ export function zoneLabel(zone: string, ms = Date.now()): string {
   try {
     const p = new Intl.DateTimeFormat('es-AR', { timeZone: zone, timeZoneName: 'longGeneric' }).formatToParts(new Date(ms));
     const n = p.find((x) => x.type === 'timeZoneName')?.value;
-    if (n && !/^GMT|^UTC[+-]/.test(n)) name = n;
+    // Some browsers say "hora estándar de Argentina" even for the generic name.
+    if (n && !/^GMT|^UTC[+-]/.test(n)) name = n.replace(/\b(estándar|normal) /i, '');
   } catch {
     /* keep the id */
   }

@@ -1435,8 +1435,16 @@ export const AUDIT_ROUTES: Record<string, Descriptor | Skip | Manual> = {
     before: (c) => row<{ buy: number; sell: number; source: string }>('SELECT buy, sell, source FROM fx_rates WHERE date = ?', String(c.body?.date ?? '')),
     describe: (c) => {
       const r = (v: number) => money(Math.round(v * 100), 'ARS');
-      const was = c.before ? ` (antes ${r(c.before.buy)} / ${r(c.before.sell)})` : '';
-      return { action: 'cotizacion', entity: 'fx', summary: `Cargó a mano el dólar del ${fdate(String(c.body?.date))}: compra ${r(num(c.body?.buy))} / venta ${r(num(c.body?.sell))}${was}` };
+      const changes = [
+        { field: 'Compra', from: c.before ? r(c.before.buy) : '—', to: r(num(c.body?.buy)) },
+        { field: 'Venta', from: c.before ? r(c.before.sell) : '—', to: r(num(c.body?.sell)) },
+      ];
+      return {
+        action: 'cotizacion',
+        entity: 'fx',
+        summary: `Cargó a mano el dólar del ${fdate(String(c.body?.date))}: compra ${r(num(c.body?.buy))} / venta ${r(num(c.body?.sell))}`,
+        details: { changes, facts: c.before ? [{ label: 'Fuente anterior', value: String(c.before.source) }] : [] },
+      };
     },
   }),
   'POST /api/fx/refresh': D('Ajustes', {
@@ -1451,7 +1459,8 @@ export const AUDIT_ROUTES: Record<string, Descriptor | Skip | Manual> = {
     describe: (c) => {
       const month = String(c.body?.month ?? '');
       const was = c.before ? `${pctText(c.before.pct)} → ` : '';
-      return { action: 'ipc', entity: 'cpi', summary: `Cargó a mano el IPC de ${/^\d{4}-\d{2}$/.test(month) ? monthLabel(month) : month}: ${was}${pctText(num(c.body?.pct))}` };
+      const changes = [{ field: 'IPC mensual', from: c.before ? pctText(c.before.pct) : '—', to: pctText(num(c.body?.pct)) }];
+      return { action: 'ipc', entity: 'cpi', summary: `Cargó a mano el IPC de ${/^\d{4}-\d{2}$/.test(month) ? monthLabel(month) : month}: ${was}${pctText(num(c.body?.pct))}`, details: { changes } };
     },
   }),
   'POST /api/cpi/refresh': D('Ajustes', {

@@ -24,6 +24,21 @@ const accountSchema = z.object({
   sort: z.number().int().default(0),
 });
 
+// Editing sends only what changed: no defaults here, or a missing field would reset it (e.g. the opening balance to 0).
+const accountPatchSchema = z
+  .object({
+    name: z.string().trim().min(1).max(60),
+    type: z.enum(['bank', 'cash', 'credit_card', 'savings', 'investment', 'wallet']),
+    currency: z.enum(['ARS', 'USD']),
+    owner: z.enum(['joint', 'me']),
+    is_private: z.boolean(),
+    opening_balance: z.number().int(),
+    color: z.string().max(20).nullish(),
+    archived: z.boolean(),
+    sort: z.number().int(),
+  })
+  .partial();
+
 const categorySchema = z.object({
   name: z.string().trim().min(1).max(60),
   parent_id: z.number().int().nullish(),
@@ -246,7 +261,7 @@ export default async function coreRoutes(app: FastifyInstance) {
     const id = idParam(req.params);
     const existing = loadAccounts().get(id);
     if (!existing || !(existing.owner_id === null || existing.owner_id === req.userId)) throw new HttpError(404, 'Cuenta no encontrada');
-    const a = parse(accountSchema.partial(), req.body);
+    const a = parse(accountPatchSchema, req.body);
     const hasTx = db().prepare('SELECT 1 FROM transactions WHERE account_id = ? OR to_account_id = ? LIMIT 1').get(id, id);
     if (a.currency && a.currency !== existing.currency && hasTx) throw new HttpError(400, 'No se puede cambiar la moneda de una cuenta con movimientos.');
     const owner = a.owner === undefined ? existing.owner_id : a.owner === 'me' ? req.userId : null;

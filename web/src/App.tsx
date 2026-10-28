@@ -23,6 +23,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { DebtorsPage } from './pages/DebtorsPage';
 import { PendingPaymentsPage } from './pages/PendingPaymentsPage';
+import { ActivityPage } from './pages/ActivityPage';
 import { WikiPage } from './wiki/WikiPage';
 
 type Status = { needsSetup: boolean; user: { id: number; username: string; display_name: string; color: string } | null };
@@ -89,6 +90,7 @@ function AppScreens() {
         <Route path="/cierre" element={<ReviewPage />} />
         <Route path="/ajustes" element={<SettingsPage />} />
         <Route path="/perfiles" element={<ProfilesPage />} />
+        <Route path="/actividad" element={<ActivityPage />} />
         <Route path="/deudores" element={<DebtorsPage />} />
         <Route path="/pendientes" element={<PendingPaymentsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

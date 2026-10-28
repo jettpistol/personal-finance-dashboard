@@ -287,6 +287,13 @@ describe('money flows', () => {
     expect((await call('ana', 'POST', '/api/budgets/index-cpi', { scope: 'household' })).status).toBe(404);
   });
 
+  it('editing one field of an account keeps the others (opening balance included)', async () => {
+    const id = (await call('ana', 'POST', '/api/accounts', { name: 'Caja chica', type: 'cash', currency: 'ARS', owner: 'me', opening_balance: 20_000_00, sort: 3 })).body.id;
+    expect((await call('ana', 'PATCH', `/api/accounts/${id}`, { name: 'Caja' })).status).toBe(200);
+    const acc = (await call('ana', 'GET', '/api/accounts')).body.find((a: { id: number }) => a.id === id);
+    expect(acc).toMatchObject({ name: 'Caja', opening_balance: 20_000_00, sort: 3, archived: 0 });
+  });
+
   it('hides cents per currency, by default for both', async () => {
     expect((await call('ana', 'GET', '/api/settings')).body.hide_cents).toEqual({ ARS: true, USD: true });
     expect(formatMoney(123456, 'ARS')).toBe('$ 1.235');

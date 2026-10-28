@@ -34,6 +34,7 @@ The order follows the sidebar.
 | [Reglas](reglas.md) | "If the description contains X, set category Y" and similar automatic fixes. |
 | [Recurrentes](recurrentes.md) | Rent, bills, subscriptions and salaries that repeat; you confirm each one with the real amount. |
 | | |
+| [Actividad](actividad.md) | Who did what and when: every change, by section and person, in the time zone you pick (Argentina by default); export to CSV and clear old entries. |
 | [Perfil de datos](perfil-de-datos.md) | Separate sets of data (for example test data vs your real data). |
 | [Ajustes](ajustes.md) | Your profile and password, email alerts, the household, categories, exchange rates and inflation, export and backups. |
 | [Connect Mercado Pago](mercado-pago.md) | Getting your Mercado Pago access token and connecting your account in **Ajustes → Mercado Pago**, and how the token is kept safe. |

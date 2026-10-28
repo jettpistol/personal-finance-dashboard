@@ -2,7 +2,6 @@ import { config } from '../config.js';
 import { coreDb, db } from '../db/index.js';
 import { HttpError } from './http.js';
 import { decryptSecret, encryptSecret } from './secrets.js';
-import { logAction } from './audit.js';
 
 // Mercado Pago, one personal account per person. See docs/mercadopago/ for what the API offers.
 //
@@ -249,7 +248,6 @@ export function linkMpAccount(userId: number, accountId: number | null): { id: n
         .run(MP_ACCOUNT_NAME, userId).lastInsertRowid,
     );
     db().prepare('INSERT INTO mp_links (user_id, account_id) VALUES (?, ?)').run(userId, id);
-    logAction({ userId, section: 'Mercado Pago', action: 'crear', summary: `Se creó la cuenta «${MP_ACCOUNT_NAME}» en Cuentas para la conexión con Mercado Pago`, entity: 'account', entityId: id, privateTo: userId });
     return { id, name: MP_ACCOUNT_NAME, created: true };
   }
   const chosen = state.candidates.find((c) => c.id === accountId);
