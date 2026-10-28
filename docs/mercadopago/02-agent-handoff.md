@@ -115,19 +115,20 @@ Use `GET {base}/config` first to see which column keys the account actually supp
 
 Generation is **async**. `POST` returns right away; poll `/list` until the file appears (seconds to minutes), then download. Report windows have a max span (typically ~60 days for settlement, longer for release), so backfill in chunks.
 
-#### Settlement report download (confirmed from Mercado Pago's API reference)
+#### Report download (confirmed for both reports from Mercado Pago's API reference)
 
 ```
 GET https://api.mercadopago.com/v1/account/settlement_report/{file_name}
+GET https://api.mercadopago.com/v1/account/release_report/{file_name}
 Authorization: Bearer <ACCESS_TOKEN>
 Content-Type: application/json
 ```
 
-- `file_name` comes from `GET /v1/account/settlement_report/list`.
+- `file_name` comes from the matching `/list` endpoint (`/v1/account/settlement_report/list` or `/v1/account/release_report/list`).
 - `200` returns the raw file (`.csv` or `.xlsx`, depending on config) with **no JSON body**, so handle it as text/binary, not JSON.
 - `401` means the token is invalid; `404 not_found` means the file name is wrong or the file isn't ready yet (keep polling `/list`).
 
-Columns in the settlement report, as documented (the CSV header):
+Columns as documented (the CSV header). Mercado Pago's docs show this **same** header for both reports, though the release report page says its fields vary with the parameters you set:
 
 ```
 DATE, SOURCE_ID, EXTERNAL_REFERENCE, RECORD_TYPE, DESCRIPTION,
@@ -153,9 +154,9 @@ Notes:
 - Amounts can come with a locale decimal separator, depending on the config's `separator` and the country. Parse them explicitly, never with `parseFloat` on unchecked input.
 - `RECORD_TYPE` includes summary rows (e.g. an initial or total line). Keep only the detail rows as transactions; log the summary rows' values to check them against the sum of the details.
 
-**Balance:** the settlement report has **no balance column**. Get the balance in this order:
+**Balance:** neither documented header has a balance column. Get the balance in this order:
 1. The legacy balance endpoint (3.4), if it returns 200.
-2. The release report, if its config offers a `BALANCE_AMOUNT` column (verify with `GET /v1/account/release_report/config`). Use the last detail row's value.
+2. The release report, **only if** its config accepts a balance column (e.g. `BALANCE_AMOUNT`). The docs don't confirm one exists. Check with `GET /v1/account/release_report/config`, try adding it with `PUT`, and if it's accepted use the last detail row's value.
 3. As a last resort, ask the owner for their current balance once, as an opening value, and add up `NET_CREDIT_AMOUNT − NET_DEBIT_AMOUNT` from there. Label it as "estimated".
 
 Always show "as of <report end time>".
