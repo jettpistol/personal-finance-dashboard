@@ -30,10 +30,12 @@ Standing instructions for any agent working in this repo. They come from the own
 3. **Update the version mentioned in `README.md`** (`Finanzas vX.Y.Z · …`).
 4. **Update the guide** for anything a user would notice. If the README table of sections changes, the wiki sidebar follows it. Retake screenshots that changed (see Verify).
 5. **Verify** (below), then commit and push. Don't open a pull request unless the owner asks.
-6. **Reply with a concise checklist** of every change (✅ per item), grouped by section of the app, plus any open question.
+6. **Reply with a concise checklist** of every change, as `- [ ]` bullets (never the ✅ emoji), grouped by section of the app, plus any open question.
+7. **Don't push a tiny text fix on its own** (a typo, one line in CLAUDE.md): hold it and include it in the next batch of changes.
 
 ## Design rules
 
+- **Short eye travel.** Keep related things within one glance: a label next to its value or control, a tag next to what it labels, figures next to their title. Pages sit in a centered column sized to their content (`PAGE_WIDTH` in `Layout.tsx`; a new page picks narrow, medium or wide). A lone small card is centered, never a half-page box with one switch. Check new screens at 1920 px as well as 1366 px.
 - **Declutter.** Show one short line and hide the details behind a click (expand, ⋯ menu, **Detalles**). Never pile dates, reasons and progress into one row. Apply this to every new screen.
 - **Short labels.** Avoid long names for small functions. If no short one works, ask the owner first.
 - **No fixed explanatory notes** that just restate a state (e.g. "Falta configurar…" under a badge). A badge or an empty state is enough.

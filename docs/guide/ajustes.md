@@ -131,7 +131,7 @@ To add one:
 
 ### Monedas
 
-One card per currency, **Pesos (ARS)** and **Dólares (USD)**, each with **Ocultar centavos** (on by default) and an example. With it on, amounts in that currency show without cents everywhere in the app and in the emails ($ 12.346 instead of $ 12.345,60). It's a household setting: it applies to both of you. Amounts are still stored with their cents, and you can still type cents in any amount box.
+One card, **Ocultar centavos**, with a switch for **Pesos (ARS)** and one for **Dólares (USD)** (both on by default), each followed by an example. With it on, amounts in that currency show without cents everywhere in the app and in the emails ($ 12.346 instead of $ 12.345,60). It's a household setting: it applies to both of you. Amounts are still stored with their cents, and you can still type cents in any amount box.
 
 ### Cotizaciones e inflación
 

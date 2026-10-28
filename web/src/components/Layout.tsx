@@ -203,6 +203,21 @@ function NotificationsBell() {
   );
 }
 
+// How wide each page's content may grow, so sparse screens stay together in the middle instead
+// of spreading their few items across a wide monitor. Data-heavy pages get the widest column.
+const PAGE_WIDTH: Record<string, 'narrow' | 'medium' | 'wide'> = {
+  '/pendientes': 'narrow',
+  '/perfiles': 'narrow',
+  '/ajustes': 'medium',
+  '/saldos': 'medium',
+  '/deudores': 'medium',
+  '/metas': 'medium',
+  '/recurrentes': 'medium',
+  '/reglas': 'medium',
+  '/actividad': 'medium',
+  '/importar': 'medium',
+};
+
 export function Layout({ children }: { children: ReactNode }) {
   const [opened, { toggle, close }] = useDisclosure();
   const { me, openTx, txModal } = useApp();
@@ -327,9 +342,11 @@ export function Layout({ children }: { children: ReactNode }) {
             <ScopeSelector />
           </div>
         )}
-        <VersionCheck />
-        {children}
-        <AppFooter />
+        <div className="pfd-page" data-width={PAGE_WIDTH[location.pathname] ?? 'wide'}>
+          <VersionCheck />
+          {children}
+          <AppFooter />
+        </div>
       </AppShell.Main>
       {txModal && <TxFormModal />}
     </AppShell>

@@ -165,7 +165,7 @@ function ProfileTab() {
   };
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }}>
+    <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
       <Card>
         <Stack>
           <Title order={4}>Tus datos</Title>
@@ -261,7 +261,7 @@ function NotificationsTab() {
   };
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }}>
+    <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
       <Card>
         <Stack>
           <Group justify="space-between">
@@ -426,19 +426,27 @@ function CurrenciesTab() {
   };
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      {(['ARS', 'USD'] as Currency[]).map((c) => (
-        <Card key={c}>
-          <Stack gap="sm">
-            <Title order={4}>{c === 'ARS' ? 'Pesos (ARS)' : 'Dólares (USD)'}</Title>
-            <Switch label="Ocultar centavos" checked={hide[c]} disabled={busy === c} onChange={(e) => toggle(c, e.currentTarget.checked)} />
-            <Text size="sm" c="dimmed">
-              Ejemplo: <span className="num">{money(c === 'ARS' ? 1234560 : 123450, c)}</span>
-            </Text>
-          </Stack>
-        </Card>
-      ))}
-    </SimpleGrid>
+    <Card maw={360} mx="auto">
+      <Stack gap="md">
+        <Title order={4}>Ocultar centavos</Title>
+        {(['ARS', 'USD'] as Currency[]).map((c) => (
+          <Switch
+            key={c}
+            label={
+              <>
+                {c === 'ARS' ? 'Pesos (ARS)' : 'Dólares (USD)'}
+                <Text span c="dimmed" size="sm" className="num" ml={8}>
+                  {money(c === 'ARS' ? 1234560 : 123450, c)}
+                </Text>
+              </>
+            }
+            checked={hide[c]}
+            disabled={busy === c}
+            onChange={(e) => toggle(c, e.currentTarget.checked)}
+          />
+        ))}
+      </Stack>
+    </Card>
   );
 }
 
@@ -499,7 +507,7 @@ function HouseholdTab() {
   const thresholds = form.budget_thresholds;
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }}>
+    <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
       <Card>
         <Stack>
           <Title order={4}>Hogar</Title>
@@ -889,7 +897,7 @@ function RatesTab() {
   const latest = fx.data?.latest;
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }}>
+    <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
       <Card>
         <Stack>
           <Group justify="space-between">
@@ -1050,7 +1058,7 @@ function DataTab() {
   const range = qs({ from, to });
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }}>
+    <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
       <Card>
         <Stack>
           <Title order={4}>Exportar</Title>

@@ -446,6 +446,18 @@ a {
 }
 
 /* Breadcrumb strip carrying the page title and actions. */
+/* Page column: centered, as wide as the page's content needs (see PAGE_WIDTH in Layout). */
+.pfd-page {
+  max-width: 1320px;
+  margin-inline: auto;
+}
+.pfd-page[data-width='medium'] {
+  max-width: 1000px;
+}
+.pfd-page[data-width='narrow'] {
+  max-width: 760px;
+}
+
 .pfd-crumbs {
   display: flex;
   align-items: stretch;
@@ -1508,8 +1520,8 @@ a {
 
 .pfd-act-row {
   display: grid;
-  grid-template-columns: 44px 120px minmax(0, 1fr) auto;
-  grid-template-areas: 'time who text meta';
+  grid-template-columns: 44px 110px 124px minmax(0, 1fr) auto;
+  grid-template-areas: 'time who tags text meta';
   align-items: baseline;
   column-gap: 12px;
   width: 100%;
@@ -1566,6 +1578,16 @@ a {
   align-items: center;
   gap: 8px;
   align-self: center;
+  color: var(--pfd-ink-2);
+}
+
+.pfd-act-tags {
+  grid-area: tags;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+  min-width: 0;
   color: var(--pfd-ink-2);
 }
 
@@ -1629,10 +1651,10 @@ a {
 
 @media (max-width: 48em) {
   .pfd-act-row {
-    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-template-columns: 40px minmax(0, 1fr) auto auto;
     grid-template-areas:
-      'time who meta'
-      'time text text';
+      'time who tags meta'
+      'time text text text';
     row-gap: 2px;
     padding: 8px 12px;
   }

@@ -257,7 +257,7 @@ A cool institutional palette: navy and graphite structure on a blue-grey ground,
 
 ## Layout
 
-An application shell: a 224px navy rail fixed on the left (with "Nuevo movimiento" at its top, then grouped nav), a 52px graphite top bar holding the scope tabs (Hogar / Mío / partner) on the left and ARS/USD tabs, alerts and the user on the right. Main content runs fluid at 20px shell padding; there are no fixed widths.
+An application shell: a 224px navy rail fixed on the left (with "Nuevo movimiento" at its top, then grouped nav), a 52px graphite top bar holding the scope tabs (Hogar / Mío / partner) on the left and ARS/USD tabs, alerts and the user on the right. Main content sits in a centered column at 20px shell padding, as wide as the page needs (`PAGE_WIDTH` in `Layout.tsx`, `.pfd-page`): 1320px for data pages (Inicio, Movimientos, Cuentas, Presupuestos, Reportes, Cierre de mes), 1000px for settings and short lists, 760px for single-column lists (Pendientes, Perfil de datos). A small panel on its own is centered in its area, not pinned to the left.
 
 Each page opens with the breadcrumb strip (home icon cell, divided by a rule, then the title and an optional muted description, actions right-aligned), 20px above the content. Content is a grid of boxed panels: on Inicio, the three-column release band across the top, then a wide main column (ranked bars, latest movements) beside a narrower column of blue-barred side panels. Panels stack with 16-20px gaps on the Mantine spacing scale (10/12/16/20/32px).
 
@@ -336,11 +336,12 @@ Rows of swatch + name, a 14px navy bar with a 1px outlined ghost of the comparis
 - **Do** set every amount in tabular Source Sans 3 and color changes by good/bad for the household.
 - **Do** keep motion to 120-200ms state changes (hover, press, bar width).
 - **Do** use toggle buttons and square tags for filters and states.
+- **Do** keep related things within one glance: a label next to its value or control, a tag next to what it labels, figures next to their title. When a screen has little on it, narrow and center it rather than spreading it out.
 
 ### Don't:
 - **Don't** put drop shadows on panels or use floating white cards; only menus and popovers cast a shadow.
 - **Don't** round panels, tabs, tags or fields beyond 2px, and don't use pill-shaped fields or chips.
 - **Don't** use ocre, green or red for decoration, categories or series.
-- **Don't** add heavy gloss, bevels, embossed text, textures, carousels or fixed page widths.
+- **Don't** add heavy gloss, bevels, embossed text, textures, carousels, or pages that stretch a few items across the whole screen.
 - **Don't** set secondary text paler than muted ink (#4f5b70) or below 10px.
 - **Don't** use donut charts as the summary view; the ranked bars carry the breakdown.

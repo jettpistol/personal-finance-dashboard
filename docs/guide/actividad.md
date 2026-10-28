@@ -35,7 +35,7 @@ Entries are never part of a data profile's data: they stay when the app is updat
 - **Buscar**: words in the entry's text.
 - **Todos los perfiles**: off, the list shows the profile in use plus entries that aren't tied to any profile (logins, profiles, email setup, your personal settings). On, every profile.
 
-**The list**: entries grouped by day, newest first. Each row has the time, the person, one line saying what happened and, when all sections are shown, the section. A lock means only you can see that entry.
+**The list**: entries grouped by day, newest first. Each row has the time, the person, the section (when all sections are shown), then one line saying what happened. A lock next to the section means only you can see that entry.
 
 Click a row to see its details:
 

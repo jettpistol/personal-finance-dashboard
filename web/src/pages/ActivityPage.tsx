@@ -216,12 +216,12 @@ export function ActivityPage() {
                         <span className="pfd-act-dot" style={{ background: e.user_id ? `var(--mantine-color-${colorOf(e.user_id)}-6)` : 'var(--pfd-rule-strong)' }} />
                         {e.user_name ?? 'Automático'}
                       </span>
-                      <span className="pfd-act-text">{e.summary}</span>
-                      <span className="pfd-act-meta">
+                      <span className="pfd-act-tags">
                         {section === 'all' && <span className="pfd-act-section">{e.section}</span>}
                         {e.private && <IconLock size={13} aria-label="Solo lo ves vos" />}
-                        {open === e.id ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
                       </span>
+                      <span className="pfd-act-text">{e.summary}</span>
+                      <span className="pfd-act-meta">{open === e.id ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}</span>
                     </UnstyledButton>
                     {open === e.id && <EntryDetails e={e} zone={zone} />}
                   </div>

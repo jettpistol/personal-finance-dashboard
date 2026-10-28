@@ -158,7 +158,7 @@ export function DebtorsPage() {
         </Card>
       )}
 
-      <SimpleGrid cols={{ base: 1, lg: 2 }}>
+      <SimpleGrid cols={{ base: 1, lg: 2 }} style={{ alignItems: 'start' }}>
         {byPerson.map(([person, list]) => (
           <PersonCard key={person} person={person} loans={list} onEdit={setEditing} onReturn={setReturning} />
         ))}

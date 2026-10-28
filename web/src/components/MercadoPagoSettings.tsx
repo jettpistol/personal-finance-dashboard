@@ -133,7 +133,7 @@ export function MercadoPagoSettings() {
 
   if (!c.connected) {
     return (
-      <Card maw={560}>
+      <Card maw={560} mx="auto">
         <Stack>
           <Group justify="space-between">
             <Title order={4}>Mercado Pago</Title>
@@ -186,7 +186,7 @@ export function MercadoPagoSettings() {
   };
 
   return (
-    <Card maw={560}>
+    <Card maw={560} mx="auto">
       <Stack>
         <Group justify="space-between" wrap="nowrap">
           <Title order={4}>Mercado Pago</Title>

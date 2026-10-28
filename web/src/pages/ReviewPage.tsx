@@ -157,7 +157,7 @@ export function ReviewPage() {
 
           {infl.data?.cpi_latest_month && (
             <Card padding="md">
-              <Group justify="space-between" wrap="wrap" gap="sm">
+              <Group wrap="wrap" gap="sm" style={{ columnGap: 48 }}>
                 <div>
                   <Text fw={700}>Inflación</Text>
                   <Text size="xs" c="dimmed">
