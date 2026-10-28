@@ -4,6 +4,7 @@ import { normaliseTx, insertTx, type SplitInput } from './transactions.js';
 import { notify } from './notify.js';
 import { formatMoney } from './money.js';
 import { loadAccounts } from './domain.js';
+import { logAction } from './audit.js';
 
 export type Recurring = {
   id: number;
@@ -47,6 +48,9 @@ export async function generateDueRecurring(asOf = today()): Promise<number> {
   const due = db().prepare('SELECT * FROM recurring WHERE active = 1 AND next_date <= ?').all(asOf) as Recurring[];
   let created = 0;
   const accounts = loadAccounts();
+  // Notices go out after every occurrence is written: nothing is awaited in between, so a request
+  // that generates them (saving a recurring item) journals all of them for Deshacer (lib/undo.ts).
+  const notices: Parameters<typeof notify>[0][] = [];
   for (const r of due) {
     let next = r.next_date;
     const newOnes: string[] = [];
@@ -81,7 +85,19 @@ export async function generateDueRecurring(asOf = today()): Promise<number> {
     if (newOnes.length) {
       const account = accounts.get(r.account_id);
       const recipients = account?.owner_id == null ? null : [account.owner_id];
-      await notify({
+      // Actividad, as "Automático": private recurring items (or on a private account) only for their owner.
+      const n = newOnes.length;
+      logAction({
+        userId: null,
+        section: 'Recurrentes',
+        action: 'generar',
+        summary: `Generó ${n > 1 ? `${n} pendientes` : 'un pendiente'} de «${r.description}»: ${formatMoney(r.amount, account?.currency ?? 'ARS')}${n > 1 ? ' cada uno' : ''}, para confirmar`,
+        entity: 'recurring',
+        entityId: r.id,
+        details: { facts: [{ label: n > 1 ? 'Fechas' : 'Fecha', value: newOnes.map((d) => d.split('-').reverse().join('/')).join(', ') }] },
+        privateTo: account?.owner_id != null && (account.is_private || r.is_private) ? account.owner_id : null,
+      });
+      notices.push({
         kind: 'recurring',
         users: recipients,
         title: `Para confirmar: ${r.description}`,
@@ -90,5 +106,6 @@ export async function generateDueRecurring(asOf = today()): Promise<number> {
       });
     }
   }
+  for (const n of notices) await notify(n);
   return created;
 }

@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { createTheme, type MantineColorsTuple } from '@mantine/core';
 
 // "Informe del mes": the household read like a statistical release, dressed in the
@@ -72,8 +73,20 @@ export const theme = createTheme({
     Menu: { defaultProps: { shadow: 'md', radius: 'sm' } },
     Modal: { defaultProps: { radius: 0, overlayProps: { backgroundOpacity: 0.45, color: '#0b1a2e' } } },
     Tooltip: { defaultProps: { radius: 'sm' } },
+    // A typed date has to be a real one between 1900 and 2100 (01/01/150000 isn't): otherwise it isn't
+    // taken, and on leaving the field it goes back to the last valid date or the placeholder.
+    DateInput: { defaultProps: { minDate: '1900-01-01', maxDate: '2100-12-31', dateParser: parseTypedDate } },
+    // The selected option's tick goes at the end, so it never pushes the option's name sideways.
+    Select: { defaultProps: { checkIconPosition: 'right' } },
+    MultiSelect: { defaultProps: { checkIconPosition: 'right' } },
     Table: { defaultProps: { verticalSpacing: 8 } },
     Tabs: { defaultProps: { variant: 'outline', radius: 0 } },
     Pagination: { defaultProps: { radius: 0 } },
   },
 });
+
+/** DD/MM/YYYY as typed (also D/M/YYYY and DD/MM/YY), strictly: no overflow into other days or years. */
+export function parseTypedDate(value: string): string | null {
+  const d = dayjs(value.trim(), ['DD/MM/YYYY', 'D/M/YYYY', 'DD/MM/YY', 'D/M/YY', 'YYYY-MM-DD'], true);
+  return d.isValid() && d.year() >= 1900 && d.year() <= 2100 ? d.format('YYYY-MM-DD') : null;
+}

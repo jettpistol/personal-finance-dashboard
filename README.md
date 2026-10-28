@@ -56,12 +56,14 @@ The demo data lives in the **Prueba (demo)** profile; the app opens on the empty
 
 ```bash
 npm run update       # discards local lockfile changes, pulls, installs exactly what the lockfile says
-npm run demo:reset   # rebuilds and reloads the demo data
+npm run demo:reset   # rebuilds and reloads the "Prueba (demo)" profile only
 ```
+
+`demo:reset` only empties and refills the **Prueba (demo)** profile. Logins, the other profiles (such as **Vacío**), the email setup, Mercado Pago connections and the encryption key (`secret.key`) are kept. Before 0.11.1 it deleted the whole `data-demo` folder. To really start over, stop the app and delete `server/data-demo` by hand.
 
 `npm run update` is the same as `git checkout -- package-lock.json && git pull --ff-only && npm ci`. Use `npm ci` rather than `npm install` to install: it never rewrites `package-lock.json`, so the next `git pull` can't be blocked by it.
 
-The footer shows the version you're running (`Finanzas v0.12.0 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
+The footer shows the version you're running (`Finanzas v0.15.0 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
 
 ### Development
 

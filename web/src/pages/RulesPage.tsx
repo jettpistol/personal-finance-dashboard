@@ -126,7 +126,7 @@ export function RulesPage() {
     setApplying(true);
     try {
       const r = await api.post<{ changed: number }>('/rules/apply');
-      notifyOk(r.changed ? `Se categorizaron ${r.changed} movimientos` : 'No había movimientos sin categoría que coincidan con las reglas');
+      notifyOk(r.changed ? (r.changed === 1 ? 'Se categorizó 1 movimiento' : `Se categorizaron ${r.changed} movimientos`) : 'No había movimientos sin categoría que coincidan con las reglas');
       refresh();
     } catch (e) {
       notifyError(e);
@@ -144,6 +144,7 @@ export function RulesPage() {
       onConfirm: async () => {
         try {
           await api.del(`/rules/${r.id}`);
+          notifyOk(`Regla «${r.name}» eliminada`);
           qc.invalidateQueries({ queryKey: ['rules'] });
         } catch (e) {
           notifyError(e);

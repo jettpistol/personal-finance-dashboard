@@ -12,6 +12,7 @@ import { addMonthsToMonth, currentMonth, isValidDate, monthsBetween, today } fro
 import { loadConverter } from '../lib/fx.js';
 import { categoryTotals } from '../lib/reports.js';
 import { idParam, monthQuery, parse, scopeQuery } from './util.js';
+import { removeStoredFile } from '../lib/undo.js';
 
 const scopeField = z.string().refine((s) => parseScope(s) !== null, 'Ámbito inválido');
 
@@ -55,8 +56,9 @@ const goalSchema = z.object({
 // Goal pictures live next to the receipts, under DATA_DIR/goals (random file names, shared by all profiles).
 const goalsDir = () => path.join(config.dataDir, 'goals');
 const IMAGE_TYPES: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+// Inside an undoable action the picture goes to the trash first, so Deshacer can bring it back.
 const removeGoalImage = (file: string | null | undefined) => {
-  if (file) fs.rm(path.join(goalsDir(), path.basename(file)), { force: true }, () => {});
+  if (file) removeStoredFile(path.join(goalsDir(), path.basename(file)));
 };
 
 function assertScopeWritable(scope: Scope, viewer: number) {

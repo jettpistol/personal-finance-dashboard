@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ActionIcon, Anchor, Badge, Button, Card, Collapse, Group, Menu, PasswordInput, Stack, Text, Title, UnstyledButton } from '@mantine/core';
+import { useEffect, useState } from 'react';
+import { ActionIcon, Anchor, Badge, Button, Card, Collapse, Group, Menu, Modal, PasswordInput, Radio, Stack, Text, Title, UnstyledButton } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
 import { IconChevronDown, IconChevronRight, IconDots, IconPencil } from '@tabler/icons-react';
@@ -11,7 +11,7 @@ import { date, today } from '../lib/format';
 import { errorFields, notifyError, notifyOk } from '../lib/queries';
 
 type Check = { key: 'identity' | 'payments' | 'balance' | 'release_report' | 'settlement_report'; status: 'ok' | 'unconfigured' | 'unavailable' | 'error'; http: number | null };
-type Setup = { key: 'release_report' | 'settlement_report'; result: 'exists' | 'created' | 'failed'; http: number | null };
+type Setup = { key: 'release_report' | 'settlement_report'; result: 'exists' | 'created' | 'failed'; http: number | null; message?: string };
 type Connection =
   | { connected: false }
   | {
@@ -24,6 +24,9 @@ type Connection =
       checked_at: string | null;
       checks: Check[] | null;
       readable: boolean;
+      /** Its account in Cuentas (this data profile), or the existing ones it has to be tied to. */
+      account: { id: number; name: string } | null;
+      candidates: { id: number; name: string }[];
     };
 
 const SOURCES: Record<Check['key'], string> = {
@@ -51,7 +54,8 @@ export function MercadoPagoSettings() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: KEY, queryFn: () => api.get<Connection>('/me/mercadopago') });
   const [token, setToken] = useState('');
-  const [start, setStart] = useState<string | null>(null);
+  // The owner's default for where the history starts.
+  const [start, setStart] = useState<string | null>('2026-10-01');
   const [replacing, setReplacing] = useState(false);
   const [editingStart, setEditingStart] = useState(false);
   const [showSources, setShowSources] = useState(false);
@@ -170,7 +174,9 @@ export function MercadoPagoSettings() {
       qc.setQueryData(KEY, view);
       setShowSources(true);
       const failed = setup.filter((x) => x.result === 'failed');
-      if (failed.length) notifyError(new Error(`Mercado Pago no aceptó: ${failed.map((x) => `${SOURCES[x.key]}${x.http ? ` (código ${x.http})` : ''}`).join(', ')}.`));
+      // Mercado Pago's own reason (in its words) helps tell a wrong setting from an account that can't have reports.
+      if (failed.length)
+        notifyError(new Error(`Mercado Pago no aceptó: ${failed.map((x) => `${SOURCES[x.key]}${x.http ? ` (código ${x.http})` : ''}${x.message ? `: «${x.message}»` : ''}`).join('; ')}.`));
       else notifyOk('Reportes configurados');
     } catch (e) {
       notifyError(e);
@@ -251,6 +257,8 @@ export function MercadoPagoSettings() {
               </Group>
             )}
           </dd>
+          <dt>En Cuentas</dt>
+          <dd>{c.account ? c.account.name : <Text span c="dimmed">Sin asignar</Text>}</dd>
           <dt>Conectada</dt>
           <dd>{date(c.connected_at.slice(0, 10), 'D MMM YYYY')}</dd>
           <dt>Datos</dt>
@@ -322,5 +330,69 @@ export function MercadoPagoSettings() {
         )}
       </Stack>
     </Card>
+  );
+}
+
+/**
+ * Once connected, the connection fills one account in Cuentas. With no Mercado Pago account there
+ * yet, one is created; when there are some, this asks which one it is and can't be dismissed.
+ * Mounted once in the layout, so it shows on whatever page you're on.
+ */
+export function MercadoPagoAccountPrompt() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: KEY, queryFn: () => api.get<Connection>('/me/mercadopago'), staleTime: 60_000 });
+  const [choice, setChoice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const c = q.data;
+  const missing = !!c?.connected && c.readable && !c.account;
+
+  useEffect(() => {
+    // Nothing to choose from: make the account right away.
+    if (!missing || !c?.connected || c.candidates.length || busy) return;
+    setBusy(true);
+    api
+      .post<Connection & { linked: { name: string; created: boolean } }>('/me/mercadopago/account', {})
+      .then((r) => {
+        qc.setQueryData(KEY, r);
+        qc.invalidateQueries({ queryKey: ['accounts'] });
+        if (r.linked.created) notifyOk(`Se creó la cuenta «${r.linked.name}» en Cuentas`);
+      })
+      .catch(notifyError)
+      .finally(() => setBusy(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [missing]);
+
+  if (!missing || !c?.connected || !c.candidates.length) return null;
+  const save = async () => {
+    if (!choice) return;
+    setBusy(true);
+    try {
+      const r = await api.post<Connection>('/me/mercadopago/account', { account_id: Number(choice) });
+      qc.setQueryData(KEY, r);
+      notifyOk('Cuenta de Mercado Pago asignada');
+    } catch (e) {
+      notifyError(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal opened onClose={() => {}} withCloseButton={false} closeOnClickOutside={false} closeOnEscape={false} centered title={<Text fw={700}>¿Cuál es tu cuenta de Mercado Pago?</Text>}>
+      <Stack gap="sm">
+        <Text size="sm">Tu conexión con Mercado Pago va a cargar los movimientos en una de estas cuentas. Cada persona tiene una sola.</Text>
+        <Radio.Group value={choice} onChange={setChoice}>
+          <Stack gap="xs">
+            {c.candidates.map((a) => (
+              <Radio key={a.id} value={String(a.id)} label={a.name} />
+            ))}
+          </Stack>
+        </Radio.Group>
+        <Group justify="flex-end">
+          <Button onClick={save} loading={busy} disabled={!choice}>
+            Asignar
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }

@@ -89,7 +89,7 @@ function SuggestModal({ scope, existing, onClose }: { scope: string; existing: B
         const value = amounts[r.category_id];
         await api.put('/budgets', { category_id: r.category_id, scope, amount: value === undefined ? r.amount : toCents(value), currency: 'ARS' });
       }
-      notifyOk(`${chosen.length} presupuestos guardados`);
+      notifyOk(chosen.length === 1 ? '1 presupuesto guardado' : `${chosen.length} presupuestos guardados`);
       refresh();
       onClose();
     } catch (e) {
@@ -187,6 +187,7 @@ export function BudgetsPage() {
       onConfirm: async () => {
         try {
           await api.del(`/budgets/${b.id}`);
+          notifyOk(`Presupuesto de ${b.category_name} eliminado`);
           refresh();
         } catch (e) {
           notifyError(e);

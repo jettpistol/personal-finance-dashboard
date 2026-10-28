@@ -18,10 +18,15 @@ import {
   verifyPassword,
 } from '../lib/auth.js';
 import { HttpError } from '../lib/http.js';
+import { logAction } from '../lib/audit.js';
 import { EXTRA_SESSIONS_COOKIE, SESSION_COOKIE } from '../app.js';
 import { parse } from './util.js';
 
 const MAX_USERS = 4;
+
+/** Actividad → Accesos. Logins aren't tied to a data profile; passwords are never part of an entry. */
+const logAccess = (userId: number, action: string, summary: string) => logAction({ userId, section: 'Accesos', action, summary, profileId: null });
+const nameOf = (id: number | undefined) => (id ? (coreDb().prepare('SELECT display_name FROM users WHERE id = ?').get(id) as { display_name: string } | undefined)?.display_name : undefined);
 
 const newUserSchema = z.object({
   username: z.string().trim().min(2).max(40).regex(/^[a-zA-Z0-9._-]+$/, 'Solo letras, números, punto, guion y guion bajo'),
@@ -137,6 +142,8 @@ async function checkCredentials(req: FastifyRequest, reply: FastifyReply, userna
   const ok = await verifyPassword(password, user?.password_hash ?? (await getDummyHash()));
   if (!user || !ok) {
     const locked = registerFailure(keys);
+    // Only for a real user (an unknown username could be a password typed in the wrong field).
+    if (user) logAccess(user.id, 'fallido', `Intento de ingreso con contraseña incorrecta${locked > 0 ? ` (bloqueado ${Math.ceil(locked / 1000)} s)` : ''}`);
     if (locked > 0) {
       reply.header('retry-after', Math.ceil(locked / 1000));
       reply.code(429).send({
@@ -194,6 +201,7 @@ export default async function authRoutes(app: FastifyInstance) {
       throw new HttpError(409, 'La configuración inicial ya se realizó.');
     }
     setSessionCookie(req, reply, userId);
+    logAccess(userId, 'crear', 'Creó la primera cuenta e ingresó');
     return { ok: true };
   });
 
@@ -202,6 +210,7 @@ export default async function authRoutes(app: FastifyInstance) {
     const userId = await checkCredentials(req, reply, username, password);
     if (userId === null) return reply;
     setSessionCookie(req, reply, userId);
+    logAccess(userId, 'ingresar', 'Ingresó');
     return { ok: true };
   });
 
@@ -229,6 +238,8 @@ export default async function authRoutes(app: FastifyInstance) {
       ? { active: added, extra: s.active ? [s.active, ...extra] : extra }
       : { active: s.active, extra: [...extra, added] };
     saveSessions(req, reply, next);
+    const from = nameOf(s.active?.userId);
+    logAccess(userId, 'ingresar', `Ingresó sumando su cuenta a este navegador${from ? ` (junto a ${from})` : ''}${next.active === added ? '' : ', sin pasar a usarla'}`);
     return { ok: true, accounts: accountList(next) };
   });
 
@@ -239,6 +250,8 @@ export default async function authRoutes(app: FastifyInstance) {
     if (s.active?.userId !== user_id) {
       const target = s.extra.find((e) => e.userId === user_id);
       if (!target) throw new HttpError(404, 'Esa cuenta no tiene la sesión abierta en este navegador.');
+      const from = nameOf(s.active?.userId);
+      logAccess(user_id, 'cambiar', `Pasó a usar su cuenta${from ? ` (antes estaba ${from})` : ''}`);
       s.extra = [...(s.active ? [s.active] : []), ...s.extra.filter((e) => e !== target)];
       s.active = target;
     }
@@ -250,6 +263,8 @@ export default async function authRoutes(app: FastifyInstance) {
   // With { all: true } every account of this browser is logged out.
   app.post('/auth/logout', async (req, reply) => {
     const { all } = parse(z.object({ all: z.boolean().optional() }), req.body ?? {});
+    const leaving = sessionInfo(req.cookies[SESSION_COOKIE])?.userId;
+    if (leaving) logAccess(leaving, 'salir', all ? 'Cerró sesión en todas las cuentas de este navegador' : 'Cerró sesión');
     destroySession(req.cookies[SESSION_COOKIE]);
     if (all) {
       for (const t of extraTokens(req)) destroySession(t);

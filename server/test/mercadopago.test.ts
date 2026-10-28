@@ -25,6 +25,8 @@ const fake = http.createServer((req, res) => {
     if (url.pathname === '/v1/account/settlement_report/config') return send(200, { columns: [] });
     if (url.pathname === '/v1/account/release_report/config') {
       if (req.method === 'POST') {
+        // Refuses the long column list once, like a real account might, and takes the short one.
+        if (JSON.parse(raw).columns.length > 3) return send(400, { message: 'invalid columns', error: 'bad_request', cause: [{ description: 'column X is not valid' }] });
         releaseConfigured = true;
         return send(201, {});
       }
@@ -146,15 +148,31 @@ describe('Mercado Pago connection', () => {
     const r = await call('ivan', 'POST', '/api/me/mercadopago/reports');
     expect(r.status).toBe(200);
     expect(r.body.setup).toEqual([
-      { key: 'release_report', result: 'created', http: 201 },
+      { key: 'release_report', result: 'created', http: 201, tier: 1 },
       { key: 'settlement_report', result: 'exists', http: 200 },
     ]);
     expect(r.body.checks.find((c: { key: string }) => c.key === 'release_report').status).toBe('ok');
     const writes = seen.filter((x) => x.method !== 'GET');
-    expect(writes.map((w) => `${w.method} ${w.path}`)).toEqual(['POST /v1/account/release_report/config']);
-    expect(writes[0].body).toMatchObject({ display_timezone: 'GMT-03', notification_email_list: [], include_withdrawal: true });
+    expect(writes.map((w) => `${w.method} ${w.path}`)).toEqual(['POST /v1/account/release_report/config', 'POST /v1/account/release_report/config']);
+    expect(writes[0].body).toMatchObject({ display_timezone: 'GMT-03', include_withdrawal_at_end: true, execute_after_withdrawal: false });
+    expect(writes[0].body).not.toHaveProperty('header_language');
+    expect((writes[1].body as { columns: { key: string }[] }).columns.map((c) => c.key)).toEqual(['DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE']);
     expect(raw(r)).not.toContain('ab12ab12');
     expect((await call('ivan', 'POST', '/api/me/mercadopago/reports')).status).toBe(429);
+  });
+
+  it("passes on Mercado Pago's reason when it refuses both attempts", async () => {
+    // The fake refuses any other token (401 with a message) on every call.
+    const r = await lib.setupReports(`APP_USR-0000000000000000-102716-${'ff00'.repeat(8)}-111111111`);
+    expect(r[0]).toEqual({ key: 'release_report', result: 'failed', http: 401, message: 'invalid access token' });
+  });
+
+  it('sends the documented settings for the transactions report', () => {
+    const c = lib.reportConfig('settlement_report') as Record<string, unknown> & { columns: { key: string }[] };
+    expect(c).toMatchObject({ include_withdraw: true, header_language: 'en', display_timezone: 'GMT-03', frequency: { type: 'monthly' } });
+    expect(c.columns.map((x) => x.key)).toContain('TRANSACTION_DATE');
+    expect(c.columns.map((x) => x.key)).not.toContain('DATE');
+    expect((lib.reportConfig('settlement_report', 2).columns as { key: string }[]).map((x) => x.key)).toEqual(['TRANSACTION_DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE']);
   });
 
   it('allows no write except report settings and report requests', async () => {
@@ -183,6 +201,25 @@ describe('Mercado Pago connection', () => {
     expect((await call('ivan', 'PUT', '/api/me/mercadopago', { history_start: '2025-03-01' })).body.history_start).toBe('2025-03-01');
     expect((await call('ivan', 'PUT', '/api/me/mercadopago', { history_start: '2999-01-01' })).status).toBe(400);
     expect((await call('mili', 'PUT', '/api/me/mercadopago', { history_start: '2025-03-01' })).status).toBe(404);
+  });
+
+  it('ties the connection to one Mercado Pago account in Cuentas', async () => {
+    // Iván had none: connecting made one and tied it.
+    const ivan = (await call('ivan', 'GET', '/api/me/mercadopago')).body;
+    expect(ivan.account).toMatchObject({ name: 'Mercado Pago' });
+    expect(ivan.history_start).toBeTruthy();
+    // A second Mercado Pago account for him is refused.
+    expect((await call('ivan', 'POST', '/api/accounts', { name: 'MP Iván', type: 'wallet', currency: 'ARS', owner: 'me' })).status).toBe(400);
+    // Milagros already has one: connecting asks which, with no way to make another.
+    const mine = (await call('mili', 'POST', '/api/accounts', { name: 'Mercado Pago Mili', type: 'wallet', currency: 'ARS', owner: 'me' })).body.id;
+    await call('mili', 'POST', '/api/accounts', { name: 'Galicia', type: 'bank', currency: 'ARS', owner: 'me' });
+    const connected = (await call('mili', 'PUT', '/api/me/mercadopago', { access_token: TOKEN })).body;
+    expect(connected).toMatchObject({ connected: true, account: null, candidates: [{ id: mine, name: 'Mercado Pago Mili' }] });
+    expect((await call('mili', 'POST', '/api/me/mercadopago/account', {})).status).toBe(400);
+    expect((await call('mili', 'POST', '/api/me/mercadopago/account', { account_id: ivan.account.id })).status).toBe(400);
+    const linked = await call('mili', 'POST', '/api/me/mercadopago/account', { account_id: mine });
+    expect(linked.body).toMatchObject({ account: { id: mine }, candidates: [], linked: { created: false } });
+    await call('mili', 'DELETE', '/api/me/mercadopago');
   });
 
   it('disconnects, deleting the token', async () => {

@@ -1,6 +1,7 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createElement } from 'react';
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
-import { ApiError, api } from './api';
+import { ApiError, api, takeUndoTokens } from './api';
 import type { Account, Category, Currency, Me, Settings, User } from './types';
 
 export const useMe = () => useQuery({ queryKey: ['me'], queryFn: () => api.get<Me>('/me') });
@@ -41,8 +42,51 @@ export function notifyError(e: unknown) {
   notifications.show({ color: 'red', title: 'Error', message: e instanceof Error ? e.message : String(e) });
 }
 
+// Confirmations show at the bottom of the page. When the action can be undone (the server
+// answered with an undo token, see api.ts), the toast carries a bold «Deshacer» for a few seconds.
+const OK_POSITION = 'bottom-center' as const;
+let undoClient: QueryClient | null = null;
+let toastSeq = 0;
+
+/** main.tsx hands over the app's QueryClient, so an undo can refresh every screen. */
+export function setUndoQueryClient(qc: QueryClient) {
+  undoClient = qc;
+}
+
 export function notifyOk(message: string) {
-  notifications.show({ color: 'teal', message });
+  const tokens = takeUndoTokens();
+  if (!tokens.length) {
+    notifications.show({ color: 'teal', message, position: OK_POSITION, className: 'pfd-toast-ok' });
+    return;
+  }
+  const id = `pfd-undo-${++toastSeq}`;
+  notifications.show({
+    id,
+    color: 'teal',
+    position: OK_POSITION,
+    autoClose: 7000,
+    className: 'pfd-toast-ok pfd-toast-undo',
+    message: createElement(
+      'span',
+      { className: 'pfd-undo-line' },
+      createElement('span', null, message),
+      ' ',
+      createElement('button', { type: 'button', className: 'pfd-undo-btn', onClick: () => void runUndo(id, tokens) }, 'Deshacer'),
+    ),
+  });
+}
+
+/** Undoes the actions behind a toast (newest first) and refreshes everything. */
+async function runUndo(id: string, tokens: string[]) {
+  notifications.update({ id, message: 'Deshaciendo…', loading: true, autoClose: false, withCloseButton: false, className: 'pfd-toast-ok' });
+  try {
+    for (const t of tokens) await api.post(`/undo/${t}`);
+    notifications.update({ id, color: 'teal', message: 'Deshecho', loading: false, autoClose: 3000, withCloseButton: true });
+  } catch (e) {
+    notifications.update({ id, color: 'red', message: e instanceof Error ? e.message : String(e), loading: false, autoClose: 6000, withCloseButton: true });
+  } finally {
+    void undoClient?.invalidateQueries();
+  }
 }
 
 /** Category helpers: names with parent prefix, and grouped select data. */

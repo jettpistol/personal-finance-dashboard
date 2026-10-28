@@ -35,8 +35,17 @@ Each of you does this with your own Mercado Pago login.
 
 1. In Finanzas: **Ajustes → Mercado Pago**.
 2. Paste the token in **Access Token de producción**.
-3. Optionally, **Traer movimientos desde**: how far back to bring movements once that's available.
+3. **Traer movimientos desde**: how far back to bring movements once that's available. It starts on **1 October 2026**.
 4. Click **Conectar**. The app asks Mercado Pago who the token belongs to, and only saves it if it's valid.
+
+### Your Mercado Pago account in Cuentas
+
+Each of you has **one** Mercado Pago account in [Cuentas](cuentas.md), and the connection fills that one:
+
+- If you have none (no personal account named *Mercado Pago*, *MercadoPago* or *MP*), connecting creates **Mercado Pago**: a digital wallet in pesos, yours, starting at $ 0.
+- If you already have one, a window asks **¿Cuál es tu cuenta de Mercado Pago?** on whatever page you are. Pick it and click **Asignar**. The window can't be closed without choosing, and you can't make another one.
+- Once assigned, creating a second Mercado Pago account of your own is refused.
+- This is per data profile: in another profile (for example **Prueba (demo)**) the same happens the first time you open the app there.
 
 Common messages:
 
@@ -50,13 +59,14 @@ Common messages:
 ## Once connected
 
 - **Cuenta**: your Mercado Pago name, user ID and country (**MLA** is Argentina).
-- **Desde**: the start date; the pencil changes it.
+- **Desde**: the start date (1 October 2026 unless you changed it); the pencil changes it.
+- **En Cuentas**: the account it fills.
 - **Datos**: after **Probar conexión**, how many data sources your account allows. Click it for the list:
   - **Datos de la cuenta**: who you are.
   - **Pagos recibidos**: money that came in, almost in real time.
   - **Saldo**: the live balance. Mercado Pago often blocks it for personal accounts; that's normal.
   - **Reporte de dinero liberado** and **Reporte de todas las transacciones**: the full history, in and out. **Sin configurar** means Mercado Pago has no settings for that report yet: click **Configurar reportes** (below).
-- **Configurar reportes** (only while a report shows **Sin configurar**): saves the report's settings in Mercado Pago (every column, Argentina's time, no emails, no automatic schedule) and checks again. Reports already set up are left as they are. If Mercado Pago refuses, the message says which report and its code; then try generating one by hand on the website (**Tu negocio → Reportes**) and click **Probar conexión** again.
+- **Configurar reportes** (only while a report shows **Sin configurar**): saves the report's settings in Mercado Pago (every column, Argentina's time, no emails, no automatic schedule) and checks again. Reports already set up are left as they are. If Mercado Pago refuses the list of columns, the app tries simpler ones, down to the short list from Mercado Pago's own example. If that's refused too, the message says which report, its code and Mercado Pago's reason; then try generating one by hand on the website (**Tu negocio → Reportes**) and click **Probar conexión** again.
 - **⋯ → Reemplazar token**: after renewing it in Mercado Pago.
 - **⋯ → Desconectar**: deletes the token from Finanzas. To cancel it in Mercado Pago too, renew it there.
 - **Volvé a conectar** (yellow): the server can no longer open the saved token (its key changed). Paste the token again.

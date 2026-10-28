@@ -29,8 +29,9 @@ const PREF: Record<NotifyKind, 'notify_budget' | 'notify_recurring' | 'notify_re
 export async function notify(n: Notice) {
   const users = loadUsers().filter((u) => n.users === null || n.users.includes(u.id));
   const insert = db().prepare('INSERT INTO notifications (user_id, kind, title, body, link) VALUES (?, ?, ?, ?, ?)');
+  // Every bell entry first, before anything is awaited: an undoable action journals them all (lib/undo.ts).
+  for (const u of users) insert.run(u.id, n.kind, n.title, n.body, n.link ?? null);
   for (const u of users) {
-    insert.run(u.id, n.kind, n.title, n.body, n.link ?? null);
     const pref = PREF[n.kind];
     if (pref && !u[pref]) continue;
     const link = n.link && config.publicUrl ? `${config.publicUrl}${n.link}` : '';

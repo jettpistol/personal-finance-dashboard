@@ -367,4 +367,38 @@ export const migrations: string[] = [
     checks TEXT
   );
   `,
+  // Activity log (Actividad), kept in the core database so it survives profile resets and
+  // updates. at_ms is UTC milliseconds; the browser shows it in the viewer's chosen time zone.
+  // private_to: only that user may see the entry (private accounts and movements, own connections).
+  `
+  CREATE TABLE audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    at_ms INTEGER NOT NULL,
+    user_id INTEGER,
+    profile_id INTEGER,
+    section TEXT NOT NULL,
+    action TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    entity TEXT,
+    entity_id INTEGER,
+    details TEXT,
+    private_to INTEGER
+  );
+  CREATE INDEX audit_log_at ON audit_log (at_ms);
+  CREATE INDEX audit_log_section ON audit_log (section, at_ms);
+  `,
+  // Which account in this data profile is each person's Mercado Pago (one per person).
+  `
+  CREATE TABLE mp_links (
+    user_id INTEGER PRIMARY KEY,
+    account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE
+  );
+  `,
+  // Deudores: installments every N days, weeks or months (null = every month), and loans tied
+  // to inflation (CPI), whose installments follow the published index.
+  `
+  ALTER TABLE loans ADD COLUMN period_unit TEXT CHECK (period_unit IN ('day', 'week', 'month'));
+  ALTER TABLE loans ADD COLUMN period_count INTEGER;
+  ALTER TABLE loans ADD COLUMN indexed INTEGER NOT NULL DEFAULT 0;
+  `,
 ];

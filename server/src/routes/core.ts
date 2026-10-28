@@ -8,7 +8,9 @@ import { loadConverter } from '../lib/fx.js';
 import { today } from '../lib/dates.js';
 import { telegramEnabled, findChatIdByCode, sendTelegramMessage } from '../lib/telegram.js';
 import { activeSmtp, clearSmtp, describeMailError, mailEnabled, saveSmtp, sendMail, storedSmtp, verifyMail } from '../lib/mail.js';
-import { idParam, parse } from './util.js';
+import { assertSingleMpAccount } from '../lib/mercadopago.js';
+import { bool, idParam, parse } from './util.js';
+import { accountMovementCount, deleteAccountWithMovements } from '../lib/accounts.js';
 import crypto from 'node:crypto';
 
 const accountSchema = z.object({
@@ -22,6 +24,21 @@ const accountSchema = z.object({
   archived: z.boolean().default(false),
   sort: z.number().int().default(0),
 });
+
+// Editing sends only what changed: no defaults here, or a missing field would reset it (e.g. the opening balance to 0).
+const accountPatchSchema = z
+  .object({
+    name: z.string().trim().min(1).max(60),
+    type: z.enum(['bank', 'cash', 'credit_card', 'savings', 'investment', 'wallet']),
+    currency: z.enum(['ARS', 'USD']),
+    owner: z.enum(['joint', 'me']),
+    is_private: z.boolean(),
+    opening_balance: z.number().int(),
+    color: z.string().max(20).nullish(),
+    archived: z.boolean(),
+    sort: z.number().int(),
+  })
+  .partial();
 
 const categorySchema = z.object({
   name: z.string().trim().min(1).max(60),
@@ -234,6 +251,7 @@ export default async function coreRoutes(app: FastifyInstance) {
   app.post('/accounts', async (req) => {
     const a = parse(accountSchema, req.body);
     const owner = a.owner === 'me' ? req.userId : null;
+    if (owner) assertSingleMpAccount(owner, a.name);
     const id = db()
       .prepare('INSERT INTO accounts (name, type, currency, owner_id, is_private, opening_balance, color, archived, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .run(a.name, a.type, a.currency, owner, owner && a.is_private ? 1 : 0, a.opening_balance, a.color ?? null, a.archived ? 1 : 0, a.sort).lastInsertRowid;
@@ -244,10 +262,11 @@ export default async function coreRoutes(app: FastifyInstance) {
     const id = idParam(req.params);
     const existing = loadAccounts().get(id);
     if (!existing || !(existing.owner_id === null || existing.owner_id === req.userId)) throw new HttpError(404, 'Cuenta no encontrada');
-    const a = parse(accountSchema.partial(), req.body);
+    const a = parse(accountPatchSchema, req.body);
     const hasTx = db().prepare('SELECT 1 FROM transactions WHERE account_id = ? OR to_account_id = ? LIMIT 1').get(id, id);
     if (a.currency && a.currency !== existing.currency && hasTx) throw new HttpError(400, 'No se puede cambiar la moneda de una cuenta con movimientos.');
     const owner = a.owner === undefined ? existing.owner_id : a.owner === 'me' ? req.userId : null;
+    if (owner && a.name) assertSingleMpAccount(owner, a.name, id);
     if (owner !== existing.owner_id && hasTx) throw new HttpError(400, 'No se puede cambiar el titular de una cuenta con movimientos.');
     const isPrivate = owner !== null && (a.is_private ?? !!existing.is_private);
     db()
@@ -267,16 +286,20 @@ export default async function coreRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.delete('/accounts/:id', async (req) => {
+  // With ?with_movements=1 its movements go too (Deshacer can bring everything back); without it,
+  // an account in use answers 409 with how many movements it has, so the screen can ask first.
+  app.delete('/accounts/:id', async (req, reply) => {
     const id = idParam(req.params);
     const existing = loadAccounts().get(id);
     if (!existing || !(existing.owner_id === null || existing.owner_id === req.userId)) throw new HttpError(404, 'Cuenta no encontrada');
-    const used =
-      db().prepare('SELECT 1 FROM transactions WHERE account_id = ? OR to_account_id = ? LIMIT 1').get(id, id) ||
-      db().prepare('SELECT 1 FROM recurring WHERE account_id = ? LIMIT 1').get(id);
-    if (used) throw new HttpError(409, 'La cuenta tiene movimientos. Archivala en lugar de borrarla.');
+    const movements = accountMovementCount(id);
+    const used = movements > 0 || db().prepare('SELECT 1 FROM recurring WHERE account_id = ? LIMIT 1').get(id);
+    if (used && !bool((req.query as { with_movements?: string }).with_movements)) {
+      return reply.code(409).send({ error: 'La cuenta tiene movimientos.', movements });
+    }
+    if (used) return { ok: true, movements: deleteAccountWithMovements(id, req.userId) };
     db().prepare('DELETE FROM accounts WHERE id = ?').run(id);
-    return { ok: true };
+    return { ok: true, movements: 0 };
   });
 
   // ---- Categories ----

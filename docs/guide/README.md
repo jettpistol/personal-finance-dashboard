@@ -23,7 +23,7 @@ The order follows the sidebar.
 | [Cuentas](cuentas.md) | Accounts and their balances, joint or personal, in ARS or USD. |
 | [Gastos compartidos](gastos-compartidos.md) | Who owes whom from shared expenses and shared income, and settling up. |
 | [Deudores](deudores.md) | Money and things you lent to other people: what's still out, partial returns, reminders. |
-| [Pagos pendientes](pagos-pendientes.md) | What you have to do yourself each month (savings, paying someone back) and loans to collect; it chases you until it's done. |
+| [Pendientes](pagos-pendientes.md) | **Pagos** you have to make yourself each month (savings, paying someone back) and **Cobros** to collect from loans; it chases you until it's done. |
 | **Planificación** | |
 | [Presupuestos](presupuestos.md) | Monthly limits per category, alerts at 80% and 100%, and indexing by inflation. |
 | [Objetivos](metas.md) | Savings objectives (with picture, link, notes and priority) and how much to put aside each month. |
@@ -35,6 +35,7 @@ The order follows the sidebar.
 | [Reglas](reglas.md) | "If the description contains X, set category Y" and similar automatic fixes. |
 | [Recurrentes](recurrentes.md) | Rent, bills, subscriptions and salaries that repeat; you confirm each one with the real amount. |
 | | |
+| [Actividad](actividad.md) | Who did what and when: every change, by section and person, in the time zone you pick (Argentina by default); export to CSV and clear old entries. |
 | [Perfil de datos](perfil-de-datos.md) | Separate sets of data (for example test data vs your real data). |
 | [Ajustes](ajustes.md) | Your profile and password, email alerts, the household, categories, exchange rates and inflation, export and backups. |
 | [Connect Mercado Pago](mercado-pago.md) | Getting your Mercado Pago access token and connecting your account in **Ajustes → Mercado Pago**, and how the token is kept safe. |
@@ -84,6 +85,8 @@ The app can hold several independent sets of data, called profiles. The same two
 npm run update
 npm run demo:reset   # or: npm run build && npm start, for your real data
 ```
+
+`demo:reset` only reloads the **Prueba (demo)** profile: your logins, the **Vacío** profile, the email setup and your Mercado Pago connection stay. (Before 0.11.1 it erased all of them.)
 
 If `git pull` ever says *Your local changes to the following files would be overwritten by merge: package-lock.json*, the update didn't happen: `npm run update` avoids that.
 

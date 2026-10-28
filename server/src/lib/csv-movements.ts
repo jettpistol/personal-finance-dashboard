@@ -49,7 +49,14 @@ function findCategory(raw: string, kind: 'expense' | 'income', cats: Category[])
 }
 
 /** Reads the file and checks every row; with `commit`, also saves the valid, non-duplicate ones. */
-export async function processMovementsCsv(data: Buffer, fileName: string, viewer: number, commit: boolean): Promise<{ rows: CsvRow[]; created: number }> {
+export async function processMovementsCsv(
+  data: Buffer,
+  fileName: string,
+  viewer: number,
+  commit: boolean,
+  /** Runs the (synchronous) save, e.g. with undoable() so it can be undone. */
+  journal: <T>(save: () => T) => T = (save) => save(),
+): Promise<{ rows: CsvRow[]; created: number }> {
   const table = await readTable(data, fileName, { delimiter: 'auto', encoding: 'utf-8', sheet: 0 });
   const headerIndex = table.findIndex((r) => r.some((c) => String(c ?? '').trim() !== ''));
   if (headerIndex < 0) throw new HttpError(400, 'El archivo está vacío.');
@@ -119,8 +126,10 @@ export async function processMovementsCsv(data: Buffer, fileName: string, viewer
   });
 
   if (commit && valid.length) {
-    const ids = db().transaction(() => valid.map((v) => insertTx({ ...v.tx, import_hash: v.hash })))();
-    for (const id of ids) autoLink(id);
+    journal(() => {
+      const ids = db().transaction(() => valid.map((v) => insertTx({ ...v.tx, import_hash: v.hash })))();
+      for (const id of ids) autoLink(id);
+    });
   }
   return { rows, created: commit ? valid.length : 0 };
 }

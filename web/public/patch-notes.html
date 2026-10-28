@@ -49,13 +49,21 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.12.0</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.15.0</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.15.0"><b>0.15.0</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.14.0"><b>0.14.0</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.13.1"><b>0.13.1</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.13.0"><b>0.13.0</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.12.1"><b>0.12.1</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.12.0"><b>0.12.0</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.11.3"><b>0.11.3</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.11.2"><b>0.11.2</b><span class="date">Oct 28, 2026</span></a>
+        <a class="idx" href="#v0.11.1"><b>0.11.1</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.11.0"><b>0.11.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.10.0"><b>0.10.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.9.1"><b>0.9.1</b><span class="date">Oct 27, 2026</span></a>
@@ -81,8 +89,8 @@
       <td class="main">
         <p class="lead">What changed in each version</p>
 
-        <a name="v0.12.0"></a>
-        <h2>0.12.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <a name="v0.15.0"></a>
+        <h2>0.15.0 <span class="date">&middot; Oct 28, 2026</span></h2>
         <ul>
           <li>New <b>Resúmenes</b> section: upload a bank PDF or Excel file as the bank gives it and the app recognises the format by its content.</li>
           <li>Reads Banco Galicia's Caja de Ahorro extract (Excel) and monthly statement (PDF), and the Visa and American Express card statements (PDF).</li>
@@ -94,6 +102,90 @@
           <li>The suggested rules bank now also recognises Uber Eats, Crunchyroll, Patreon, LinkedIn, Solo Deportes, neighbourhood supermarkets, fruit shops, Granja, and the shortened names card statements print (SportClub, Burger King, Cencosud Easy, pet shops).</li>
           <li><b>Importar</b> can now open the Excel extract that Galicia exports, which it couldn't read before.</li>
           <li>New help article: Resúmenes. The Docker image now includes <code>pdftotext</code>, needed to read PDFs.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.14.0"></a>
+        <h2>0.14.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>Confirmation messages now appear at the bottom of the page, with a slide-up animation.</li>
+          <li>After recording, editing or deleting something, the message offers <b>Deshacer</b> for 7 seconds. It restores everything the action changed, including linked payments, splits and deleted receipts. Example: "Perdonados $ 70.000 a Juan. <b>Deshacer</b>".</li>
+          <li>An account with movements can now be deleted together with its movements after a second confirmation, and <b>Deshacer</b> brings it all back.</li>
+          <li>Undoing is refused if the same data changed afterwards ("No se puede deshacer: hubo cambios después").</li>
+          <li><b>Actividad</b> records each undo as "Deshizo: …".</li>
+          <li>Deudores messages are more specific (for example "Devolución de $ 50.000 de Juan anotada").</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.13.1"></a>
+        <h2>0.13.1 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>No visible changes yet: groundwork for undoing actions (Deshacer), which arrives in the next version.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.13.0"></a>
+        <h2>0.13.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>Deudores: a loan can be tied to inflation. Each installment follows the CPI from the month of the loan; a month that isn't published yet is added to the next installment once it is.</li>
+          <li>Installments can fall every N months (1 by default), weeks or days.</li>
+          <li>Interest is now chosen as <b>Sin interés</b>, <b>Interés fijo</b> or <b>Inflación</b> (with an optional extra rate), instead of copying last month's CPI.</li>
+          <li>The plan line under the loan form wraps instead of overflowing.</li>
+          <li>"Perdonar lo que falta" is now <b>Perdonar deuda</b>, in red, and asks before forgiving.</li>
+          <li>Dates typed by hand are checked everywhere: an impossible date (like 01/01/150000) isn't taken, and the box goes back to its last value.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.12.1"></a>
+        <h2>0.12.1 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>Fixed: archiving an account, or changing only part of it, reset its opening balance to $ 0. Check the opening balance of any account you archived or edited before this version.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.12.0"></a>
+        <h2>0.12.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>New <b>Actividad</b> section in the sidebar: a log of every change that affects your numbers, with who made it.</li>
+          <li>Filter the log by section (with counts), person, date range or text, across this profile or all profiles; click an entry to see what changed, before and after.</li>
+          <li>Times show in Argentina time by default, or any time zone you pick; the exact UTC time is in each entry's details and in the CSV download.</li>
+          <li>Clear one section, entries before a date, or everything from the <b>⋯</b> menu; each clearing is recorded too.</li>
+          <li>The log is kept across updates and profile resets. Entries about private accounts, Deudores, Pendientes and your own settings are only visible to you; passwords and tokens are never recorded.</li>
+          <li>"Pagos pendientes" is now <b>Pendientes</b>, with two separate lists, <b>Pagos</b> and <b>Cobros</b>, each with its own counter. The sidebar counter is their sum.</li>
+          <li>Done items move to a green <b>Completados</b> list instead of disappearing.</li>
+          <li>Card titles are bigger; tags and the due line are smaller and lighter.</li>
+          <li>One <b>Registrar</b> button: it asks whether to pick a movement already loaded or to load a new one. A new one is tied to the item when saved, whatever the amount.</li>
+          <li>Fixed: paying a dollar savings plan with a peso conversion, or registering a partial payment or collection, did nothing. Short amounts now ask why and say how much is still missing.</li>
+          <li>"incluye X del mes anterior" is now "+ X del mes anterior"; payments no longer show "(automático)".</li>
+          <li>A commitment due on the 29th, 30th or 31st falls on the last day of shorter months.</li>
+          <li>Dollars are written USD everywhere, never US$. Amount boxes only show the $ sign; the currency is shown once, next to it.</li>
+          <li>In every dropdown, the tick of the selected option sits at the end, so the names never move.</li>
+          <li>Mercado Pago: the connection fills one account in Cuentas per person. It creates "Mercado Pago" if you have none; if you already have one, it asks which and can't be skipped. A second Mercado Pago account is refused.</li>
+          <li>Mercado Pago history starts on 1 October 2026 unless you change it.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.11.3"></a>
+        <h2>0.11.3 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>No changes in the app. Fixed a test that failed now and then because two test files shared one temporary data folder.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.11.2"></a>
+        <h2>0.11.2 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>Mercado Pago: <b>Configurar reportes</b> now sends exactly the settings from Mercado Pago's documentation for each report.</li>
+          <li>The transactions report asks for more useful columns (store, wallet or bank behind a QR payment, taxes, release date). If Mercado Pago refuses them, it falls back to simpler lists.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.11.1"></a>
+        <h2>0.11.1 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>Fixed: <code>npm run demo:reset</code> erased everything in the demo folder after each update, including your Mercado Pago connection, the email setup and the Vac&iacute;o profile. It now reloads only the Prueba (demo) profile.</li>
+          <li>Fixed: <b>Configurar reportes</b> sent settings Mercado Pago rejects. Each report now gets its own columns, and if the full list is refused the app retries with a short one.</li>
+          <li>When Mercado Pago still refuses, the message includes its own reason.</li>
         </ul>
         <p class="top"><a href="#top">&uarr; Back to top</a></p>
 

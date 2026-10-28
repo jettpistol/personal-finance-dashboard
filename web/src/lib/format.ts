@@ -13,7 +13,7 @@ export function setHideCents(v: Record<Currency, boolean> | undefined) {
   if (v) hideCents = v;
 }
 
-/** Formats cents, e.g. 123456 -> "$ 1.234,56" / "US$ 1.234,56" ("$ 1.235" with cents hidden). */
+/** Formats cents, e.g. 123456 -> "$ 1.234,56" / "USD 1.234,56" ("$ 1.235" with cents hidden). Never "US$". */
 export function money(cents: number | null | undefined, currency: Currency = 'ARS', opts: { compact?: boolean; sign?: boolean } = {}): string {
   if (cents == null) return '—';
   const v = cents / 100;
@@ -23,17 +23,17 @@ export function money(cents: number | null | undefined, currency: Currency = 'AR
   else if (opts.compact || hideCents[currency]) body = nf0.format(abs);
   else body = nf2.format(abs);
   const sign = v < 0 ? '-' : opts.sign && v > 0 ? '+' : '';
-  return `${sign}${currency === 'USD' ? 'US$' : '$'} ${body}`;
+  return `${sign}${currency === 'USD' ? 'USD' : '$'} ${body}`;
 }
 
 const nf1 = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 });
 
-/** Chart axes: "$ 150k", "US$ 1,2M", "$ 800". */
+/** Chart axes: "$ 150k", "USD 1,2M", "$ 800". */
 export function moneyShort(cents: number, currency: Currency = 'ARS'): string {
   const v = cents / 100;
   const abs = Math.abs(v);
   const body = abs >= 1_000_000 ? `${nf1.format(abs / 1_000_000)}M` : abs >= 1_000 ? `${nf1.format(abs / 1_000)}k` : nf0.format(abs);
-  return `${v < 0 ? '-' : ''}${currency === 'USD' ? 'US$' : '$'} ${body}`;
+  return `${v < 0 ? '-' : ''}${currency === 'USD' ? 'USD' : '$'} ${body}`;
 }
 
 /** Converts a decimal amount typed by the user into cents. */

@@ -5,10 +5,11 @@ import { addMonthsToMonth, currentMonth, daysInMonth, today } from './dates.js';
 import { getTx, loadAccounts, type Tx } from './domain.js';
 import { formatMoney, type Currency } from './money.js';
 import { notify } from './notify.js';
-import { presentLoan, recordLoanReturn, type LoanRow, type ReturnRow } from './loans.js';
+import { logAction } from './audit.js';
+import { own, presentLoan, recordLoanReturn, type LoanRow, type ReturnRow } from './loans.js';
 
-// Pagos pendientes: things you have to do yourself each month (move savings, pay someone back)
-// and money people owe you on a schedule (Deudores loans with dates). Each month expects an
+// Pendientes: things you have to do yourself each month (Pagos: move savings, pay someone back)
+// and money people owe you on a schedule (Cobros: Deudores loans with dates). Each month expects an
 // amount; what's missing rolls over to the next month and extra lowers it. A movement with the
 // exact amount is linked on its own; a smaller one needs a reason.
 
@@ -144,6 +145,36 @@ function loanItem(loan: LoanRow, returns: ReturnRow[]): PendingItem | null {
   };
 }
 
+/** Pagos (savings, debts you pay) or Cobros (money owed to you). */
+export const sideOf = (kind: PendingItem['kind']): 'pay' | 'collect' => (kind === 'collect' ? 'collect' : 'pay');
+
+export type CompletedItem = { key: string; source: 'commitment' | 'loan'; id: number; kind: PendingItem['kind']; title: string; person: string | null; currency: Currency; total: number; completed_on: string; how: 'paid' | 'forgiven' };
+
+/**
+ * What's fully done: commitments whose last month is paid, and loans with dates that were
+ * returned or forgiven. Newest first.
+ */
+export function completedItems(userId: number): CompletedItem[] {
+  const out: CompletedItem[] = [];
+  const commitments = db().prepare('SELECT * FROM commitments WHERE owner_id = ? AND months IS NOT NULL').all(userId) as Commitment[];
+  const payments = db().prepare('SELECT * FROM commitment_payments ORDER BY date').all() as Payment[];
+  for (const c of commitments) {
+    const item = commitmentItem(c, payments);
+    if (!item?.finished) continue;
+    const mine = payments.filter((p) => p.commitment_id === c.id);
+    out.push({ key: `c${c.id}`, source: 'commitment', id: c.id, kind: c.kind, title: c.title, person: c.person, currency: c.currency, total: mine.reduce((s, p) => s + p.amount, 0), completed_on: mine.at(-1)?.date ?? item.due, how: 'paid' });
+  }
+  const loans = db()
+    .prepare(`SELECT * FROM loans WHERE owner_id = ? AND kind = 'money' AND closed_on IS NOT NULL AND (first_due IS NOT NULL OR due_on IS NOT NULL)`)
+    .all(userId) as LoanRow[];
+  const returns = db().prepare('SELECT * FROM loan_returns').all() as ReturnRow[];
+  for (const l of loans) {
+    const v = presentLoan(l, returns);
+    out.push({ key: `l${l.id}`, source: 'loan', id: l.id, kind: 'collect', title: l.item || 'Préstamo', person: l.person, currency: l.currency, total: v.returned, completed_on: l.closed_on!, how: l.closed_reason === 'forgiven' ? 'forgiven' : 'paid' });
+  }
+  return out.sort((a, b) => (a.completed_on < b.completed_on ? 1 : -1));
+}
+
 /** Everything a user is responsible for, most urgent first. */
 export function pendingItems(userId: number | null): PendingItem[] {
   const commitments = db()
@@ -190,7 +221,8 @@ export function linkToCommitment(c: Commitment, tx: Tx, reason: string | null, a
       c.kind === 'savings' ? `Tiene que ser una transferencia hacia la cuenta del ahorro, en ${c.currency}.` : `Tiene que ser un gasto o una transferencia en ${c.currency}.`,
     );
   }
-  if (db().prepare('SELECT 1 FROM commitment_payments WHERE transaction_id = ?').get(tx.id)) throw new HttpError(409, 'Ese movimiento ya está vinculado.');
+  if (db().prepare('SELECT 1 FROM commitment_payments WHERE transaction_id = ? UNION SELECT 1 FROM loan_returns WHERE transaction_id = ?').get(tx.id, tx.id))
+    throw new HttpError(409, 'Ese movimiento ya está vinculado.');
   const payments = db().prepare('SELECT * FROM commitment_payments WHERE commitment_id = ?').all(c.id) as Payment[];
   const open = commitmentPeriods(c, payments).at(-1);
   if (!open) throw new HttpError(400, 'Este compromiso todavía no empezó.');
@@ -198,6 +230,28 @@ export function linkToCommitment(c: Commitment, tx: Tx, reason: string | null, a
   db()
     .prepare('INSERT INTO commitment_payments (commitment_id, month, transaction_id, amount, date, reason, auto) VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(c.id, open.month, tx.id, amount, tx.date, reason?.trim() || null, auto ? 1 : 0);
+}
+
+/**
+ * Links a movement to one pending item (from Registrar or from picking an existing movement).
+ * Partial amounts need a reason (field "reason"). Throws a readable error if it can't count.
+ */
+export function linkPending(viewer: number, source: string, id: number, tx: Tx, reason: string | null) {
+  if (source === 'commitment') return linkToCommitment(getCommitment(id, viewer), tx, reason);
+  if (source !== 'loan') throw new HttpError(404, 'No encontrado');
+  const loan = own(id, viewer);
+  if (tx.type !== 'income') throw new HttpError(400, 'Tiene que ser un ingreso: la plata que te devolvieron.');
+  if (tx.status !== 'confirmed') throw new HttpError(400, 'El movimiento tiene que estar confirmado.');
+  if (tx.currency !== loan.currency) throw new HttpError(400, `Tiene que ser en ${loan.currency}, la moneda del préstamo.`);
+  if (db().prepare('SELECT 1 FROM loan_returns WHERE transaction_id = ? UNION SELECT 1 FROM commitment_payments WHERE transaction_id = ?').get(tx.id, tx.id))
+    throw new HttpError(409, 'Ese movimiento ya está vinculado.');
+  try {
+    recordLoanReturn(loan, { date: tx.date, amount: tx.amount, note: reason?.trim() || null, transaction_id: tx.id });
+  } catch (e) {
+    // The loan calls it "note"; for the form it's the same reason field.
+    if (e instanceof HttpError && e.field === 'note') throw new HttpError(e.status, e.message, 'reason');
+    throw e;
+  }
 }
 
 /**
@@ -218,6 +272,17 @@ export function autoLink(txId: number) {
         const amount = contribution(c, tx);
         if (amount === null || (amount !== item.remaining && amount !== c.amount)) continue;
         linkToCommitment(c, tx, amount < item.remaining ? 'Pago del monto mensual (lo anterior queda pendiente)' : null, true);
+        logAction({
+          userId: tx.created_by,
+          section: 'Pendientes',
+          action: 'vincular',
+          summary: `Vinculó automáticamente ${formatMoney(amount, c.currency)} a «${c.title}» (monto exacto)`,
+          entity: 'commitment',
+          entityId: c.id,
+          details: { transaction_id: tx.id, amount, remaining_before: item.remaining },
+          // Pendientes are each person's own: so is their log.
+          privateTo: item.owner_id,
+        });
         return;
       }
       // Money that came back from a loan: an income in the lender's account.
@@ -226,6 +291,16 @@ export function autoLink(txId: number) {
       const installment = presentLoan(loan, db().prepare('SELECT * FROM loan_returns WHERE loan_id = ?').all(loan.id) as ReturnRow[]).next_installment;
       if (tx.amount !== item.remaining && tx.amount !== installment?.remaining) continue;
       recordLoanReturn(loan, { date: tx.date, amount: tx.amount, note: tx.amount < item.remaining ? 'Cuota cobrada (lo anterior queda pendiente)' : null, transaction_id: tx.id });
+      logAction({
+        userId: tx.created_by,
+        section: 'Pendientes',
+        action: 'vincular',
+        summary: `Vinculó automáticamente el cobro de ${formatMoney(tx.amount, loan.currency)} de ${loan.person} a «${item.title}» (monto exacto)`,
+        entity: 'loan',
+        entityId: loan.id,
+        details: { transaction_id: tx.id, amount: tx.amount, remaining_before: item.remaining },
+        privateTo: item.owner_id,
+      });
       return;
     }
   } catch (e) {

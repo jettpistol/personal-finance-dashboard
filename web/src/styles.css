@@ -1268,7 +1268,7 @@ a {
   opacity: 0.6;
 }
 
-/* Pagos pendientes: boxed cards; late ones carry a red rule on the left. */
+/* Pendientes: boxed cards; late ones carry a red rule on the left. */
 .pfd-pending[data-status='overdue'] {
   border-left: 4px solid var(--pfd-down);
 }
@@ -1361,6 +1361,11 @@ a {
 
 /* Every dropdown list (Select, Autocomplete, GroupedSelect…) can be stretched from its bottom-right
    corner; the drag itself is handled in lib/dropdown-resize.ts. */
+.m_88b62a41 {
+  /* Room for the corner, so it never sits on the last option's tick. */
+  padding-bottom: 12px;
+}
+
 .m_88b62a41::after {
   content: '';
   position: absolute;
@@ -1414,4 +1419,317 @@ a {
 .pfd-mp-sources {
   border-top: 1px solid var(--pfd-rule);
   padding-top: 8px;
+}
+
+/* GroupedSelect options: the selected tick sits at the end, like every other dropdown. */
+.pfd-gs-label {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Nuevo movimiento opened from Pendientes: what it pays. */
+.pfd-tx-pending {
+  padding: 8px 12px;
+  border-left: 3px solid var(--mantine-color-navy-6);
+  background: var(--pfd-strip);
+}
+
+/* Pendientes cards: the title leads (set on the Title); tags and the due line step back. */
+.pfd-pending-meta .pfd-tag {
+  font-size: 0.625rem;
+  opacity: 0.8;
+}
+
+/* Registrar: the two ways in, as large choices. */
+.pfd-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--pfd-rule-strong);
+  background: var(--pfd-strip);
+}
+
+.pfd-choice:hover {
+  border-color: var(--mantine-color-navy-6);
+}
+
+/* Completados: done items, in green. */
+.pfd-done-list {
+  margin-top: var(--mantine-spacing-lg);
+  border: 1px solid color-mix(in srgb, var(--mantine-color-teal-6) 45%, transparent);
+  border-left: 4px solid var(--mantine-color-teal-6);
+}
+
+.pfd-done-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  color: var(--mantine-color-teal-8);
+  background: color-mix(in srgb, var(--mantine-color-teal-6) 10%, transparent);
+}
+
+[data-mantine-color-scheme='dark'] .pfd-done-head {
+  color: var(--mantine-color-teal-3);
+}
+
+.pfd-done-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--pfd-rule);
+}
+
+.pfd-done-check {
+  flex: none;
+  color: var(--mantine-color-teal-6);
+}
+
+/* Actividad */
+.pfd-act-day {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pfd-ink-2);
+  background: var(--pfd-strip);
+  border-bottom: 1px solid var(--pfd-rule);
+}
+
+.pfd-act-day:not(:first-child) {
+  border-top: 1px solid var(--pfd-rule);
+}
+
+.pfd-act-entry + .pfd-act-entry {
+  border-top: 1px solid var(--pfd-rule);
+}
+
+.pfd-act-row {
+  display: grid;
+  grid-template-columns: 44px 120px minmax(0, 1fr) auto;
+  grid-template-areas: 'time who text meta';
+  align-items: baseline;
+  column-gap: 12px;
+  width: 100%;
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  color: var(--pfd-ink);
+}
+
+.pfd-act-row:hover,
+.pfd-act-entry[data-open] .pfd-act-row {
+  background: var(--pfd-strip);
+}
+
+.pfd-act-time {
+  grid-area: time;
+  color: var(--pfd-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.pfd-act-who {
+  grid-area: who;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.pfd-act-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.pfd-act-text {
+  grid-area: text;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pfd-act-entry[data-open] .pfd-act-text {
+  white-space: normal;
+}
+
+.pfd-act-meta {
+  grid-area: meta;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  color: var(--pfd-ink-2);
+}
+
+.pfd-act-section {
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 1px solid var(--pfd-rule);
+  background: var(--pfd-panel);
+  white-space: nowrap;
+}
+
+.pfd-act-detail {
+  padding: 4px 14px 12px 70px;
+  font-size: 0.8125rem;
+  background: var(--pfd-strip);
+}
+
+.pfd-act-changes {
+  max-width: 640px;
+  margin-bottom: 8px;
+  background: var(--pfd-panel);
+  border: 1px solid var(--pfd-rule);
+}
+
+.pfd-act-items {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+
+.pfd-act-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
+}
+
+.pfd-act-facts div {
+  display: flex;
+  gap: 6px;
+}
+
+.pfd-act-facts dt {
+  color: var(--pfd-ink-2);
+}
+
+.pfd-act-facts dd {
+  margin: 0;
+}
+
+.pfd-act-zone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--pfd-ink-2);
+}
+
+.pfd-act-zone:hover {
+  color: var(--pfd-ink);
+}
+
+@media (max-width: 48em) {
+  .pfd-act-row {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'time who meta'
+      'time text text';
+    row-gap: 2px;
+    padding: 8px 12px;
+  }
+
+  .pfd-act-text {
+    white-space: normal;
+  }
+
+  .pfd-act-section {
+    display: none;
+  }
+
+  .pfd-act-detail {
+    padding: 4px 12px 12px;
+  }
+
+  .pfd-act-facts {
+    flex-direction: column;
+  }
+}
+
+/* Deudores: the plan of a loan, wrapping like any text (amounts can be long). */
+.pfd-loan-plan {
+  padding-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+/* Undo toasts */
+/* Confirmations rise from the bottom center (Mantine slides and fades them in).
+   «Deshacer» is bold text in the message; a thin line under the toast shows the time left and
+   starts over while the pointer rests on it (Mantine pauses closing on hover). */
+.pfd-toast-ok {
+  border: 1px solid var(--pfd-rule);
+}
+
+.pfd-undo-line {
+  overflow-wrap: anywhere;
+}
+
+.pfd-undo-btn {
+  margin: 0 0 0 2px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 120ms ease;
+  white-space: nowrap;
+}
+
+.pfd-undo-btn:hover {
+  text-decoration-color: currentColor;
+}
+
+.pfd-undo-btn:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.pfd-toast-undo::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--notification-color);
+  opacity: 0.55;
+  transform-origin: left center;
+  animation: pfd-undo-time 7s linear forwards;
+}
+
+.pfd-toast-undo:hover::after {
+  animation: none;
+}
+
+@keyframes pfd-undo-time {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pfd-toast-ok {
+    transition-duration: 1ms !important;
+    transform: none !important;
+  }
+
+  .pfd-toast-undo::after {
+    animation: none;
+  }
 }

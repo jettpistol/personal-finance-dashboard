@@ -662,6 +662,7 @@ function CategoriesTab() {
   const archive = async (c: Category) => {
     try {
       await api.patch(`/categories/${c.id}`, { archived: !c.archived });
+      notifyOk(`Categoría «${c.name}» ${c.archived ? 'desarchivada' : 'archivada'}`);
       refreshCats();
     } catch (e) {
       notifyError(e);
@@ -682,6 +683,7 @@ function CategoriesTab() {
       onConfirm: async () => {
         try {
           await api.del(`/categories/${c.id}`);
+          notifyOk(`Categoría «${c.name}» eliminada`);
           refreshCats();
         } catch (e) {
           notifyError(e);
@@ -771,6 +773,7 @@ function CategoryModal({ kind, cat, parent, onClose, onSaved }: { kind: 'expense
     try {
       if (cat) await api.patch(`/categories/${cat.id}`, { name, color });
       else await api.post('/categories', { name, kind, parent_id: parentId, color });
+      notifyOk(`Categoría «${name.trim()}» ${cat ? 'actualizada' : 'creada'}`);
       onSaved();
       onClose();
     } catch (e) {

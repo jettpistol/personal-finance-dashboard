@@ -12,6 +12,8 @@ import profileRoutes from './profiles.js';
 import loanRoutes from './loans.js';
 import pendingRoutes from './pending.js';
 import mercadoPagoRoutes from './mercadopago.js';
+import auditRoutes from './audit.js';
+import undoRoutes from './undo.js';
 import { appVersion } from '../lib/version.js';
 
 export async function registerRoutes(app: FastifyInstance) {
@@ -28,5 +30,7 @@ export async function registerRoutes(app: FastifyInstance) {
   await app.register(loanRoutes);
   await app.register(pendingRoutes);
   await app.register(mercadoPagoRoutes);
+  await app.register(auditRoutes);
+  await app.register(undoRoutes);
   app.get('/health', async () => ({ ok: true, version: appVersion() }));
 }

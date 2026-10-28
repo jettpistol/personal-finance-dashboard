@@ -82,7 +82,11 @@ An archived account disappears from this page (unless **Mostrar archivadas** is 
 
 ### Delete an account
 
-**···** → **Eliminar** asks "¿Eliminar «name»? Solo se puede si no tiene movimientos." It only works for an account with no movements and no recurring item pointing to it. Otherwise you get "La cuenta tiene movimientos. Editala y marcala como archivada en lugar de borrarla." Archive it instead.
+**···** → **Eliminar** asks "¿Eliminar «name»?". An account with no movements is deleted right away.
+
+If it has movements (or a recurring item), a second window asks again: "«name» tiene N movimientos. Se eliminan junto con la cuenta, igual que sus recurrentes." **Eliminar con sus movimientos** deletes the account with every movement in it, transfers to and from it included (so the other account's balance changes too), and its recurring items. Import history stays. If one of those transfers goes to your partner's private account, the deletion is refused: archive the account instead.
+
+The message at the bottom reads "Cuenta «name» eliminada con sus N movimientos" and offers **Deshacer** for a few seconds, which brings everything back as it was (see [Undo an action](barra-superior.md#undo-an-action)). To keep the history, archive the account instead of deleting it.
 
 ### Fix a balance that doesn't match the bank
 

@@ -11,7 +11,8 @@ export function MoneyInput({ currency, ...props }: NumberInputProps & { currency
       decimalSeparator=","
       thousandSeparator="."
       decimalScale={2}
-      prefix={currency === 'USD' ? 'US$ ' : '$ '}
+      // Only the money sign: the currency is always shown next to it (selector or account), never twice.
+      prefix="$ "
       hideControls
       inputMode="decimal"
       {...props}

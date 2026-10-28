@@ -168,8 +168,9 @@ export function GroupedSelect({
         aria-selected={checked}
         active={checked}
       >
+        {/* The tick goes at the end so the name never moves when it's selected. */}
+        <span className="pfd-gs-label">{it.label}</span>
         {checked && <CheckIcon className={Combobox.classes.optionsDropdownCheckIcon} />}
-        <span>{it.label}</span>
       </Combobox.Option>
     );
   };

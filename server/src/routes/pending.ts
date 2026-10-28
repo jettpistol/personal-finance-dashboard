@@ -4,11 +4,10 @@ import { db } from '../db/index.js';
 import { HttpError } from '../lib/http.js';
 import { addDays, today } from '../lib/dates.js';
 import { accountVisible, fetchTxs, getTx, loadAccounts, presentTx, txVisibility } from '../lib/domain.js';
-import { getCommitment, linkToCommitment, pendingItems } from '../lib/commitments.js';
-import { own, recordLoanReturn } from '../lib/loans.js';
+import { completedItems, getCommitment, linkPending, pendingItems, sideOf } from '../lib/commitments.js';
 import { idParam, parse } from './util.js';
 
-// Pagos pendientes: what each person still has to do (or collect) this month. Each user only sees
+// Pendientes: what each person still has to pay (Pagos) or collect (Cobros). Each user only sees
 // what they're responsible for.
 
 const commitmentSchema = z
@@ -34,11 +33,14 @@ const linkSchema = z.object({ transaction_id: z.number().int(), reason: z.string
 export default async function pendingRoutes(app: FastifyInstance) {
   app.get('/pending', async (req) => pendingItems(req.userId));
 
-  // For the sidebar counter: what's late or due today.
+  // Counters: what's late or due today, for Pagos and Cobros (the sidebar shows the sum).
   app.get('/pending/summary', async (req) => {
     const items = pendingItems(req.userId).filter((i) => i.remaining > 0 && i.due <= today());
-    return { due: items.length, overdue: items.filter((i) => i.status === 'overdue').length };
+    const pay = items.filter((i) => sideOf(i.kind) === 'pay').length;
+    return { due: items.length, overdue: items.filter((i) => i.status === 'overdue').length, pay, collect: items.length - pay };
   });
+
+  app.get('/pending/completed', async (req) => completedItems(req.userId));
 
   const checkAccount = (c: z.infer<typeof commitmentSchema>, viewer: number) => {
     if (!c.account_id) return;
@@ -103,12 +105,7 @@ export default async function pendingRoutes(app: FastifyInstance) {
     const { transaction_id, reason } = parse(linkSchema, req.body);
     const tx = getTx(transaction_id);
     if (!tx || txVisibility(tx, req.userId, loadAccounts()) !== 'full') throw new HttpError(404, 'Movimiento no encontrado');
-    if (source === 'commitment') linkToCommitment(getCommitment(id, req.userId), tx, reason ?? null);
-    else if (source === 'loan') {
-      if (tx.type !== 'income') throw new HttpError(400, 'Tiene que ser un ingreso: la plata que te devolvieron.');
-      if (db().prepare('SELECT 1 FROM loan_returns WHERE transaction_id = ?').get(tx.id)) throw new HttpError(409, 'Ese movimiento ya está vinculado.');
-      recordLoanReturn(own(id, req.userId), { date: tx.date, amount: tx.amount, note: reason ?? null, transaction_id: tx.id });
-    } else throw new HttpError(404, 'No encontrado');
+    linkPending(req.userId, source, id, tx, reason ?? null);
     return { ok: true };
   });
 

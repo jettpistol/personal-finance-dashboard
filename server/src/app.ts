@@ -11,6 +11,8 @@ import { validationMessage } from './lib/validation-message.js';
 import { registerRoutes } from './routes/index.js';
 import { PROFILE_COOKIE, profileDb, profilesEnabled, resolveProfile } from './lib/profiles.js';
 import { withDb } from './db/index.js';
+import { installAuditHooks } from './lib/audit-routes.js';
+import { installUndoHooks } from './lib/undo.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -54,6 +56,10 @@ export async function buildApp(opts: { logger?: boolean; serveWeb?: boolean } = 
     }
     req.userId = uid;
   });
+  // Actividad: every successful change through the API is logged (lib/audit-routes.ts).
+  installAuditHooks(app);
+  // Deshacer: journals each change and hands out an undo token (after Actividad: lib/undo.ts).
+  installUndoHooks(app);
 
   app.addHook('onSend', async (_req, reply, payload) => {
     reply.header('x-content-type-options', 'nosniff');

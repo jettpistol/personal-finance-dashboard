@@ -23,6 +23,7 @@ import { App } from './App';
 import { theme } from './theme';
 import './lib/format';
 import { installDropdownResize } from './lib/dropdown-resize';
+import { setUndoQueryClient } from './lib/queries';
 
 installDropdownResize();
 
@@ -39,6 +40,8 @@ document.addEventListener(
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 15_000 } },
 });
+// Deshacer refreshes every screen once it's done (lib/queries.ts).
+setUndoQueryClient(queryClient);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -46,7 +49,7 @@ createRoot(document.getElementById('root')!).render(
       <MantineProvider theme={theme} defaultColorScheme="light">
         <DatesProvider settings={{ locale: 'es', firstDayOfWeek: 1 }}>
           <ModalsProvider labels={{ confirm: 'Confirmar', cancel: 'Cancelar' }}>
-            <Notifications position="top-right" />
+            <Notifications position="top-right" transitionDuration={320} />
             <BrowserRouter>
               <App />
             </BrowserRouter>

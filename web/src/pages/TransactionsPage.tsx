@@ -65,7 +65,8 @@ export function TransactionsPage() {
   const bulk = async (action: 'delete' | 'categorize', category_id?: number | null) => {
     try {
       const r = await api.post<{ changed: number }>('/transactions/bulk', { ids: [...selected], action, category_id });
-      notifyOk(`${r.changed} movimientos actualizados`);
+      const n = r.changed === 1 ? '1 movimiento' : `${r.changed} movimientos`;
+      notifyOk(action === 'delete' ? `${n} ${r.changed === 1 ? 'eliminado' : 'eliminados'}` : `Categoría asignada a ${n}`);
       setSelected(new Set());
       refresh();
     } catch (e) {
@@ -98,7 +99,7 @@ export function TransactionsPage() {
   const askDelete = () =>
     modals.openConfirmModal({
       title: `Eliminar ${selected.size} movimientos`,
-      children: <Text size="sm">Esta acción no se puede deshacer.</Text>,
+      children: <Text size="sm">¿Eliminar los movimientos seleccionados?</Text>,
       labels: { confirm: 'Eliminar', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
       onConfirm: () => bulk('delete'),

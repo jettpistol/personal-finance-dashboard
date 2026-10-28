@@ -40,7 +40,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '../components/Layout';
 import { AccountSelect, MoneyInput } from '../components/inputs';
-import { api } from '../lib/api';
+import { api, takeUndoTokens } from '../lib/api';
 import { useApp } from '../lib/app-state';
 import { MANTINE_COLORS, date, fromCents, money, toCents, today } from '../lib/format';
 import { compressImage } from '../lib/image';
@@ -160,10 +160,12 @@ function GoalModal({ goal, onClose }: { goal: Objective | null; onClose: () => v
       if (file && id) {
         const blob = await compressImage(file, 1200, 0.8);
         await api.upload(`/goals/${id}/image`, blob, 'file', blob.type === 'image/jpeg' ? 'objetivo.jpg' : file.name);
+        // A new picture can't be undone (an upload), so neither is the rest of this save.
+        takeUndoTokens();
       } else if (dropImage && goal?.image_version) {
         await api.del(`/goals/${goal.id}/image`);
       }
-      notifyOk(goal ? 'Objetivo actualizado' : 'Objetivo creado');
+      notifyOk(goal ? `Objetivo «${form.name.trim() || goal.name}» actualizado` : `Objetivo «${form.name.trim()}» creado`);
       refresh();
       onClose();
     } catch (e) {
@@ -308,7 +310,7 @@ function ContributionsModal({ goal, onClose }: { goal: Objective; onClose: () =>
       await api.post(`/goals/${goal.id}/contributions`, { date: day, amount: toCents(amount), note: note || null });
       setAmount('');
       setNote('');
-      notifyOk('Aporte registrado');
+      notifyOk(`Aporte de ${money(toCents(amount), goal.currency)} registrado en «${goal.name}»`);
       refresh();
     } catch (e) {
       notifyError(e);
@@ -320,6 +322,7 @@ function ContributionsModal({ goal, onClose }: { goal: Objective; onClose: () =>
   const remove = async (id: number) => {
     try {
       await api.del(`/goals/${goal.id}/contributions/${id}`);
+      notifyOk('Aporte eliminado');
       refresh();
     } catch (e) {
       notifyError(e);
@@ -431,6 +434,7 @@ function GoalCard({ g, onEdit, onContrib }: { g: Objective; onEdit: () => void; 
       onConfirm: async () => {
         try {
           await api.del(`/goals/${g.id}`);
+          notifyOk(`Objetivo «${g.name}» eliminado`);
           refresh();
         } catch (e) {
           notifyError(e);

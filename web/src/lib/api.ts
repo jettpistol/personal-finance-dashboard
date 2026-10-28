@@ -8,6 +8,19 @@ export class ApiError extends Error {
   }
 }
 
+// Deshacer: a change the server can undo answers with `x-undo-token`. The tokens wait here until
+// the confirmation toast picks them up (notifyOk in queries.ts).
+type UndoToken = { token: string; at: number };
+const undoQueue: UndoToken[] = [];
+
+/** Takes the undo tokens of the last `withinMs` milliseconds off the queue, newest first. */
+export function takeUndoTokens(withinMs = 4000): string[] {
+  const since = Date.now() - withinMs;
+  const taken = undoQueue.filter((t) => t.at >= since).map((t) => t.token);
+  undoQueue.length = 0;
+  return taken.reverse();
+}
+
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   const init: RequestInit = { method, credentials: 'same-origin', headers: {} };
   if (body instanceof FormData) {
@@ -17,6 +30,12 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
     (init.headers as Record<string, string>)['content-type'] = 'application/json';
   }
   const res = await fetch(`/api${url}`, init);
+  const undoToken = res.headers.get('x-undo-token');
+  if (res.ok && undoToken) {
+    // Old ones no toast took (an action without a confirmation) can't be offered any more.
+    while (undoQueue.length && undoQueue[0].at < Date.now() - 10_000) undoQueue.shift();
+    undoQueue.push({ token: undoToken, at: Date.now() });
+  }
   const isJson = res.headers.get('content-type')?.includes('application/json');
   const data = isJson ? await res.json() : undefined;
   if (!res.ok) {

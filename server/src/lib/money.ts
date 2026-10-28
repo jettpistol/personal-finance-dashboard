@@ -45,5 +45,5 @@ function hideCents(currency: Currency): boolean {
 export function formatMoney(cents: number, currency: Currency): string {
   const digits = hideCents(currency) ? 0 : 2;
   const n = new Intl.NumberFormat('es-AR', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(cents / 100);
-  return currency === 'USD' ? `US$ ${n}` : `$ ${n}`;
+  return currency === 'USD' ? `USD ${n}` : `$ ${n}`;
 }

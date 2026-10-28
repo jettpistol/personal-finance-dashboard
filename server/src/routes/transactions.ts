@@ -18,10 +18,11 @@ import {
 } from '../lib/transactions.js';
 import { checkBudgetAlerts } from '../lib/budgets.js';
 import { processMovementsCsv } from '../lib/csv-movements.js';
-import { autoLink } from '../lib/commitments.js';
+import { autoLink, linkPending } from '../lib/commitments.js';
 import { applyRules, loadRules } from '../lib/rules.js';
 import { today } from '../lib/dates.js';
 import { bool, idParam, parse } from './util.js';
+import { removeStoredFile, undoable } from '../lib/undo.js';
 
 const listQuery = z.object({
   from: z.string().optional(),
@@ -114,9 +115,18 @@ export default async function transactionRoutes(app: FastifyInstance) {
     return last ? { category_id: last.category_id, merchant: last.merchant ?? undefined } : {};
   });
 
+  // `pending`: created from Pendientes → Registrar. The movement is linked to that item in the
+  // same step; if it can't count (or is partial without a reason) nothing is saved.
+  const pendingLink = z.object({ source: z.enum(['commitment', 'loan']), id: z.number().int(), reason: z.string().trim().max(300).nullish() }).nullish();
+
   app.post('/transactions', async (req) => {
     const input = parse(txInputSchema, req.body);
-    const tx = createTx(input, req.userId);
+    const link = parse(pendingLink, (req.body as { pending?: unknown } | null)?.pending);
+    const tx = db().transaction(() => {
+      const created = createTx(input, req.userId);
+      if (link) linkPending(req.userId, link.source, link.id, created, link.reason ?? null);
+      return created;
+    })();
     afterWrite(tx);
     return presentTx(tx, req.userId, loadAccounts());
   });
@@ -127,7 +137,8 @@ export default async function transactionRoutes(app: FastifyInstance) {
     if (!file) throw new HttpError(400, 'Falta el archivo');
     const commit = bool((req.query as { commit?: string }).commit);
     try {
-      return await processMovementsCsv(await file.toBuffer(), file.filename, req.userId, commit);
+      // The upload is read first, so the route isn't wrapped: the commit journals itself (Deshacer).
+      return await processMovementsCsv(await file.toBuffer(), file.filename, req.userId, commit, (save) => undoable(req, save));
     } catch (e) {
       if (e instanceof HttpError) throw e;
       throw new HttpError(400, `No se pudo leer el archivo: ${(e as Error).message}`);
@@ -191,7 +202,8 @@ export default async function transactionRoutes(app: FastifyInstance) {
     } else {
       db().prepare('DELETE FROM transactions WHERE id = ?').run(id);
     }
-    if (tx.receipt_file) fs.rm(path.join(config.receiptsDir, tx.receipt_file), { force: true }, () => {});
+    // To the trash while the action can be undone (lib/undo.ts).
+    if (tx.receipt_file) removeStoredFile(path.join(config.receiptsDir, path.basename(tx.receipt_file)));
     return { ok: true };
   });
 
@@ -284,7 +296,7 @@ export default async function transactionRoutes(app: FastifyInstance) {
   app.delete('/transactions/:id/receipt', async (req) => {
     const id = idParam(req.params);
     const tx = editable(id, req.userId);
-    if (tx.receipt_file) fs.rm(path.join(config.receiptsDir, tx.receipt_file), { force: true }, () => {});
+    if (tx.receipt_file) removeStoredFile(path.join(config.receiptsDir, path.basename(tx.receipt_file)));
     db().prepare('UPDATE transactions SET receipt_file = NULL WHERE id = ?').run(id);
     return { ok: true };
   });

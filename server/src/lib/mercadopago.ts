@@ -1,5 +1,5 @@
 import { config } from '../config.js';
-import { coreDb } from '../db/index.js';
+import { coreDb, db } from '../db/index.js';
 import { HttpError } from './http.js';
 import { decryptSecret, encryptSecret } from './secrets.js';
 
@@ -124,30 +124,61 @@ export async function checkSources(token: string, mpUserId: number): Promise<MpC
 
 // ---- Reports (the full history, in and out) ----
 
-// The columns Mercado Pago documents for both reports. Amounts use a dot as decimal separator once
-// the column separator is a comma; parse them explicitly when importing.
-const REPORT_COLUMNS = [
-  'DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE', 'RECORD_TYPE', 'DESCRIPTION', 'NET_CREDIT_AMOUNT', 'NET_DEBIT_AMOUNT', 'GROSS_AMOUNT',
-  'SELLER_AMOUNT', 'MP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'COUPON_AMOUNT', 'INSTALLMENTS',
-  'PAYMENT_METHOD', 'TAX_DETAIL', 'TAX_AMOUNT_TELCO', 'TRANSACTION_APPROVAL_DATE', 'POS_ID', 'POS_NAME', 'EXTERNAL_POS_ID', 'STORE_ID',
-  'STORE_NAME', 'EXTERNAL_STORE_ID', 'TAXES_DISAGGREGATED', 'METADATA', 'REFUND_ID',
-];
+// Report settings, exactly as Mercado Pago's "Generate report via API" pages show them (both
+// summarised in docs/mercadopago/03-reports-reference.md). The two reports don't share fields or
+// column names. setupReports() tries each column list in order and keeps the first one accepted:
+// a richer list, then the header of the sample report in the docs, then the docs' minimal example.
+// Columns can be widened later with PUT.
+const COLUMN_TIERS: Record<ReportKind, string[][]> = {
+  release_report: [
+    // The sample report's header.
+    ['DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE', 'RECORD_TYPE', 'DESCRIPTION', 'NET_CREDIT_AMOUNT', 'NET_DEBIT_AMOUNT', 'GROSS_AMOUNT', 'MP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'COUPON_AMOUNT', 'INSTALLMENTS', 'PAYMENT_METHOD'],
+    ['DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE'],
+  ],
+  settlement_report: [
+    // The sample header plus glossary columns that help a household: who/where, wallet, taxes, release.
+    ['EXTERNAL_REFERENCE', 'SOURCE_ID', 'USER_ID', 'PAYMENT_METHOD_TYPE', 'PAYMENT_METHOD', 'SITE', 'TRANSACTION_TYPE', 'TRANSACTION_AMOUNT', 'TRANSACTION_CURRENCY', 'TRANSACTION_DATE', 'FEE_AMOUNT', 'SETTLEMENT_NET_AMOUNT', 'SETTLEMENT_CURRENCY', 'SETTLEMENT_DATE', 'REAL_AMOUNT', 'COUPON_AMOUNT', 'METADATA', 'MKP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'INSTALLMENTS', 'ORDER_ID', 'DESCRIPTION', 'TAX_DETAIL', 'TAXES_DISAGGREGATED', 'STORE_NAME', 'POS_NAME', 'POI_WALLET_NAME', 'POI_BANK_NAME', 'MONEY_RELEASE_DATE', 'IS_RELEASED'],
+    // The sample report's header, as is.
+    ['EXTERNAL_REFERENCE', 'SOURCE_ID', 'USER_ID', 'PAYMENT_METHOD_TYPE', 'PAYMENT_METHOD', 'SITE', 'TRANSACTION_TYPE', 'TRANSACTION_AMOUNT', 'TRANSACTION_CURRENCY', 'TRANSACTION_DATE', 'FEE_AMOUNT', 'SETTLEMENT_NET_AMOUNT', 'SETTLEMENT_CURRENCY', 'SETTLEMENT_DATE', 'REAL_AMOUNT', 'COUPON_AMOUNT', 'METADATA', 'MKP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'INSTALLMENTS', 'ORDER_ID', 'SHIPPING_ID', 'SHIPMENT_MODE', 'PACK_ID'],
+    ['TRANSACTION_DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE'],
+  ],
+};
 
-/** Settings for a new report: no emails, Argentina's time, every documented column. Scheduling stays off. */
-export function reportConfig(kind: ReportKind) {
-  return {
-    file_name_prefix: kind === 'release_report' ? 'finanzas-liberado' : 'finanzas-transacciones',
-    display_timezone: 'GMT-03',
-    report_translation: 'en',
-    separator: ',',
-    notification_email_list: [],
-    frequency: { type: 'daily', value: 1, hour: 6 },
-    ...(kind === 'release_report' ? { include_withdrawal: true } : {}),
-    columns: REPORT_COLUMNS.map((key) => ({ key })),
-  };
+/** Settings for a new report: Argentina's time, no emails. The frequency is only stored: nothing schedules it. */
+export function reportConfig(kind: ReportKind, tier = 0) {
+  const columns = COLUMN_TIERS[kind][Math.min(tier, COLUMN_TIERS[kind].length - 1)].map((key) => ({ key }));
+  const frequency = { hour: 0, type: 'monthly', value: 1 };
+  if (kind === 'settlement_report')
+    // The documented example's options, as they are.
+    return {
+      file_name_prefix: 'settlement-report-finanzas',
+      show_fee_prevision: false,
+      show_chargeback_cancel: true,
+      coupon_detailed: true,
+      include_withdraw: true,
+      shipping_detail: true,
+      refund_detailed: true,
+      display_timezone: 'GMT-03',
+      header_language: 'en',
+      frequency,
+      columns,
+    };
+  return { file_name_prefix: 'release-report-finanzas', include_withdrawal_at_end: true, execute_after_withdrawal: false, display_timezone: 'GMT-03', frequency, columns };
 }
 
-export type ReportSetup = { key: ReportKind; result: 'exists' | 'created' | 'failed'; http: number | null };
+// `tier`: which column list was accepted (0 = the richest).
+export type ReportSetup = { key: ReportKind; result: 'exists' | 'created' | 'failed'; http: number | null; tier?: number; message?: string };
+
+/** Mercado Pago's own explanation of a refusal (it never contains credentials), kept short. */
+function mpMessage(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return typeof body === 'string' && body.trim() ? body.trim().slice(0, 200) : undefined;
+  const b = body as { message?: unknown; error?: unknown; cause?: unknown };
+  const causes = Array.isArray(b.cause) ? b.cause.map((c) => (c && typeof c === 'object' ? (c as { description?: unknown }).description : c)).filter((x) => typeof x === 'string') : [];
+  const parts = [b.message, b.error, ...causes].filter((x): x is string => typeof x === 'string' && x.trim() !== '');
+  return parts.length ? [...new Set(parts)].join(' · ').slice(0, 200) : undefined;
+}
+
+const ok = (status: number) => status >= 200 && status < 300;
 
 /** Saves the settings of each report that has none yet; reports already set up are left alone. */
 export async function setupReports(token: string): Promise<ReportSetup[]> {
@@ -160,8 +191,17 @@ export async function setupReports(token: string): Promise<ReportSetup[]> {
         out.push({ key, result: 'exists', http: 200 });
         continue;
       }
-      const r = await mpWrite(token, 'POST', base, reportConfig(key));
-      out.push({ key, result: r.status >= 200 && r.status < 300 ? 'created' : 'failed', http: r.status });
+      let r: MpResponse | null = null;
+      let reason: string | undefined;
+      let tier = 0;
+      for (; tier < COLUMN_TIERS[key].length; tier++) {
+        r = await mpWrite(token, 'POST', base, reportConfig(key, tier));
+        if (ok(r.status)) break;
+        reason = mpMessage(r.body) ?? reason;
+        // A refused token or permission won't change with other columns.
+        if (r.status === 401 || r.status === 403) break;
+      }
+      out.push(r && ok(r.status) ? { key, result: 'created', http: r.status, tier } : { key, result: 'failed', http: r?.status ?? null, message: reason });
     } catch {
       out.push({ key, result: 'failed', http: null });
     }
@@ -172,6 +212,55 @@ export async function setupReports(token: string): Promise<ReportSetup[]> {
 /** Asks Mercado Pago to build a report for [begin, end] (UTC ISO). It's ready later: poll the list. */
 export async function requestReport(token: string, kind: ReportKind, begin: string, end: string): Promise<MpResponse> {
   return mpWrite(token, 'POST', `/v1/account/${kind}`, { begin_date: begin, end_date: end });
+}
+
+// ---- The Mercado Pago account in Cuentas (per data profile, one per person) ----
+
+/** "Mercado Pago Iván", "MercadoPago", "MP": names that already mean a Mercado Pago account. */
+export const MP_NAME = /mercado\s*pago|(^|[^a-z])mp([^a-z]|$)/i;
+export const MP_ACCOUNT_NAME = 'Mercado Pago';
+
+type AccountRow = { id: number; name: string; owner_id: number | null; archived: number };
+
+/** The account this person's connection fills in the active profile, and the ones it could be. */
+export function mpAccountState(userId: number) {
+  const link = db().prepare('SELECT a.id, a.name FROM mp_links l JOIN accounts a ON a.id = l.account_id WHERE l.user_id = ?').get(userId) as
+    | { id: number; name: string }
+    | undefined;
+  const candidates = (db().prepare('SELECT id, name, owner_id, archived FROM accounts WHERE owner_id = ? AND archived = 0 ORDER BY id').all(userId) as AccountRow[])
+    .filter((a) => MP_NAME.test(a.name))
+    .map(({ id, name }) => ({ id, name }));
+  return { account: link ?? null, candidates: link ? [] : candidates };
+}
+
+/**
+ * Ties the connection to an account. With no Mercado Pago account yet, `accountId` null creates
+ * one; when there are some, it must be one of them (there's no way to skip or make another).
+ */
+export function linkMpAccount(userId: number, accountId: number | null): { id: number; name: string; created: boolean } {
+  const state = mpAccountState(userId);
+  if (state.account) return { ...state.account, created: false };
+  if (accountId === null) {
+    if (state.candidates.length) throw new HttpError(400, 'Elegí cuál de tus cuentas es la de Mercado Pago.', 'account_id');
+    const id = Number(
+      db()
+        .prepare(`INSERT INTO accounts (name, type, currency, owner_id, is_private, opening_balance, sort) VALUES (?, 'wallet', 'ARS', ?, 0, 0, 0)`)
+        .run(MP_ACCOUNT_NAME, userId).lastInsertRowid,
+    );
+    db().prepare('INSERT INTO mp_links (user_id, account_id) VALUES (?, ?)').run(userId, id);
+    return { id, name: MP_ACCOUNT_NAME, created: true };
+  }
+  const chosen = state.candidates.find((c) => c.id === accountId);
+  if (!chosen) throw new HttpError(400, 'Esa cuenta no es una de tus cuentas de Mercado Pago.', 'account_id');
+  db().prepare('INSERT INTO mp_links (user_id, account_id) VALUES (?, ?)').run(userId, chosen.id);
+  return { ...chosen, created: false };
+}
+
+/** One Mercado Pago account per person: a second one is refused once the connection has its account. */
+export function assertSingleMpAccount(userId: number, name: string, exceptId?: number) {
+  if (!MP_NAME.test(name)) return;
+  const linked = mpAccountState(userId).account;
+  if (linked && linked.id !== exceptId) throw new HttpError(400, `Ya tenés una cuenta de Mercado Pago («${linked.name}»). Cada persona tiene una sola.`, 'name');
 }
 
 // ---- Storage (core database, one row per person) ----
@@ -189,6 +278,7 @@ type Row = {
 };
 
 const context = (userId: number) => `mp:${userId}`;
+export const DEFAULT_HISTORY_START = '2026-10-01';
 
 function row(userId: number): Row | undefined {
   return coreDb().prepare('SELECT * FROM mp_connections WHERE user_id = ?').get(userId) as Row | undefined;
@@ -203,7 +293,9 @@ export function connectionView(userId: number) {
     mp_user_id: r.mp_user_id,
     nickname: r.nickname,
     site_id: r.site_id,
-    history_start: r.history_start,
+    // The owner chose 1 October 2026 as where the history starts, unless a date was set.
+    history_start: r.history_start ?? DEFAULT_HISTORY_START,
+    ...mpAccountState(userId),
     connected_at: r.connected_at,
     checked_at: r.checked_at,
     checks: r.checks ? (JSON.parse(r.checks) as MpCheck[]) : null,
