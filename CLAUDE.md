@@ -57,7 +57,7 @@ Standing instructions for any agent working in this repo. They come from the own
 - **Transf. propia between currencies:** the received amount is never typed. It is calculated from the amount and the **Tipo de cambio**, which starts at today's BNA quote.
 - **Objetivos:** a goal linked to an account follows that account's balance. Only unlinked goals get **Registrar aporte**.
 - **Notifications:** bell plus email (one shared Gmail with an app password, set in **Ajustes → Notificaciones**). Telegram stays optional and is not promoted; a future mobile app may carry notifications.
-- **Mercado Pago:** each person connects their own account in **Ajustes → Mercado Pago**. The owner's guidelines are in [`docs/mercadopago/`](docs/mercadopago/); the note at the top of the agent brief says how this repo deviates from it.
+- **Mercado Pago:** each person connects their own account in **Ajustes → Mercado Pago**. The owner's guidelines are in [`docs/mercadopago/`](docs/mercadopago/); the note at the top of the agent brief says how this repo deviates from it, and `03-reports-reference.md` holds the confirmed report facts (it overrides the brief). Mercado Pago's developer sites can't be reached from cloud sessions: ask the owner to paste pages instead of guessing fields.
 - **Data profiles:** a new install opens on the empty **Vacío** profile; demo data lives in **Prueba (demo)**.
 - Changing the data profile or the account keeps you on the same page and refreshes it.
 

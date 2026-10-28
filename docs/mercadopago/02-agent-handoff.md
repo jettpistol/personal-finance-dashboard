@@ -3,6 +3,7 @@
 > **How this repo applies this brief (read first).** This brief was written for a generic hosted site. In Finanzas:
 > - Each person connects their own account in **Ajustes → Mercado Pago**. Tokens are **not** env vars: the server verifies the token with `GET /users/me`, then stores it encrypted (AES-256-GCM, key in `SECRET_KEY` or `DATA_DIR/secret.key`, never in the database) in the core table `mp_connections`. The API never returns it. Code: `server/src/lib/secrets.ts`, `server/src/lib/mercadopago.ts`, `server/src/routes/mercadopago.ts`.
 > - Reads go through `mpGet()` (GET only, path allowlist). The only writes, approved by the owner on 2026-10-28, go through `mpWrite()`: `POST`/`PUT {base}/config` and `POST {base}` (generate a report) for the two reports. `schedule` and everything else stays blocked; anything new needs the owner's approval.
+> - Report settings, columns, response codes and the balance trick are confirmed in [`03-reports-reference.md`](03-reports-reference.md), which overrides section 3.3 below.
 > - Storage is the app's SQLite and its own `transactions` table (integer cents), not the data model in section 4. Hosting is self-hosted (Docker), so the scheduler is the app's own (`lib/scheduler.ts`).
 
 

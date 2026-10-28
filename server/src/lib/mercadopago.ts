@@ -124,42 +124,50 @@ export async function checkSources(token: string, mpUserId: number): Promise<MpC
 
 // ---- Reports (the full history, in and out) ----
 
-// Report settings, modelled on Mercado Pago's own examples (POST {base}/config). The two reports
-// don't share column names: the transactions report dates rows with TRANSACTION_DATE, the
-// released-money one with DATE. If Mercado Pago refuses the full list, setupReports() retries once
-// with the short list from its examples; columns can be widened later with PUT.
-const COLUMNS: Record<ReportKind, { full: string[]; minimal: string[] }> = {
-  release_report: {
-    full: [
-      'DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE', 'RECORD_TYPE', 'DESCRIPTION', 'NET_CREDIT_AMOUNT', 'NET_DEBIT_AMOUNT', 'GROSS_AMOUNT',
-      'MP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'COUPON_AMOUNT', 'INSTALLMENTS', 'PAYMENT_METHOD',
-    ],
-    minimal: ['DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE'],
-  },
-  settlement_report: {
-    full: [
-      'TRANSACTION_DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE', 'TRANSACTION_TYPE', 'PAYMENT_METHOD_TYPE', 'PAYMENT_METHOD', 'TRANSACTION_AMOUNT',
-      'TRANSACTION_CURRENCY', 'SELLER_AMOUNT', 'FEE_AMOUNT', 'SETTLEMENT_NET_AMOUNT', 'SETTLEMENT_CURRENCY', 'SETTLEMENT_DATE', 'REAL_AMOUNT',
-      'COUPON_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'INSTALLMENTS', 'STORE_NAME', 'POS_NAME',
-    ],
-    minimal: ['TRANSACTION_DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE'],
-  },
+// Report settings, exactly as Mercado Pago's "Generate report via API" pages show them (both
+// summarised in docs/mercadopago/03-reports-reference.md). The two reports don't share fields or
+// column names. setupReports() tries each column list in order and keeps the first one accepted:
+// a richer list, then the header of the sample report in the docs, then the docs' minimal example.
+// Columns can be widened later with PUT.
+const COLUMN_TIERS: Record<ReportKind, string[][]> = {
+  release_report: [
+    // The sample report's header.
+    ['DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE', 'RECORD_TYPE', 'DESCRIPTION', 'NET_CREDIT_AMOUNT', 'NET_DEBIT_AMOUNT', 'GROSS_AMOUNT', 'MP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'COUPON_AMOUNT', 'INSTALLMENTS', 'PAYMENT_METHOD'],
+    ['DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE'],
+  ],
+  settlement_report: [
+    // The sample header plus glossary columns that help a household: who/where, wallet, taxes, release.
+    ['EXTERNAL_REFERENCE', 'SOURCE_ID', 'USER_ID', 'PAYMENT_METHOD_TYPE', 'PAYMENT_METHOD', 'SITE', 'TRANSACTION_TYPE', 'TRANSACTION_AMOUNT', 'TRANSACTION_CURRENCY', 'TRANSACTION_DATE', 'FEE_AMOUNT', 'SETTLEMENT_NET_AMOUNT', 'SETTLEMENT_CURRENCY', 'SETTLEMENT_DATE', 'REAL_AMOUNT', 'COUPON_AMOUNT', 'METADATA', 'MKP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'INSTALLMENTS', 'ORDER_ID', 'DESCRIPTION', 'TAX_DETAIL', 'TAXES_DISAGGREGATED', 'STORE_NAME', 'POS_NAME', 'POI_WALLET_NAME', 'POI_BANK_NAME', 'MONEY_RELEASE_DATE', 'IS_RELEASED'],
+    // The sample report's header, as is.
+    ['EXTERNAL_REFERENCE', 'SOURCE_ID', 'USER_ID', 'PAYMENT_METHOD_TYPE', 'PAYMENT_METHOD', 'SITE', 'TRANSACTION_TYPE', 'TRANSACTION_AMOUNT', 'TRANSACTION_CURRENCY', 'TRANSACTION_DATE', 'FEE_AMOUNT', 'SETTLEMENT_NET_AMOUNT', 'SETTLEMENT_CURRENCY', 'SETTLEMENT_DATE', 'REAL_AMOUNT', 'COUPON_AMOUNT', 'METADATA', 'MKP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'INSTALLMENTS', 'ORDER_ID', 'SHIPPING_ID', 'SHIPMENT_MODE', 'PACK_ID'],
+    ['TRANSACTION_DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE'],
+  ],
 };
 
 /** Settings for a new report: Argentina's time, no emails. The frequency is only stored: nothing schedules it. */
-export function reportConfig(kind: ReportKind, columns: 'full' | 'minimal' = 'full') {
-  return {
-    file_name_prefix: kind === 'release_report' ? 'release-report-finanzas' : 'settlement-report-finanzas',
-    columns: COLUMNS[kind][columns].map((key) => ({ key })),
-    frequency: { hour: 0, type: 'monthly', value: 1 },
-    display_timezone: 'GMT-03',
-    separator: ',',
-    notification_email_list: [],
-    ...(kind === 'release_report' ? { include_withdrawal_at_end: true, execute_after_withdrawal: false } : { include_withdrawal: true }),
-  };
+export function reportConfig(kind: ReportKind, tier = 0) {
+  const columns = COLUMN_TIERS[kind][Math.min(tier, COLUMN_TIERS[kind].length - 1)].map((key) => ({ key }));
+  const frequency = { hour: 0, type: 'monthly', value: 1 };
+  if (kind === 'settlement_report')
+    // The documented example's options, as they are.
+    return {
+      file_name_prefix: 'settlement-report-finanzas',
+      show_fee_prevision: false,
+      show_chargeback_cancel: true,
+      coupon_detailed: true,
+      include_withdraw: true,
+      shipping_detail: true,
+      refund_detailed: true,
+      display_timezone: 'GMT-03',
+      header_language: 'en',
+      frequency,
+      columns,
+    };
+  return { file_name_prefix: 'release-report-finanzas', include_withdrawal_at_end: true, execute_after_withdrawal: false, display_timezone: 'GMT-03', frequency, columns };
 }
 
-export type ReportSetup = { key: ReportKind; result: 'exists' | 'created' | 'failed'; http: number | null; columns?: 'full' | 'minimal'; message?: string };
+// `tier`: which column list was accepted (0 = the richest).
+export type ReportSetup = { key: ReportKind; result: 'exists' | 'created' | 'failed'; http: number | null; tier?: number; message?: string };
 
 /** Mercado Pago's own explanation of a refusal (it never contains credentials), kept short. */
 function mpMessage(body: unknown): string | undefined {
@@ -183,15 +191,17 @@ export async function setupReports(token: string): Promise<ReportSetup[]> {
         out.push({ key, result: 'exists', http: 200 });
         continue;
       }
-      let r = await mpWrite(token, 'POST', base, reportConfig(key, 'full'));
-      let columns: 'full' | 'minimal' = 'full';
-      if (!ok(r.status)) {
-        const first = r;
-        r = await mpWrite(token, 'POST', base, reportConfig(key, 'minimal'));
-        columns = 'minimal';
-        if (!ok(r.status)) r = { status: r.status, body: mpMessage(r.body) ? r.body : first.body };
+      let r: MpResponse | null = null;
+      let reason: string | undefined;
+      let tier = 0;
+      for (; tier < COLUMN_TIERS[key].length; tier++) {
+        r = await mpWrite(token, 'POST', base, reportConfig(key, tier));
+        if (ok(r.status)) break;
+        reason = mpMessage(r.body) ?? reason;
+        // A refused token or permission won't change with other columns.
+        if (r.status === 401 || r.status === 403) break;
       }
-      out.push(ok(r.status) ? { key, result: 'created', http: r.status, columns } : { key, result: 'failed', http: r.status, message: mpMessage(r.body) });
+      out.push(r && ok(r.status) ? { key, result: 'created', http: r.status, tier } : { key, result: 'failed', http: r?.status ?? null, message: reason });
     } catch {
       out.push({ key, result: 'failed', http: null });
     }
