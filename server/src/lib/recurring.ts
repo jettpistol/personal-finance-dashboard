@@ -48,6 +48,9 @@ export async function generateDueRecurring(asOf = today()): Promise<number> {
   const due = db().prepare('SELECT * FROM recurring WHERE active = 1 AND next_date <= ?').all(asOf) as Recurring[];
   let created = 0;
   const accounts = loadAccounts();
+  // Notices go out after every occurrence is written: nothing is awaited in between, so a request
+  // that generates them (saving a recurring item) journals all of them for Deshacer (lib/undo.ts).
+  const notices: Parameters<typeof notify>[0][] = [];
   for (const r of due) {
     let next = r.next_date;
     const newOnes: string[] = [];
@@ -94,7 +97,7 @@ export async function generateDueRecurring(asOf = today()): Promise<number> {
         details: { facts: [{ label: n > 1 ? 'Fechas' : 'Fecha', value: newOnes.map((d) => d.split('-').reverse().join('/')).join(', ') }] },
         privateTo: account?.owner_id != null && (account.is_private || r.is_private) ? account.owner_id : null,
       });
-      await notify({
+      notices.push({
         kind: 'recurring',
         users: recipients,
         title: `Para confirmar: ${r.description}`,
@@ -103,5 +106,6 @@ export async function generateDueRecurring(asOf = today()): Promise<number> {
       });
     }
   }
+  for (const n of notices) await notify(n);
   return created;
 }

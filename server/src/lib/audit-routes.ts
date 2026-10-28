@@ -10,6 +10,7 @@ import { pendingItems } from './commitments.js';
 import { activeSmtp } from './mail.js';
 import { getProfile, profileDb } from './profiles.js';
 import { RULE_CATALOG } from './rule-catalog.js';
+import { undoneAuditIds } from './undo.js';
 
 // Turns each mutating API request into an Actividad entry, without touching the routes: a
 // preHandler hook loads a "before" snapshot when an edit or delete needs one, onSend reads the
@@ -1498,6 +1499,41 @@ export const AUDIT_ROUTES: Record<string, Descriptor | Skip | Manual> = {
 
   // ---- Actividad (clearing is logged by the route itself, after the delete) ----
   'DELETE /api/audit': { manual: 'routes/audit.ts' },
+
+  // ---- Deshacer: one line per entry of the undone action, in its section and with its privacy ----
+  'POST /api/undo/:token': D('Actividad', {
+    describe: (c) => {
+      const ids = undoneAuditIds(String(c.params.token ?? ''));
+      const rows = ids.length
+        ? (coreDb().prepare(`SELECT * FROM audit_log WHERE id IN (${ids.map(() => '?').join(', ')}) ORDER BY id`).all(...ids) as {
+            section: AuditSection;
+            summary: string;
+            entity: string | null;
+            entity_id: number | null;
+            details: string | null;
+            private_to: number | null;
+          }[])
+        : [];
+      if (!rows.length) return { action: 'deshacer', summary: 'Deshizo la última acción' };
+      return rows.map((r) => {
+        let pub: string | undefined;
+        try {
+          pub = r.details ? (JSON.parse(r.details) as AuditDetails).public?.summary : undefined;
+        } catch {
+          pub = undefined;
+        }
+        return {
+          section: r.section,
+          action: 'deshacer',
+          entity: r.entity,
+          entityId: r.entity_id,
+          summary: `Deshizo: ${r.summary}`,
+          privateTo: r.private_to,
+          details: pub ? { public: { summary: `Deshizo: ${pub}` } } : null,
+        };
+      });
+    },
+  }),
 };
 
 /** Section for a mutating route with no descriptor, from its path. */
@@ -1616,7 +1652,9 @@ export function installAuditHooks(app: FastifyInstance) {
         for (const e of entries) {
           if (!e) continue;
           const { section: own, userId, ...rest } = e;
-          logAction({ ...rest, userId: userId === undefined ? ctx.userId : userId, section: own ?? section, profileId: desc?.global ? null : st.profileId });
+          const entryId = logAction({ ...rest, userId: userId === undefined ? ctx.userId : userId, section: own ?? section, profileId: desc?.global ? null : st.profileId });
+          // Deshacer (lib/undo.ts) keeps these with the undo token, for its "Deshizo: …" line.
+          if (entryId) (req.auditIds ??= []).push(entryId);
         }
       });
     } catch (e) {

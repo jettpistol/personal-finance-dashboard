@@ -9,7 +9,8 @@ import { today } from '../lib/dates.js';
 import { telegramEnabled, findChatIdByCode, sendTelegramMessage } from '../lib/telegram.js';
 import { activeSmtp, clearSmtp, describeMailError, mailEnabled, saveSmtp, sendMail, storedSmtp, verifyMail } from '../lib/mail.js';
 import { assertSingleMpAccount } from '../lib/mercadopago.js';
-import { idParam, parse } from './util.js';
+import { bool, idParam, parse } from './util.js';
+import { accountMovementCount, deleteAccountWithMovements } from '../lib/accounts.js';
 import crypto from 'node:crypto';
 
 const accountSchema = z.object({
@@ -285,16 +286,20 @@ export default async function coreRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.delete('/accounts/:id', async (req) => {
+  // With ?with_movements=1 its movements go too (Deshacer can bring everything back); without it,
+  // an account in use answers 409 with how many movements it has, so the screen can ask first.
+  app.delete('/accounts/:id', async (req, reply) => {
     const id = idParam(req.params);
     const existing = loadAccounts().get(id);
     if (!existing || !(existing.owner_id === null || existing.owner_id === req.userId)) throw new HttpError(404, 'Cuenta no encontrada');
-    const used =
-      db().prepare('SELECT 1 FROM transactions WHERE account_id = ? OR to_account_id = ? LIMIT 1').get(id, id) ||
-      db().prepare('SELECT 1 FROM recurring WHERE account_id = ? LIMIT 1').get(id);
-    if (used) throw new HttpError(409, 'La cuenta tiene movimientos. Archivala en lugar de borrarla.');
+    const movements = accountMovementCount(id);
+    const used = movements > 0 || db().prepare('SELECT 1 FROM recurring WHERE account_id = ? LIMIT 1').get(id);
+    if (used && !bool((req.query as { with_movements?: string }).with_movements)) {
+      return reply.code(409).send({ error: 'La cuenta tiene movimientos.', movements });
+    }
+    if (used) return { ok: true, movements: deleteAccountWithMovements(id, req.userId) };
     db().prepare('DELETE FROM accounts WHERE id = ?').run(id);
-    return { ok: true };
+    return { ok: true, movements: 0 };
   });
 
   // ---- Categories ----
