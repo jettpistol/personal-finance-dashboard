@@ -7,9 +7,11 @@ import { decryptSecret, encryptSecret } from './secrets.js';
 //
 // The production access token can move money (there is no read-only scope), so:
 // - it is stored only encrypted, bound to its user, and is never returned by the API or logged;
-// - every request goes through mpGet(), which only sends GET requests and only to the paths in
-//   READ_ONLY. There is deliberately no way here to create payments, refunds or anything else.
-//   Generating reports needs POST calls: add them only with the owner's approval, one path at a time.
+// - reads go through mpGet(): GET only, and only to the paths in READ_ONLY;
+// - the only writes are the report ones the owner approved (save a report's settings, ask for a
+//   report for a date range), through mpWrite() and the exact method + path pairs in WRITES.
+//   Nothing here can create payments, refunds, transfers or anything else that moves money.
+//   Adding any other write needs the owner's explicit approval first.
 
 const READ_ONLY: RegExp[] = [
   /^\/users\/me$/,
@@ -20,16 +22,27 @@ const READ_ONLY: RegExp[] = [
   /^\/v1\/account\/(release|settlement)_report\/[\w.-]+\.(csv|xlsx)$/,
 ];
 
+// Approved by the owner on 2026-10-28: report settings and report generation, nothing else.
+const WRITES: { method: 'POST' | 'PUT'; path: RegExp }[] = [
+  { method: 'POST', path: /^\/v1\/account\/(release|settlement)_report\/config$/ },
+  { method: 'PUT', path: /^\/v1\/account\/(release|settlement)_report\/config$/ },
+  { method: 'POST', path: /^\/v1\/account\/(release|settlement)_report$/ },
+];
+
 const TIMEOUT_MS = 10_000;
 
 export type MpResponse = { status: number; body: unknown };
 
-export async function mpGet(token: string, pathAndQuery: string): Promise<MpResponse> {
-  const url = new URL(pathAndQuery, config.mpApiUrl);
-  if (!READ_ONLY.some((re) => re.test(url.pathname))) throw new Error(`Mercado Pago path not allowed: ${url.pathname}`);
+async function send(token: string, method: 'GET' | 'POST' | 'PUT', url: URL, payload?: unknown): Promise<MpResponse> {
   let res: Response;
   try {
-    res = await fetch(url, { method: 'GET', headers: { authorization: `Bearer ${token}`, accept: 'application/json' }, signal: AbortSignal.timeout(TIMEOUT_MS), redirect: 'error' });
+    res = await fetch(url, {
+      method,
+      headers: { authorization: `Bearer ${token}`, accept: 'application/json', ...(payload === undefined ? {} : { 'content-type': 'application/json' }) },
+      body: payload === undefined ? undefined : JSON.stringify(payload),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      redirect: 'error',
+    });
   } catch {
     // The underlying error may carry request details; never pass it on.
     throw new HttpError(502, 'No se pudo contactar a Mercado Pago. Probá de nuevo en unos minutos.');
@@ -42,6 +55,19 @@ export async function mpGet(token: string, pathAndQuery: string): Promise<MpResp
     /* CSV report or plain text */
   }
   return { status: res.status, body };
+}
+
+export async function mpGet(token: string, pathAndQuery: string): Promise<MpResponse> {
+  const url = new URL(pathAndQuery, config.mpApiUrl);
+  if (!READ_ONLY.some((re) => re.test(url.pathname))) throw new Error(`Mercado Pago path not allowed: ${url.pathname}`);
+  return send(token, 'GET', url);
+}
+
+/** One of the approved report writes (see WRITES); anything else throws before a request is made. */
+export async function mpWrite(token: string, method: 'POST' | 'PUT', path: string, payload: unknown): Promise<MpResponse> {
+  const url = new URL(path, config.mpApiUrl);
+  if (url.search || !WRITES.some((w) => w.method === method && w.path.test(url.pathname))) throw new Error(`Mercado Pago write not allowed: ${method} ${url.pathname}`);
+  return send(token, method, url, payload);
 }
 
 /** Quick shape check before calling Mercado Pago with it. */
@@ -61,7 +87,15 @@ export async function verifyToken(token: string): Promise<MpIdentity> {
   return { id: b.id, nickname: typeof b.nickname === 'string' ? b.nickname : null, site_id: typeof b.site_id === 'string' ? b.site_id : null };
 }
 
-export type MpCheck = { key: 'identity' | 'payments' | 'balance' | 'release_report' | 'settlement_report'; status: 'ok' | 'unavailable' | 'error'; http: number | null };
+export type MpCheck = {
+  key: 'identity' | 'payments' | 'balance' | 'release_report' | 'settlement_report';
+  // 'unconfigured': a report Mercado Pago knows nothing about yet (404 on its settings).
+  status: 'ok' | 'unconfigured' | 'unavailable' | 'error';
+  http: number | null;
+};
+
+const REPORTS = ['release_report', 'settlement_report'] as const;
+type ReportKind = (typeof REPORTS)[number];
 
 /**
  * Which data sources this account can read (the brief's verification step). Read-only requests,
@@ -79,12 +113,65 @@ export async function checkSources(token: string, mpUserId: number): Promise<MpC
   for (const [key, path] of probes) {
     try {
       const { status } = await mpGet(token, path);
-      out.push({ key, status: status === 200 ? 'ok' : [401, 403, 404].includes(status) ? 'unavailable' : 'error', http: status });
+      const unconfigured = status === 404 && (REPORTS as readonly string[]).includes(key);
+      out.push({ key, status: status === 200 ? 'ok' : unconfigured ? 'unconfigured' : [401, 403, 404].includes(status) ? 'unavailable' : 'error', http: status });
     } catch {
       out.push({ key, status: 'error', http: null });
     }
   }
   return out;
+}
+
+// ---- Reports (the full history, in and out) ----
+
+// The columns Mercado Pago documents for both reports. Amounts use a dot as decimal separator once
+// the column separator is a comma; parse them explicitly when importing.
+const REPORT_COLUMNS = [
+  'DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE', 'RECORD_TYPE', 'DESCRIPTION', 'NET_CREDIT_AMOUNT', 'NET_DEBIT_AMOUNT', 'GROSS_AMOUNT',
+  'SELLER_AMOUNT', 'MP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'COUPON_AMOUNT', 'INSTALLMENTS',
+  'PAYMENT_METHOD', 'TAX_DETAIL', 'TAX_AMOUNT_TELCO', 'TRANSACTION_APPROVAL_DATE', 'POS_ID', 'POS_NAME', 'EXTERNAL_POS_ID', 'STORE_ID',
+  'STORE_NAME', 'EXTERNAL_STORE_ID', 'TAXES_DISAGGREGATED', 'METADATA', 'REFUND_ID',
+];
+
+/** Settings for a new report: no emails, Argentina's time, every documented column. Scheduling stays off. */
+export function reportConfig(kind: ReportKind) {
+  return {
+    file_name_prefix: kind === 'release_report' ? 'finanzas-liberado' : 'finanzas-transacciones',
+    display_timezone: 'GMT-03',
+    report_translation: 'en',
+    separator: ',',
+    notification_email_list: [],
+    frequency: { type: 'daily', value: 1, hour: 6 },
+    ...(kind === 'release_report' ? { include_withdrawal: true } : {}),
+    columns: REPORT_COLUMNS.map((key) => ({ key })),
+  };
+}
+
+export type ReportSetup = { key: ReportKind; result: 'exists' | 'created' | 'failed'; http: number | null };
+
+/** Saves the settings of each report that has none yet; reports already set up are left alone. */
+export async function setupReports(token: string): Promise<ReportSetup[]> {
+  const out: ReportSetup[] = [];
+  for (const key of REPORTS) {
+    const base = `/v1/account/${key}/config`;
+    try {
+      const current = await mpGet(token, base);
+      if (current.status === 200) {
+        out.push({ key, result: 'exists', http: 200 });
+        continue;
+      }
+      const r = await mpWrite(token, 'POST', base, reportConfig(key));
+      out.push({ key, result: r.status >= 200 && r.status < 300 ? 'created' : 'failed', http: r.status });
+    } catch {
+      out.push({ key, result: 'failed', http: null });
+    }
+  }
+  return out;
+}
+
+/** Asks Mercado Pago to build a report for [begin, end] (UTC ISO). It's ready later: poll the list. */
+export async function requestReport(token: string, kind: ReportKind, begin: string, end: string): Promise<MpResponse> {
+  return mpWrite(token, 'POST', `/v1/account/${kind}`, { begin_date: begin, end_date: end });
 }
 
 // ---- Storage (core database, one row per person) ----

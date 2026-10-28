@@ -9,6 +9,7 @@ import {
   saveChecks,
   saveConnection,
   setHistoryStart,
+  setupReports,
   storedToken,
   verifyToken,
 } from '../lib/mercadopago.js';
@@ -47,15 +48,29 @@ export default async function mercadoPagoRoutes(app: FastifyInstance) {
     return connectionView(req.userId);
   });
 
-  app.post('/me/mercadopago/check', async (req) => {
-    const stored = storedToken(req.userId);
+  // Both talk to Mercado Pago several times in a row, so each person can run one every 30 s.
+  const takeTurn = (userId: number) => {
+    const stored = storedToken(userId);
     if (!stored) throw new HttpError(400, 'Conectá tu cuenta de Mercado Pago de nuevo.');
-    const last = lastCheck.get(req.userId) ?? 0;
-    if (Date.now() - last < CHECK_EVERY_MS) throw new HttpError(429, 'Esperá unos segundos antes de volver a probar.');
-    lastCheck.set(req.userId, Date.now());
+    if (Date.now() - (lastCheck.get(userId) ?? 0) < CHECK_EVERY_MS) throw new HttpError(429, 'Esperá unos segundos antes de volver a probar.');
+    lastCheck.set(userId, Date.now());
+    return stored;
+  };
+
+  app.post('/me/mercadopago/check', async (req) => {
+    const stored = takeTurn(req.userId);
     const who = await verifyToken(stored.token);
     saveChecks(req.userId, await checkSources(stored.token, stored.mpUserId ?? who.id));
     return connectionView(req.userId);
+  });
+
+  // Saves the settings of the reports that have none (approved write), then checks again.
+  app.post('/me/mercadopago/reports', async (req) => {
+    const stored = takeTurn(req.userId);
+    const who = await verifyToken(stored.token);
+    const setup = await setupReports(stored.token);
+    saveChecks(req.userId, await checkSources(stored.token, stored.mpUserId ?? who.id));
+    return { ...connectionView(req.userId), setup };
   });
 
   app.delete('/me/mercadopago', async (req) => {

@@ -16,7 +16,7 @@ How Finanzas keeps it:
 - It's checked with Mercado Pago, then stored **encrypted**. The key that opens it is not in the database, so a copy of the database or a backup alone is useless.
 - It's **never shown again**, not even to you: the screen only shows the account name and ID.
 - It's yours only. Your partner can't see it, use it or even tell whether you connected one.
-- The app only **reads** from Mercado Pago. It's built so it can't create payments, refunds or anything else that moves money.
+- The app only **reads** from Mercado Pago, with one exception you approved: it can save the settings of the two history reports and ask for a report. It's built so it can't create payments, refunds, transfers or anything else that moves money.
 
 ## Get the token (about 15 minutes, on a computer)
 
@@ -55,7 +55,8 @@ Common messages:
   - **Datos de la cuenta**: who you are.
   - **Pagos recibidos**: money that came in, almost in real time.
   - **Saldo**: the live balance. Mercado Pago often blocks it for personal accounts; that's normal.
-  - **Reporte de dinero liberado** and **Reporte de todas las transacciones**: the full history, in and out. **No disponible** can also mean "not set up yet".
+  - **Reporte de dinero liberado** and **Reporte de todas las transacciones**: the full history, in and out. **Sin configurar** means Mercado Pago has no settings for that report yet: click **Configurar reportes** (below).
+- **Configurar reportes** (only while a report shows **Sin configurar**): saves the report's settings in Mercado Pago (every column, Argentina's time, no emails, no automatic schedule) and checks again. Reports already set up are left as they are. If Mercado Pago refuses, the message says which report and its code; then try generating one by hand on the website (**Tu negocio → Reportes**) and click **Probar conexión** again.
 - **⋯ → Reemplazar token**: after renewing it in Mercado Pago.
 - **⋯ → Desconectar**: deletes the token from Finanzas. To cancel it in Mercado Pago too, renew it there.
 - **Volvé a conectar** (yellow): the server can no longer open the saved token (its key changed). Paste the token again.

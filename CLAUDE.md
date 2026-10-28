@@ -91,7 +91,7 @@ npm run demo:reset       # rebuilds and reloads demo data on http://localhost:30
 - Store them only through `encryptSecret` / `decryptSecret` (`lib/secrets.ts`): AES-256-GCM, bound to the user, key in `SECRET_KEY` or `DATA_DIR/secret.key`, never in a database.
 - Never return them from the API, not even partly; never log them; validate them by hand (not with a schema that could echo the input). The browser keeps a typed token only in component state until it's saved.
 - Each person's connection is theirs only: routes act on `req.userId`, never on another user.
-- Mercado Pago calls go through `mpGet()` (GET only, path allowlist). Never add payment, refund or other money-moving endpoints. Report generation (POST/PUT) needs the owner's explicit approval, one path at a time.
+- Mercado Pago reads go through `mpGet()` (GET only, path allowlist). The only writes the owner approved (2026-10-28) go through `mpWrite()`: save a report's settings (`POST`/`PUT /v1/account/{release,settlement}_report/config`) and ask for a report (`POST /v1/account/{release,settlement}_report`). Never add payment, refund, transfer or other money-moving endpoints; any other write (even report scheduling) needs the owner's explicit approval first.
 - Tests use a local fake (`MP_API_URL`); never call the real API with a real token from code or tests.
 
 ## Never

@@ -10,7 +10,8 @@ import { api } from '../lib/api';
 import { date, today } from '../lib/format';
 import { errorFields, notifyError, notifyOk } from '../lib/queries';
 
-type Check = { key: 'identity' | 'payments' | 'balance' | 'release_report' | 'settlement_report'; status: 'ok' | 'unavailable' | 'error'; http: number | null };
+type Check = { key: 'identity' | 'payments' | 'balance' | 'release_report' | 'settlement_report'; status: 'ok' | 'unconfigured' | 'unavailable' | 'error'; http: number | null };
+type Setup = { key: 'release_report' | 'settlement_report'; result: 'exists' | 'created' | 'failed'; http: number | null };
 type Connection =
   | { connected: false }
   | {
@@ -34,6 +35,7 @@ const SOURCES: Record<Check['key'], string> = {
 };
 const STATUS: Record<Check['status'], { label: string; tone?: string }> = {
   ok: { label: 'Disponible' },
+  unconfigured: { label: 'Sin configurar', tone: 'gray' },
   unavailable: { label: 'No disponible', tone: 'gray' },
   error: { label: 'Error', tone: 'ocre' },
 };
@@ -157,6 +159,25 @@ export function MercadoPagoSettings() {
 
   const checks = c.checks ?? [];
   const available = checks.filter((x) => x.status === 'ok').length;
+  const unconfigured = checks.some((x) => x.status === 'unconfigured');
+
+  // Saves the missing report settings in Mercado Pago (no money moves), then shows the new checks.
+  const setupReports = async () => {
+    setBusy('reports');
+    try {
+      const r = await api.post<Connection & { setup: Setup[] }>('/me/mercadopago/reports');
+      const { setup, ...view } = r;
+      qc.setQueryData(KEY, view);
+      setShowSources(true);
+      const failed = setup.filter((x) => x.result === 'failed');
+      if (failed.length) notifyError(new Error(`Mercado Pago no aceptó: ${failed.map((x) => `${SOURCES[x.key]}${x.http ? ` (código ${x.http})` : ''}`).join(', ')}.`));
+      else notifyOk('Reportes configurados');
+    } catch (e) {
+      notifyError(e);
+    } finally {
+      setBusy(null);
+    }
+  };
 
   return (
     <Card maw={560}>
@@ -289,9 +310,14 @@ export function MercadoPagoSettings() {
 
         {!replacing && c.readable && (
           <Group>
-            <Button variant="default" loading={busy === 'check'} onClick={() => run('check', () => api.post<Connection>('/me/mercadopago/check'), 'Conexión probada')}>
+            <Button variant="default" loading={busy === 'check'} disabled={!!busy && busy !== 'check'} onClick={() => run('check', () => api.post<Connection>('/me/mercadopago/check'), 'Conexión probada')}>
               Probar conexión
             </Button>
+            {unconfigured && (
+              <Button variant="default" loading={busy === 'reports'} disabled={!!busy && busy !== 'reports'} onClick={setupReports}>
+                Configurar reportes
+              </Button>
+            )}
           </Group>
         )}
       </Stack>

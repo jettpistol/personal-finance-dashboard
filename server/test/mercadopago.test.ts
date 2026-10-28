@@ -9,16 +9,30 @@ import type { FastifyInstance } from 'fastify';
 // A local stand-in for api.mercadopago.com: it knows one valid token and records every request,
 // so the tests can prove only GETs to the allowed paths are ever sent.
 const TOKEN = `APP_USR-1234567890123456-102716-${'ab12'.repeat(8)}-123456789`;
-const seen: { method: string; path: string }[] = [];
+const seen: { method: string; path: string; body?: unknown }[] = [];
+// The release report starts without settings (404) until the app saves them; the other one already has them.
+let releaseConfigured = false;
 const fake = http.createServer((req, res) => {
-  const url = new URL(req.url!, 'http://x');
-  seen.push({ method: req.method!, path: url.pathname });
-  const send = (status: number, body: unknown) => res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body));
-  if (req.headers.authorization !== `Bearer ${TOKEN}`) return send(401, { message: 'invalid access token' });
-  if (url.pathname === '/users/me') return send(200, { id: 123456789, nickname: 'IVAN.TEST', email: 'ivan@example.com', site_id: 'MLA' });
-  if (url.pathname === '/v1/payments/search') return send(200, { results: [], paging: { total: 0 } });
-  if (url.pathname === '/v1/account/settlement_report/config') return send(200, { columns: [] });
-  return send(404, { message: 'not_found' });
+  let raw = '';
+  req.on('data', (c) => (raw += c));
+  req.on('end', () => {
+    const url = new URL(req.url!, 'http://x');
+    seen.push({ method: req.method!, path: url.pathname, body: raw ? JSON.parse(raw) : undefined });
+    const send = (status: number, body: unknown) => res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body));
+    if (req.headers.authorization !== `Bearer ${TOKEN}`) return send(401, { message: 'invalid access token' });
+    if (url.pathname === '/users/me') return send(200, { id: 123456789, nickname: 'IVAN.TEST', email: 'ivan@example.com', site_id: 'MLA' });
+    if (url.pathname === '/v1/payments/search') return send(200, { results: [], paging: { total: 0 } });
+    if (url.pathname === '/v1/account/settlement_report/config') return send(200, { columns: [] });
+    if (url.pathname === '/v1/account/release_report/config') {
+      if (req.method === 'POST') {
+        releaseConfigured = true;
+        return send(201, {});
+      }
+      return releaseConfigured ? send(200, {}) : send(404, { message: 'not_found' });
+    }
+    if (url.pathname === '/v1/account/settlement_report' && req.method === 'POST') return send(202, {});
+    return send(404, { message: 'not_found' });
+  });
 });
 
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pfd-mp-'));
@@ -26,6 +40,8 @@ let app: FastifyInstance;
 const cookies: Record<string, string> = {};
 let lib: typeof import('../src/lib/mercadopago.js');
 let coreDb: typeof import('../src/db/index.js').coreDb;
+
+const raw = (r: { raw: string }) => r.raw;
 
 async function call(who: 'ivan' | 'mili', method: string, url: string, payload?: unknown) {
   const res = await app.inject({ method: method as 'GET', url, payload: payload as object, headers: { cookie: cookies[who] } });
@@ -115,12 +131,46 @@ describe('Mercado Pago connection', () => {
       identity: 'ok',
       payments: 'ok',
       balance: 'unavailable',
-      release_report: 'unavailable',
+      release_report: 'unconfigured',
       settlement_report: 'ok',
     });
     expect(r.body.checked_at).toBeTruthy();
     expect(seen.every((s) => s.method === 'GET')).toBe(true);
     expect((await call('ivan', 'POST', '/api/me/mercadopago/check')).status).toBe(429);
+  });
+
+  it('sets up only the reports that have no settings, with the approved writes', async () => {
+    // Connecting again resets the 30 s turn.
+    await call('ivan', 'PUT', '/api/me/mercadopago', { access_token: TOKEN });
+    seen.length = 0;
+    const r = await call('ivan', 'POST', '/api/me/mercadopago/reports');
+    expect(r.status).toBe(200);
+    expect(r.body.setup).toEqual([
+      { key: 'release_report', result: 'created', http: 201 },
+      { key: 'settlement_report', result: 'exists', http: 200 },
+    ]);
+    expect(r.body.checks.find((c: { key: string }) => c.key === 'release_report').status).toBe('ok');
+    const writes = seen.filter((x) => x.method !== 'GET');
+    expect(writes.map((w) => `${w.method} ${w.path}`)).toEqual(['POST /v1/account/release_report/config']);
+    expect(writes[0].body).toMatchObject({ display_timezone: 'GMT-03', notification_email_list: [], include_withdrawal: true });
+    expect(raw(r)).not.toContain('ab12ab12');
+    expect((await call('ivan', 'POST', '/api/me/mercadopago/reports')).status).toBe(429);
+  });
+
+  it('allows no write except report settings and report requests', async () => {
+    const r = await lib.requestReport(TOKEN, 'settlement_report', '2026-10-01T03:00:00Z', '2026-10-08T02:59:59Z');
+    expect(r.status).toBe(202);
+    expect(seen.at(-1)).toMatchObject({ method: 'POST', path: '/v1/account/settlement_report', body: { begin_date: '2026-10-01T03:00:00Z' } });
+    for (const [method, path] of [
+      ['POST', '/v1/payments'],
+      ['POST', '/v1/payments/123/refunds'],
+      ['PUT', '/v1/payments/123'],
+      ['POST', '/checkout/preferences'],
+      ['POST', '/v1/account/release_report/schedule'],
+      ['PUT', '/v1/account/settlement_report'],
+      ['POST', '/v1/account/release_report/config?x=1'],
+    ] as const)
+      await expect(lib.mpWrite(TOKEN, method, path, {})).rejects.toThrow(/not allowed/);
   });
 
   it('refuses any path outside the read-only list', async () => {
