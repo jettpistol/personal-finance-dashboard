@@ -111,11 +111,54 @@ Suggested config body (check the current docs for exact field names):
                { "key": "TRANSACTION_TYPE" } ]
 }
 ```
-Use `GET {base}/config` first to see which column keys the account actually supports.
+Use `GET {base}/config` first to see which column keys the account actually supports. The column list above is a guess for the release report; the settlement report's columns are confirmed below.
 
 Generation is **async**. `POST` returns right away; poll `/list` until the file appears (seconds to minutes), then download. Report windows have a max span (typically ~60 days for settlement, longer for release), so backfill in chunks.
 
-**Balance:** take `BALANCE_AMOUNT` from the most recent row (or the report's closing-balance row) as the current available balance. Show "as of <report end time>".
+#### Settlement report download (confirmed from Mercado Pago's API reference)
+
+```
+GET https://api.mercadopago.com/v1/account/settlement_report/{file_name}
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+```
+
+- `file_name` comes from `GET /v1/account/settlement_report/list`.
+- `200` returns the raw file (`.csv` or `.xlsx`, depending on config) with **no JSON body**, so handle it as text/binary, not JSON.
+- `401` means the token is invalid; `404 not_found` means the file name is wrong or the file isn't ready yet (keep polling `/list`).
+
+Columns in the settlement report, as documented (the CSV header):
+
+```
+DATE, SOURCE_ID, EXTERNAL_REFERENCE, RECORD_TYPE, DESCRIPTION,
+NET_CREDIT_AMOUNT, NET_DEBIT_AMOUNT, GROSS_AMOUNT, SELLER_AMOUNT,
+MP_FEE_AMOUNT, FINANCING_FEE_AMOUNT, SHIPPING_FEE_AMOUNT, TAXES_AMOUNT,
+COUPON_AMOUNT, INSTALLMENTS, PAYMENT_METHOD, TAX_DETAIL, TAX_AMOUNT_TELCO,
+TRANSACTION_APPROVAL_DATE, POS_ID, POS_NAME, EXTERNAL_POS_ID, STORE_ID,
+STORE_NAME, EXTERNAL_STORE_ID, TAXES_DISAGGREGATED, METADATA, REFUND_ID
+```
+
+How these map onto the `transactions` table (section 4):
+
+| Report column | Use |
+|---|---|
+| `SOURCE_ID` | `source_id`; it's the payment ID, so dedupe against `payments/search` on it |
+| `DATE` | `occurred_at` |
+| `NET_CREDIT_AMOUNT` / `NET_DEBIT_AMOUNT` | credit > 0 → `direction='in'`; debit > 0 → `direction='out'`; `amount` = the non-zero one |
+| `MP_FEE_AMOUNT` + `FINANCING_FEE_AMOUNT` + `SHIPPING_FEE_AMOUNT` + `TAXES_AMOUNT` | `fee` (keep each one in `raw`) |
+| `RECORD_TYPE`, `DESCRIPTION`, `PAYMENT_METHOD` | `type` / `description` / categorization input |
+| `REFUND_ID` | if set, mark the row as a refund linked to the original `SOURCE_ID` |
+
+Notes:
+- Amounts can come with a locale decimal separator, depending on the config's `separator` and the country. Parse them explicitly, never with `parseFloat` on unchecked input.
+- `RECORD_TYPE` includes summary rows (e.g. an initial or total line). Keep only the detail rows as transactions; log the summary rows' values to check them against the sum of the details.
+
+**Balance:** the settlement report has **no balance column**. Get the balance in this order:
+1. The legacy balance endpoint (3.4), if it returns 200.
+2. The release report, if its config offers a `BALANCE_AMOUNT` column (verify with `GET /v1/account/release_report/config`). Use the last detail row's value.
+3. As a last resort, ask the owner for their current balance once, as an opening value, and add up `NET_CREDIT_AMOUNT − NET_DEBIT_AMOUNT` from there. Label it as "estimated".
+
+Always show "as of <report end time>".
 
 ### 3.4 Balance endpoint (legacy, try it, don't depend on it)
 ```

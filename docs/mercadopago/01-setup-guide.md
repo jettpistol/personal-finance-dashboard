@@ -17,7 +17,7 @@ Mercado Pago's public API is built for **merchants** (people who *receive* payme
 | Your user profile / user ID | Yes | `GET /users/me` |
 | Payments you **received** (transfers in, QR, link, sales) | Yes, real time | `GET /v1/payments/search` |
 | Full history of **every movement of money in the account** (in and out: transfers sent, payments you made, withdrawals, refunds, fees) | Yes, as a CSV/XLSX report generated on demand | Reports API: *Released money* (`release_report`) and *Account money / all transactions* (`settlement_report`) |
-| Current balance | Partially | Derived from the reports (each row has a running balance). A legacy balance endpoint exists but may be disabled for your account; the dashboard agent will test it. |
+| Current balance | Partially | No guaranteed source. The "all transactions" report has no balance column. The agent will try, in order: a legacy balance endpoint (may be disabled), the released-money report (may include a balance column), or adding up all transactions from a starting balance you give once. |
 | Payments you **made** with the MP wallet (card/QR/in-store) | Only via the reports | Not returned by `payments/search` as a reliable list |
 | Mercado Pago credit card (Tarjeta Mercado Pago), Mercado Crédito loans, investments/"rendimientos" detail, crypto | No public API | Manual export from the app (see section 7) |
 
@@ -38,10 +38,8 @@ Mercado Pago's public API is built for **merchants** (people who *receive* payme
 1. Go to **https://www.mercadopago.com.ar/developers/panel/app** and log in with your **personal** Mercado Pago account.
 2. Click **Crear aplicación** (Create application).
 3. Fill in the form:
-   - **Nombre de la aplicación:** `Personal Finance Dashboard` (any name works).
-   - **¿Qué tipo de solución vas a integrar?** Choose **Pagos online**. The option doesn't restrict read access; it only picks which docs they show you.
-   - **¿Estás usando una plataforma de e-commerce?** **No**.
-   - **¿Qué producto estás integrando?** **Checkout API** (any option is fine; you won't take payments).
+   - **Elegí una solución para integrar:** pick **Checkout API**. None of the options limits what the token can read (balance, payments, reports); the choice only changes which docs they show you. Don't pick *Plataforma de e-commerce*, *QR Code*, or *Mercado Pago Point*, since those ask for store or device setup you don't need.
+   - **Otros datos:** expand it and set **Nombre de la aplicación** to `Personal Finance Dashboard` (any name works). Answer the remaining questions with the simplest option (no e-commerce platform, no website yet if it's optional).
    - Accept the terms and complete the captcha.
 4. Click **Crear aplicación**. You land on the application's detail page.
 
