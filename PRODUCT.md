@@ -32,7 +32,7 @@ Built for one specific household in Argentina: every amount can switch between p
 - Shared expenses with default/equal/percent/exact splits, balances and settle-up; installments (cuotas) as committed future spending; recurring bills that must be confirmed; rules; CSV/XLSX import presets; budgets with alerts and CPI indexing; goals; reports (trend, yearly, savings, net worth, per person, merchants, inflation); monthly review with notes and .docx; receipts, notes and tags; CSV/Excel export; backups.
 - Privacy: private accounts and private transactions are hidden from the partner everywhere.
 - Stack: React + Mantine 8 + @mantine/charts (Recharts) on Vite; Fastify + SQLite backend. Self-hosted in one Docker container.
-- UI language: Spanish (Argentina, voseo). Amounts formatted es-AR (`$ 1.234,56`, `US$`).
+- UI language: Spanish (Argentina, voseo). Amounts formatted es-AR (`$ 1.234,56` for pesos, `USD 1.234,56` for dollars; never `US$`).
 - All existing features, routes and data must keep working in a redesign; the user allowed restructuring navigation and layouts.
 
 ## Brand Commitments

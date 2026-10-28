@@ -14,7 +14,7 @@ Standing instructions for any agent working in this repo. They come from the own
 
 ## Languages
 
-- **App interface: Spanish (Argentina), with voseo** ("Elegí", "Ingresá"). Amounts in es-AR format (`$ 1.234,56`, `US$`).
+- **App interface: Spanish (Argentina), with voseo** ("Elegí", "Ingresá"). Amounts in es-AR format (`$ 1.234,56` for pesos, `USD 1.234,56` for dollars; never `US$`).
 - Formal, impersonal Spanish for instructions and help text inside the app (no chatty asides). Short labels and toasts can keep voseo.
 - **The guide (`docs/guide/*.md`) and the patch notes are in English.** Screen names and buttons are quoted in Spanish, in bold, exactly as they appear.
 - The owner writes in English; reply in English.
