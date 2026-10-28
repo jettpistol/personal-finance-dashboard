@@ -43,6 +43,7 @@ Standing instructions for any agent working in this repo. They come from the own
 - **Charts:** axes shorten with k / M (`moneyShort`, `axisK` in `ReportBits`); tooltips keep the full figure.
 - **Amounts** go through `money()` in `web/src/lib/format.ts` (it honours **Ajustes → Monedas → Ocultar centavos**). Server text uses `formatMoney()`. Never format money by hand.
 - **Currency:** dollars are written `USD 1.234`, never `US$`. Amount boxes show only `$`; the currency is shown once, by its selector or account, never twice.
+- **Typed dates** are strict and bounded app-wide (theme default `parseTypedDate`, 1900 to 2100): an impossible date is never taken; the field goes back to the last valid value or its placeholder. Give date fields a sensible `minDate`/`maxDate` when the context has one.
 - **Dropdown ticks** go at the end of the option (Select/MultiSelect default `checkIconPosition: 'right'`, GroupedSelect the same), so names never shift when selected.
 - **Dropdowns:** grouped lists use `GroupedSelect` (collapsible groups, no item counts). Every dropdown can be stretched from its corner (`lib/dropdown-resize.ts`).
 - Serious, calm tone: no gamification, no emoji in the UI.
@@ -57,7 +58,7 @@ Standing instructions for any agent working in this repo. They come from the own
   - A USD target is paid only with USD. To pay with pesos, record an ARS → USD **Transf. propia** at a specific rate first.
   - A movement with exactly the amount links automatically (`autoLink`) on every write path: form, CSV and statement import.
   - Reminders go only to the person responsible, every day 8–18, and can't be turned off.
-- **Deudores:** loans with a date or installments feed Pagos pendientes. Interest, installments, amount and dates are locked once saved. A partial return needs a reason.
+- **Deudores:** loans with a date or installments feed Pendientes → Cobros. Interest (none, fixed or tied to inflation), installments, their period (every N days, weeks or months; default 1 month), amount and dates are locked once saved. Inflation-tied installments follow `loanSchedule` (CPI from the loan month to the month before each due date; a month counts from the 15th of the next one; late months go to the next installment or a final adjustment). A partial return needs a reason. Forgiving is **Perdonar deuda**, red, with a confirmation.
 - **Transf. propia between currencies:** the received amount is never typed. It is calculated from the amount and the **Tipo de cambio**, which starts at today's BNA quote.
 - **Objetivos:** a goal linked to an account follows that account's balance. Only unlinked goals get **Registrar aporte**.
 - **Notifications:** bell plus email (one shared Gmail with an app password, set in **Ajustes → Notificaciones**). Telegram stays optional and is not promoted; a future mobile app may carry notifications.

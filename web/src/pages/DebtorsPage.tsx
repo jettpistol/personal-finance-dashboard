@@ -29,7 +29,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { PageHeader } from '../components/Layout';
 import { MoneyInput } from '../components/inputs';
-import { api } from '../lib/api';
+import { api, qs } from '../lib/api';
 import { date, fromCents, money, toCents, today } from '../lib/format';
 import { errorFields, FieldError, notifyError, notifyOk } from '../lib/queries';
 import type { Currency } from '../lib/types';
@@ -54,6 +54,12 @@ type Loan = {
   installments: number | null;
   first_due: string | null;
   total: number | null;
+  period_unit: 'day' | 'week' | 'month' | null;
+  period_count: number | null;
+  /** Tied to inflation (CPI). */
+  indexed: number;
+  /** Tied to inflation and some month's CPI isn't out yet: the installments can still grow. */
+  inflation_pending: boolean;
   returns: LoanReturn[];
   returned: number;
   outstanding: number | null;
@@ -62,17 +68,7 @@ type Loan = {
   overdue: boolean;
 };
 
-/** Same maths as the server: fixed installments at a monthly rate, compound interest for a single payment. */
-function installmentAmounts(principal: number, ratePct: number, n: number, monthsToFirst: number): number[] {
-  const r = ratePct / 100;
-  if (n <= 1) return [Math.round(principal * Math.pow(1 + r, Math.max(1, monthsToFirst)))];
-  if (!r) {
-    const base = Math.floor(principal / n);
-    return Array.from({ length: n }, (_, i) => base + (i < principal - base * n ? 1 : 0));
-  }
-  const each = Math.round((principal * r) / (1 - Math.pow(1 + r, -n)));
-  return Array.from({ length: n }, () => each);
-}
+const PERIOD: Record<'day' | 'week' | 'month', [string, string]> = { day: ['día', 'días'], week: ['semana', 'semanas'], month: ['mes', 'meses'] };
 
 type View = 'open' | 'closed' | 'all';
 
@@ -244,9 +240,31 @@ function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void
       notifyError(e);
     }
   };
+  const forgive = () =>
+    modals.openConfirmModal({
+      title: '¿Perdonar la deuda?',
+      centered: true,
+      children: (
+        <Text size="sm">
+          {l.person} ya no te va a deber <b className="num">{money(l.outstanding, l.currency)}</b>. El préstamo queda cerrado como perdonado.
+        </Text>
+      ),
+      labels: { confirm: 'Perdonar deuda', cancel: 'Cancelar' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
+        try {
+          const r = await api.post<{ forgiven?: number }>(`/loans/${l.id}/close`, { reason: 'forgiven' });
+          notifyOk(`Perdonados ${money(r.forgiven ?? l.outstanding, l.currency)} a ${l.person}.`);
+          reload();
+        } catch (e) {
+          notifyError(e);
+        }
+      },
+    });
   const remove = () =>
     modals.openConfirmModal({
       title: 'Eliminar préstamo',
+      centered: true,
       children: <Text size="sm">Se borra el préstamo y sus devoluciones anotadas.</Text>,
       labels: { confirm: 'Eliminar', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
@@ -300,7 +318,11 @@ function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void
             </Menu.Target>
             <Menu.Dropdown>
               <Menu.Item onClick={onEdit}>Editar</Menu.Item>
-              {!l.closed_on && l.kind === 'money' && <Menu.Item onClick={() => act(() => api.post(`/loans/${l.id}/close`, { reason: 'forgiven' }))}>Perdonar lo que falta</Menu.Item>}
+              {!l.closed_on && l.kind === 'money' && (
+                <Menu.Item color="red" onClick={forgive}>
+                  Perdonar deuda
+                </Menu.Item>
+              )}
               {l.closed_on && <Menu.Item onClick={() => act(() => api.post(`/loans/${l.id}/close`, { reason: 'reopen' }))}>Reabrir</Menu.Item>}
               <Menu.Item color="red" onClick={remove}>
                 Eliminar
@@ -331,8 +353,12 @@ function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void
             <>
               <dt>Plan</dt>
               <dd className="num">
-                {(l.installments ?? 1) > 1 ? `${l.installments} cuotas de ${money(l.schedule[0]?.amount, l.currency)}` : `Un pago de ${money(l.total, l.currency)}`}
-                {l.interest_rate ? ` · ${String(l.interest_rate).replace('.', ',')}% mensual` : ' · sin interés'}
+                {(l.installments ?? 1) > 1 ? `${l.installments} cuotas` : 'Un pago'}
+                {(l.installments ?? 1) > 1 && l.period_unit && ` cada ${l.period_count ?? 1} ${PERIOD[l.period_unit][(l.period_count ?? 1) > 1 ? 1 : 0]}`}
+                {l.indexed ? ' · ajusta por inflación' : ''}
+                {l.interest_rate ? ` · ${l.indexed ? '+ ' : ''}${String(l.interest_rate).replace('.', ',')}% mensual` : l.indexed ? '' : ' · sin interés'}
+                {` · total ${money(l.total, l.currency)}`}
+                {l.inflation_pending && ' (puede subir con el IPC que falta)'}
               </dd>
             </>
           )}
@@ -384,15 +410,34 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
   // Interest and installments: agreed when the loan is created, fixed afterwards.
   const locked = !!loan?.first_due;
   const [terms, setTerms] = useState(!!loan?.first_due);
-  const [rate, setRate] = useState<number | string>(loan?.interest_rate ?? '');
+  // Interest: none, a fixed monthly rate, or tied to inflation (with an optional rate on top).
+  const [mode, setMode] = useState<'none' | 'fixed' | 'ipc'>(loan?.indexed ? 'ipc' : loan?.interest_rate ? 'fixed' : 'none');
+  const [rate, setRate] = useState<number | string>(loan?.interest_rate || '');
   const [count, setCount] = useState<number | string>(loan?.installments ?? 1);
   const [firstDue, setFirstDue] = useState<string | null>(loan?.first_due ?? null);
-  const suggested = useQuery({ queryKey: ['loans', 'suggested-rate'], queryFn: () => api.get<{ month: string | null; monthly: number | null }>('/loans/suggested-rate'), enabled: terms && !locked });
-  const plan =
-    terms && kind === 'money' && toCents(amount) > 0 && firstDue
-      ? installmentAmounts(toCents(amount), Number(rate) || 0, Number(count) || 1, dayjs(firstDue).diff(dayjs(lentOn).startOf('month'), 'month'))
-      : [];
+  const [every, setEvery] = useState<number | string>(loan?.period_count ?? 1);
+  const [unit, setUnit] = useState<'day' | 'week' | 'month'>(loan?.period_unit ?? 'month');
+  const rateValue = mode === 'none' ? 0 : Number(rate) || 0;
+  // The plan as the server works it out (same maths, CPI as published today).
+  const previewParams = {
+    amount: toCents(amount),
+    interest_rate: rateValue,
+    installments: Number(count) || 1,
+    first_due: firstDue ?? '',
+    lent_on: lentOn,
+    period_unit: unit,
+    period_count: Number(every) || 1,
+    indexed: mode === 'ipc' ? 1 : 0,
+  };
+  const preview = useQuery({
+    queryKey: ['loans', 'preview', previewParams],
+    queryFn: () => api.get<{ installments: { n: number; due: string; amount: number }[] }>(`/loans/preview${qs(previewParams)}`),
+    enabled: terms && kind === 'money' && toCents(amount) > 0 && !!firstDue,
+    placeholderData: (prev) => prev,
+  });
+  const plan = terms && kind === 'money' && firstDue ? (preview.data?.installments ?? []).map((i) => i.amount) : [];
   const planTotal = plan.reduce((a, b) => a + b, 0);
+  const sameAmounts = plan.every((a) => a === plan[0]);
   const [bad, setBad] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -416,9 +461,12 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
       lent_on: lentOn,
       due_on: withTerms ? null : dueOn,
       notes: notes || null,
-      interest_rate: withTerms ? Number(rate) || 0 : null,
+      interest_rate: withTerms ? rateValue : null,
       installments: withTerms ? Number(count) || 1 : null,
       first_due: withTerms ? firstDue : null,
+      period_unit: withTerms && (Number(count) || 1) > 1 ? unit : null,
+      period_count: withTerms && (Number(count) || 1) > 1 ? Number(every) || 1 : null,
+      indexed: withTerms && mode === 'ipc',
     };
     try {
       if (loan) await api.put(`/loans/${loan.id}`, body);
@@ -473,36 +521,89 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
             />
             {terms && (
               <>
-                <SimpleGrid cols={3}>
-                  <NumberInput
-                    label="Interés mensual"
-                    suffix="%"
-                    min={0}
-                    max={50}
-                    decimalScale={2}
-                    decimalSeparator=","
-                    hideControls
-                    placeholder="0"
-                    value={rate}
-                    onChange={setRate}
-                    disabled={locked}
-                  />
+                <SegmentedControl
+                  size="xs"
+                  fullWidth
+                  value={mode}
+                  onChange={(v) => setMode(v as typeof mode)}
+                  disabled={locked}
+                  data={[
+                    { value: 'none', label: 'Sin interés' },
+                    { value: 'fixed', label: 'Interés fijo' },
+                    { value: 'ipc', label: 'Inflación' },
+                  ]}
+                />
+                <SimpleGrid cols={mode === 'none' ? 2 : 3}>
+                  {mode !== 'none' && (
+                    <NumberInput
+                      label={mode === 'ipc' ? 'Más interés' : 'Interés mensual'}
+                      description={mode === 'ipc' ? 'Opcional, por mes' : undefined}
+                      suffix="%"
+                      min={0}
+                      max={50}
+                      decimalScale={2}
+                      decimalSeparator=","
+                      hideControls
+                      placeholder="0"
+                      value={rate}
+                      onChange={setRate}
+                      disabled={locked}
+                    />
+                  )}
                   <NumberInput label="Cuotas" min={1} max={60} hideControls value={count} onChange={setCount} disabled={locked} />
-                  <DateInput label="Primera cuota" valueFormat="DD/MM/YYYY" value={firstDue} onChange={setFirstDue} error={bad.includes('first_due')} disabled={locked} required />
+                  <DateInput
+                    label="Primera cuota"
+                    valueFormat="DD/MM/YYYY"
+                    placeholder="DD/MM/AAAA"
+                    minDate={dayjs(lentOn).add(1, 'day').format('YYYY-MM-DD')}
+                    value={firstDue}
+                    onChange={setFirstDue}
+                    error={bad.includes('first_due')}
+                    disabled={locked}
+                    required
+                  />
                 </SimpleGrid>
-                {!locked && suggested.data?.monthly != null && (
-                  <Button size="compact-xs" variant="subtle" w="fit-content" onClick={() => setRate(suggested.data!.monthly!)}>
-                    Usar la inflación de {date(`${suggested.data.month}-01`, 'MMMM')} ({String(suggested.data.monthly).replace('.', ',')}%)
-                  </Button>
+                {(Number(count) || 1) > 1 && (
+                  <Group gap="xs" wrap="nowrap" align="flex-end">
+                    <NumberInput label="Una cuota cada" min={1} max={365} hideControls value={every} onChange={setEvery} disabled={locked} w={120} />
+                    <Select
+                      aria-label="Unidad"
+                      w={120}
+                      data={[
+                        { value: 'month', label: Number(every) === 1 ? 'mes' : 'meses' },
+                        { value: 'week', label: Number(every) === 1 ? 'semana' : 'semanas' },
+                        { value: 'day', label: Number(every) === 1 ? 'día' : 'días' },
+                      ]}
+                      value={unit}
+                      onChange={(v) => v && setUnit(v as typeof unit)}
+                      allowDeselect={false}
+                      disabled={locked}
+                    />
+                  </Group>
                 )}
                 {plan.length > 0 && (
-                  <Text size="sm" className="num">
-                    {plan.length > 1 ? `${plan.length} cuotas de ${money(plan[0], currency)}` : `Un pago de ${money(plan[0], currency)}`} · total {money(planTotal, currency)}
-                    {planTotal > toCents(amount) && ` (interés ${money(planTotal - toCents(amount), currency)})`}
-                  </Text>
+                  <div className="pfd-loan-plan">
+                    <Text size="sm" fw={600}>
+                      {plan.length > 1
+                        ? sameAmounts
+                          ? `${plan.length} cuotas de ${money(plan[0], currency)}`
+                          : `${plan.length} cuotas, desde ${money(Math.min(...plan), currency)}`
+                        : `Un pago de ${money(plan[0], currency)}`}
+                    </Text>
+                    {mode !== 'ipc' && planTotal > toCents(amount) && (
+                      <Text size="xs" c="dimmed">
+                        Total {money(planTotal, currency)} · interés {money(planTotal - toCents(amount), currency)}
+                      </Text>
+                    )}
+                    {mode === 'ipc' && (
+                      <Text size="xs" c="dimmed">
+                        Con la inflación publicada hasta hoy. Cada cuota se ajusta con el IPC desde el préstamo; si el de un mes todavía no salió, se suma a la cuota siguiente.
+                      </Text>
+                    )}
+                  </div>
                 )}
                 <Text size="xs" c="dimmed">
-                  {locked ? 'El interés y las cuotas quedaron fijos al crear el préstamo.' : 'Una vez guardado, el interés y las cuotas no se pueden cambiar. Cada cuota aparece en Pendientes → Cobros.'}
+                  {locked ? 'El interés, la inflación y las cuotas quedaron fijos al crear el préstamo.' : 'Una vez guardado no se puede cambiar. Cada cuota aparece en Pendientes → Cobros.'}
                 </Text>
               </>
             )}

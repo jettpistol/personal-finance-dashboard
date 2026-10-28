@@ -162,4 +162,26 @@ describe('pagos pendientes', () => {
     expect(done.find((d: { key: string }) => d.key === `l${id}`)).toMatchObject({ title: 'Pasajes a Córdoba', total: 200_00, how: 'paid', kind: 'collect' });
     expect((await call('beto', 'GET', '/api/pending/completed')).body).toEqual([]);
   });
+
+  it('ties a loan to inflation, with installments every 2 weeks, locked once saved', async () => {
+    const lent = `${prev}-05`;
+    const first = `${M}-01`;
+    const base = { person: 'Caro', kind: 'money', amount: 90_000_00, currency: 'ARS', lent_on: lent, installments: 3, first_due: first, period_unit: 'week', period_count: 2, indexed: true };
+    const preview = (await call('ana', 'GET', `/api/loans/preview?amount=9000000&installments=3&first_due=${first}&lent_on=${lent}&period_unit=week&period_count=2&indexed=1`)).body;
+    expect(preview.installments).toHaveLength(3);
+    const id = (await call('ana', 'POST', '/api/loans', base)).body.id;
+    const loan = (await call('ana', 'GET', '/api/loans')).body.find((l: { id: number }) => l.id === id);
+    expect(loan).toMatchObject({ indexed: 1, period_unit: 'week', period_count: 2 });
+    expect(loan.schedule.map((i: { due: string }) => i.due).slice(0, 3)).toEqual(preview.installments.map((i: { due: string }) => i.due));
+    // The CPI of last month (5% in this test database) is applied once it counts as published.
+    expect(loan.total).toBeGreaterThanOrEqual(90_000_00);
+    // Terms are fixed: switching inflation off is refused.
+    expect((await call('ana', 'PUT', `/api/loans/${id}`, { ...base, indexed: false })).status).toBe(400);
+    expect((await call('ana', 'PUT', `/api/loans/${id}`, { ...base, notes: 'Para el alquiler' })).status).toBe(200);
+    // Forgiving says how much.
+    const forgiven = await call('ana', 'POST', `/api/loans/${id}/close`, { reason: 'forgiven' });
+    expect(forgiven.body.forgiven).toBe(loan.outstanding);
+    // Impossible dates are refused by the server too.
+    expect((await call('ana', 'POST', '/api/loans', { ...base, first_due: '150000-01-01' })).status).toBe(400);
+  });
 });

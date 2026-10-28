@@ -31,13 +31,16 @@ Loans don't touch your accounts, balances or reports. Each of you only sees your
 4. For money: **Monto** and the currency, and optionally **¿Para qué?**. For a thing: **¿Qué le prestaste?**
 5. **Fecha** (today by default) and, if you agreed on one, **Devolver antes de**.
 6. Optionally **Con interés o en cuotas** (money only):
-   - **Interés mensual**: a percentage, or **Usar la inflación de …** to fill in last month's CPI so the money keeps its value.
+   - **Sin interés**, **Interés fijo** or **Inflación**:
+     - **Interés fijo**: **Interés mensual**, a percentage.
+     - **Inflación**: the loan is tied to the CPI (IPC), so the money keeps its value. Each installment is the agreed amount adjusted by the inflation from the month of the loan to the month before it's due: lent in October and due in January, it carries October, November and December. A month's CPI counts from the 15th of the next month, when INDEC has published it; if one isn't out yet when an installment is due, it's added to the next installment once it is (or to a final adjustment after the last one). **Más interés** adds an optional monthly rate on top.
    - **Cuotas**: how many payments (1 for a single one).
-   - **Primera cuota**: when the first one is due; the rest fall on the same day of the following months.
-   - A line shows the result, for example *3 cuotas de $ 35.421,03 · total $ 106.263,09 (interés $ 6.263,09)*. With interest, the installments are fixed (French system); a single payment accrues compound interest for the months until it's due.
+   - **Primera cuota**: when the first one is due (after the loan date). A date that doesn't exist, or one outside 1900 to 2100, isn't taken: the box goes back to what it had.
+   - **Una cuota cada**: with more than one installment, every how many **meses** (1 by default), **semanas** or **días**.
+   - A line shows the result, for example *3 cuotas de $ 35.421* and, below, *Total $ 106.263 · interés $ 6.263*. With interest, the installments are fixed (French system); a single payment accrues compound interest for the months until it's due. With inflation, the line uses the CPI published so far: the amounts grow as new months come out.
 7. **Guardar**.
 
-Once saved, **the interest, the installments, the amount and the dates are fixed**: **Editar** only changes the person, the reason and the notes.
+Once saved, **the interest, the inflation link, the installments, the amount and the dates are fixed**: **Editar** only changes the person, the reason and the notes.
 
 ### Something came back
 
@@ -51,7 +54,7 @@ Click **Recordar** on a person's card. A friendly message listing everything the
 ### Other actions (the ⋯ menu)
 
 - **Editar** any detail.
-- **Perdonar lo que falta**: close a money loan without expecting the rest.
+- **Perdonar deuda** (in red): close a money loan without expecting the rest. It asks first, and then confirms with *Perdonados $ 70.000 a Juan.*
 - **Reabrir** a closed loan.
 - **Eliminar** it, with its returns.
 

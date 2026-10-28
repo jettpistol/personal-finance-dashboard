@@ -100,6 +100,18 @@ Rules:
 
 **How much of a budget is used**: the confirmed expenses of that month that count in the budget's dashboard, in the budget's category or its subcategories, converted to the budget's currency at each expense's own day quote. Example: a $ 300.000 **Supermercado** budget with $ 250.000 in peso expenses plus a USD 20 expense on a day quoted 1.450 ($ 29.000) is at $ 279.000, **93%**. Percentages are shown with one decimal.
 
+## Loans tied to inflation (Deudores)
+
+A loan with **Inflación** keeps its installments in pesos of the month it was lent and adjusts each one by the CPI of every month from the loan up to the month before it's due.
+
+- Example: $ 300.000 lent on 10 July in 3 monthly installments from 10 October, CPI July 2%, August 3%, September 4%, October 5%.
+  - 10 October: September's CPI comes out on the 15th, so only July and August count: 100.000 × 1,02 × 1,03 = **$ 105.060**.
+  - 10 November: July to September are out (October's isn't yet): 100.000 × 1,0926 = $ 109.262, **plus** September for the first installment, which came out after it was due: 100.000 × (1,0926 − 1,0506) = $ 4.202. Total **$ 113.465**.
+  - Installments still to come use what's published today, so they grow as new months come out.
+- After the last installment, CPI published later becomes one final **adjustment** installment. The loan isn't closed while a month it depends on is still to come.
+- With **Más interés**, the monthly rate is applied on top (fixed installments in real terms, French system), then the CPI.
+- Installments every N **semanas** or **días** use the CPI of the months they fall in; the monthly rate is converted to that period.
+
 ## What counts in each dashboard
 
 Only **confirmed** expenses and incomes count as spending or income. Pending movements, transfers and adjustments never do.

@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.12.1</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.13.0</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.13.0"><b>0.13.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.12.1"><b>0.12.1</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.12.0"><b>0.12.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.11.3"><b>0.11.3</b><span class="date">Oct 28, 2026</span></a>
@@ -84,6 +85,18 @@
 
       <td class="main">
         <p class="lead">What changed in each version</p>
+
+        <a name="v0.13.0"></a>
+        <h2>0.13.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>Deudores: a loan can be tied to inflation. Each installment follows the CPI from the month of the loan; a month that isn't published yet is added to the next installment once it is.</li>
+          <li>Installments can fall every N months (1 by default), weeks or days.</li>
+          <li>Interest is now chosen as <b>Sin interés</b>, <b>Interés fijo</b> or <b>Inflación</b> (with an optional extra rate), instead of copying last month's CPI.</li>
+          <li>The plan line under the loan form wraps instead of overflowing.</li>
+          <li>"Perdonar lo que falta" is now <b>Perdonar deuda</b>, in red, and asks before forgiving.</li>
+          <li>Dates typed by hand are checked everywhere: an impossible date (like 01/01/150000) isn't taken, and the box goes back to its last value.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.12.1"></a>
         <h2>0.12.1 <span class="date">&middot; Oct 28, 2026</span></h2>

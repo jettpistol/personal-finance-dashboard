@@ -3,6 +3,7 @@ import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import Database from 'better-sqlite3';
 import { migrations } from './migrations.js';
+import { installUndoJournal } from './undo-journal.js';
 
 export type DB = Database.Database;
 
@@ -21,6 +22,8 @@ export function openDb(file: string): DB {
   db.pragma('busy_timeout = 5000');
   migrate(db);
   seedDefaults(db);
+  // Deshacer: per-connection change journal (TEMP triggers, nothing stored; lib/undo.ts).
+  installUndoJournal(db, Object.keys(DEFAULT_SETTINGS));
   return db;
 }
 

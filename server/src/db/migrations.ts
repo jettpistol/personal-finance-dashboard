@@ -394,4 +394,11 @@ export const migrations: string[] = [
     account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE
   );
   `,
+  // Deudores: installments every N days, weeks or months (null = every month), and loans tied
+  // to inflation (CPI), whose installments follow the published index.
+  `
+  ALTER TABLE loans ADD COLUMN period_unit TEXT CHECK (period_unit IN ('day', 'week', 'month'));
+  ALTER TABLE loans ADD COLUMN period_count INTEGER;
+  ALTER TABLE loans ADD COLUMN indexed INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
