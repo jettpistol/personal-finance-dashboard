@@ -169,6 +169,7 @@ function ImportWizard() {
       });
       setResult(r);
       setStep(3);
+      notifyOk(r.imported === 1 ? '1 movimiento importado' : `${r.imported} movimientos importados`);
       refresh();
     } catch (e) {
       notifyError(e);
@@ -572,6 +573,7 @@ function PresetsTab() {
       onConfirm: async () => {
         try {
           await api.del(`/presets/${p.id}`);
+          notifyOk(`Preset «${p.name}» eliminado`);
           qc.invalidateQueries({ queryKey: ['presets'] });
         } catch (e) {
           notifyError(e);
@@ -666,7 +668,7 @@ function HistoryTab() {
       onConfirm: async () => {
         try {
           const r = await api.del<{ deleted: number }>(`/imports/${b.id}`);
-          notifyOk(`Se eliminaron ${r.deleted} movimientos`);
+          notifyOk(`Importación deshecha: ${r.deleted === 1 ? '1 movimiento eliminado' : `${r.deleted} movimientos eliminados`}`);
           refresh();
         } catch (e) {
           notifyError(e);

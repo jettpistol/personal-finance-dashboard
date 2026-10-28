@@ -212,7 +212,7 @@ function ItemCard({ item: i, onRegister, onEdit }: { item: Item; onRegister: () 
       children: <Text size="sm">Se borra «{i.title}» y su historial. Los movimientos no cambian.</Text>,
       labels: { confirm: 'Eliminar', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
-      onConfirm: () => act(() => api.del(`/commitments/${i.id}`)),
+      onConfirm: () => act(() => api.del(`/commitments/${i.id}`), `Compromiso «${i.title}» eliminado`),
     });
 
   const st = STATUS[i.status];
@@ -308,7 +308,7 @@ function ItemCard({ item: i, onRegister, onEdit }: { item: Item; onRegister: () 
                       </Menu.Target>
                       <Menu.Dropdown>
                         {p.payments.map((x) => (
-                          <Menu.Item key={x.id} color="red" onClick={() => act(() => api.del(`/pending/payments/${x.id}`), 'Pago desvinculado')}>
+                          <Menu.Item key={x.id} color="red" onClick={() => act(() => api.del(`/pending/payments/${x.id}`), `Pago de ${money(x.amount, i.currency)} desvinculado de «${i.title}»`)}>
                             Desvincular {money(x.amount, i.currency)} del {date(x.date, 'D MMM')}
                           </Menu.Item>
                         ))}
@@ -368,7 +368,7 @@ function RegisterModal({ item, onClose }: { item: Item; onClose: () => void }) {
     setSaving(true);
     try {
       await api.post(`/pending/${item.source}/${item.id}/link`, { transaction_id: tx.id, reason: partial ? reason.trim() : null });
-      notifyOk(`Registrado en «${item.title}»`);
+      notifyOk(`${item.kind === 'collect' ? 'Cobro' : 'Pago'} de ${money(tx.value ?? tx.amount, item.currency)} registrado en «${item.title}»`);
       qc.invalidateQueries({ queryKey: ['pending'] });
       qc.invalidateQueries({ queryKey: ['loans'] });
       onClose();

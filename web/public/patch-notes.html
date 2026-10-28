@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.13.1</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.14.0</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.14.0"><b>0.14.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.13.1"><b>0.13.1</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.13.0"><b>0.13.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.12.1"><b>0.12.1</b><span class="date">Oct 28, 2026</span></a>
@@ -86,6 +87,18 @@
 
       <td class="main">
         <p class="lead">What changed in each version</p>
+
+        <a name="v0.14.0"></a>
+        <h2>0.14.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>Confirmation messages now appear at the bottom of the page, with a slide-up animation.</li>
+          <li>After recording, editing or deleting something, the message offers <b>Deshacer</b> for 7 seconds. It restores everything the action changed, including linked payments, splits and deleted receipts. Example: "Perdonados $ 70.000 a Juan. <b>Deshacer</b>".</li>
+          <li>An account with movements can now be deleted together with its movements after a second confirmation, and <b>Deshacer</b> brings it all back.</li>
+          <li>Undoing is refused if the same data changed afterwards ("No se puede deshacer: hubo cambios después").</li>
+          <li><b>Actividad</b> records each undo as "Deshizo: …".</li>
+          <li>Deudores messages are more specific (for example "Devolución de $ 50.000 de Juan anotada").</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.13.1"></a>
         <h2>0.13.1 <span class="date">&middot; Oct 28, 2026</span></h2>

@@ -232,9 +232,11 @@ function PersonCard({ person, loans, onEdit, onReturn }: { person: string; loans
 function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void; onReturn: () => void }) {
   const qc = useQueryClient();
   const reload = () => qc.invalidateQueries({ queryKey: ['loans'] });
-  const act = async (fn: () => Promise<unknown>) => {
+  // A confirmation toast also offers Deshacer for what the request changed.
+  const act = async (fn: () => Promise<unknown>, ok?: string) => {
     try {
       await fn();
+      if (ok) notifyOk(ok);
       reload();
     } catch (e) {
       notifyError(e);
@@ -268,7 +270,7 @@ function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void
       children: <Text size="sm">Se borra el préstamo y sus devoluciones anotadas.</Text>,
       labels: { confirm: 'Eliminar', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
-      onConfirm: () => act(() => api.del(`/loans/${l.id}`)),
+      onConfirm: () => act(() => api.del(`/loans/${l.id}`), `Préstamo a ${l.person} eliminado`),
     });
 
   const [open, setOpen] = useState(false);
@@ -323,7 +325,7 @@ function LoanRow({ loan: l, onEdit, onReturn }: { loan: Loan; onEdit: () => void
                   Perdonar deuda
                 </Menu.Item>
               )}
-              {l.closed_on && <Menu.Item onClick={() => act(() => api.post(`/loans/${l.id}/close`, { reason: 'reopen' }))}>Reabrir</Menu.Item>}
+              {l.closed_on && <Menu.Item onClick={() => act(() => api.post(`/loans/${l.id}/close`, { reason: 'reopen' }), `Préstamo a ${l.person} reabierto`)}>Reabrir</Menu.Item>}
               <Menu.Item color="red" onClick={remove}>
                 Eliminar
               </Menu.Item>
@@ -471,7 +473,7 @@ function LoanModal({ loan, people, onClose }: { loan: Loan | null; people: strin
     try {
       if (loan) await api.put(`/loans/${loan.id}`, body);
       else await api.post('/loans', body);
-      notifyOk('Préstamo guardado');
+      notifyOk(loan ? `Préstamo a ${person} actualizado` : `Préstamo a ${person} anotado`);
       qc.invalidateQueries({ queryKey: ['loans'] });
       onClose();
     } catch (e) {
@@ -642,7 +644,13 @@ function ReturnModal({ loan, onClose }: { loan: Loan; onClose: () => void }) {
     setSaving(true);
     try {
       await api.post(`/loans/${loan.id}/returns`, { date: when, amount: money_ ? toCents(amount) : null, note: note || null });
-      notifyOk(money_ && toCents(amount) < (loan.outstanding ?? 0) ? 'Devolución parcial anotada' : 'Préstamo saldado');
+      notifyOk(
+        !money_
+          ? `${loan.person} devolvió ${loan.item}`
+          : toCents(amount) < (loan.outstanding ?? 0)
+            ? `Devolución de ${money(toCents(amount), loan.currency)} de ${loan.person} anotada`
+            : `${loan.person} saldó el préstamo: ${money(toCents(amount), loan.currency)}`,
+      );
       qc.invalidateQueries({ queryKey: ['loans'] });
       onClose();
     } catch (e) {

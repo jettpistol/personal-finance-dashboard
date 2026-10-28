@@ -88,9 +88,9 @@ The form is described below in [The Nuevo movimiento form](#the-nuevo-movimiento
 2. Click the **N seleccionados** button that appears above the table.
 3. Choose:
    - **Asignar categoría**: pick a category and click **Aplicar**. It's only applied to movements of the same kind as the category (an expense category to expenses, an income category to income); the rest are skipped. If you click **Aplicar** without picking a category, the selected movements lose their category.
-   - **Eliminar**: deletes them after a confirmation. This can't be undone. Deleting one installment this way deletes only that installment, not the whole purchase.
+   - **Eliminar**: deletes them after a confirmation ("¿Eliminar los movimientos seleccionados?"). Deleting one installment this way deletes only that installment, not the whole purchase.
 
-A message tells you how many movements changed.
+A message at the bottom tells you how many movements changed ("3 movimientos eliminados", "Categoría asignada a 3 movimientos"), with **Deshacer** to reverse it. See [Undo an action](barra-superior.md#undo-an-action).
 
 ### Export to CSV
 
@@ -115,7 +115,7 @@ Click the row. The form opens as **Editar movimiento** with the stored values.
 
 - The type (**Gasto**, **Ingreso**…) can't be changed once saved. Delete and re-create it instead.
 - **Guardar** saves your changes.
-- **Eliminar** (bottom left, in red) deletes it after "¿Seguro? Esta acción no se puede deshacer." Its receipt is deleted too.
+- **Eliminar** (bottom left, in red) deletes it after "¿Eliminar este movimiento?". Its receipt is deleted too. The message "Movimiento eliminado" offers **Deshacer**, which brings back the movement and its receipt.
 - For an installment, a blue notice says "Cuota X de una compra en cuotas. Los cambios afectan solo a esta cuota." **Eliminar** removes only this installment; **Eliminar todas las cuotas** removes the whole purchase, past and future installments.
 - If a grey notice says "Este movimiento está en una cuenta privada o de solo lectura.", you can look but not save. This happens with shared expenses your partner paid from a private account.
 
@@ -139,7 +139,7 @@ Fields marked with a red asterisk are required. Which fields appear depends on t
 8. **Notas**: free text. Notes are visible only to people who can see the account; on a shared expense paid from a private account, your partner sees the movement but not the notes.
 9. **Adjuntar comprobante**: see [Receipts](#receipts).
 
-Click **Guardar**. A confirmation message appears and the form closes.
+Click **Guardar**. A confirmation message appears at the bottom with **Deshacer**, and the form closes.
 
 ### Gasto and Ingreso
 

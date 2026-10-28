@@ -1659,3 +1659,77 @@ a {
   padding-top: 2px;
   overflow-wrap: anywhere;
 }
+
+/* Undo toasts */
+/* Confirmations rise from the bottom center (Mantine slides and fades them in).
+   «Deshacer» is bold text in the message; a thin line under the toast shows the time left and
+   starts over while the pointer rests on it (Mantine pauses closing on hover). */
+.pfd-toast-ok {
+  border: 1px solid var(--pfd-rule);
+}
+
+.pfd-undo-line {
+  overflow-wrap: anywhere;
+}
+
+.pfd-undo-btn {
+  margin: 0 0 0 2px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 120ms ease;
+  white-space: nowrap;
+}
+
+.pfd-undo-btn:hover {
+  text-decoration-color: currentColor;
+}
+
+.pfd-undo-btn:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.pfd-toast-undo::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--notification-color);
+  opacity: 0.55;
+  transform-origin: left center;
+  animation: pfd-undo-time 7s linear forwards;
+}
+
+.pfd-toast-undo:hover::after {
+  animation: none;
+}
+
+@keyframes pfd-undo-time {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pfd-toast-ok {
+    transition-duration: 1ms !important;
+    transform: none !important;
+  }
+
+  .pfd-toast-undo::after {
+    animation: none;
+  }
+}

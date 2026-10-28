@@ -286,7 +286,13 @@ export function TxFormModal() {
         };
         const saved = editId ? await api.put<Tx>(`/transactions/${editId}`, body) : await api.post<Tx>('/transactions', body);
         id = saved.id;
-        notifyOk(editId ? 'Movimiento actualizado' : pending ? `Registrado en «${pending.title}»` : 'Movimiento guardado');
+        notifyOk(
+          editId
+            ? 'Movimiento actualizado'
+            : pending
+              ? `${saved.type === 'income' ? 'Cobro' : 'Pago'} de ${money(saved.amount, saved.currency)} registrado en «${pending.title}»`
+              : 'Movimiento guardado',
+        );
       }
       if (receipt && id) {
         const blob = await compressImage(receipt);
@@ -319,12 +325,13 @@ export function TxFormModal() {
   const remove = (all = false) =>
     modals.openConfirmModal({
       title: all ? 'Eliminar todas las cuotas' : 'Eliminar movimiento',
-      children: <Text size="sm">{all ? 'Se eliminan todas las cuotas de esta compra, pasadas y futuras.' : '¿Seguro? Esta acción no se puede deshacer.'}</Text>,
+      children: <Text size="sm">{all ? 'Se eliminan todas las cuotas de esta compra, pasadas y futuras.' : '¿Eliminar este movimiento?'}</Text>,
       labels: { confirm: 'Eliminar', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
       onConfirm: async () => {
         try {
           await api.del(`/transactions/${editId}${all ? '?all_installments=1' : ''}`);
+          notifyOk(all ? 'Cuotas eliminadas' : 'Movimiento eliminado');
           refresh();
           closeTx();
         } catch (e) {
@@ -336,6 +343,7 @@ export function TxFormModal() {
   const removeReceipt = async () => {
     try {
       await api.del(`/transactions/${editId}/receipt`);
+      notifyOk('Comprobante quitado');
       existing.refetch();
     } catch (e) {
       notifyError(e);

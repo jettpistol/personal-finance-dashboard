@@ -63,7 +63,14 @@ function AccountModal({ account, onClose }: { account: Account | null; onClose: 
       const body = { ...form, is_private: form.owner === 'me' && form.is_private, opening_balance: toCents(form.opening_balance) };
       if (account) await api.patch(`/accounts/${account.id}`, body);
       else await api.post('/accounts', body);
-      notifyOk(account ? 'Cuenta actualizada' : 'Cuenta creada');
+      const name = form.name.trim() || account?.name;
+      notifyOk(
+        !account
+          ? `Cuenta «${name}» creada`
+          : form.archived !== !!account.archived
+            ? `Cuenta «${name}» ${form.archived ? 'archivada' : 'desarchivada'}`
+            : `Cuenta «${name}» actualizada`,
+      );
       refresh();
       onClose();
     } catch (e) {
@@ -151,19 +158,42 @@ function AccountCard({ a, onEdit }: { a: Account; onEdit: () => void }) {
   const converted = currency === 'ARS' ? a.balance_ars : a.balance_usd;
   const isDebt = a.type === 'credit_card' && a.balance < 0;
 
+  // An account in use is deleted with its movements only after a second, explicit confirmation.
+  const removeWithMovements = (count: number) =>
+    modals.openConfirmModal({
+      title: 'Eliminar cuenta y movimientos',
+      children: (
+        <Text size="sm">
+          «{a.name}» tiene {count === 1 ? '1 movimiento' : `${count} movimientos`}. Se eliminan junto con la cuenta, igual que sus recurrentes.
+        </Text>
+      ),
+      labels: { confirm: 'Eliminar con sus movimientos', cancel: 'Cancelar' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
+        try {
+          const r = await api.del<{ movements: number }>(`/accounts/${a.id}?with_movements=1`);
+          notifyOk(`Cuenta «${a.name}» eliminada con ${r.movements === 1 ? 'su movimiento' : `sus ${r.movements} movimientos`}`);
+          refresh();
+        } catch (e) {
+          notifyError(e);
+        }
+      },
+    });
+
   const remove = () =>
     modals.openConfirmModal({
       title: 'Eliminar cuenta',
-      children: <Text size="sm">¿Eliminar «{a.name}»? Solo se puede si no tiene movimientos.</Text>,
+      children: <Text size="sm">¿Eliminar «{a.name}»?</Text>,
       labels: { confirm: 'Eliminar', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
       onConfirm: async () => {
         try {
           await api.del(`/accounts/${a.id}`);
-          notifyOk('Cuenta eliminada');
+          notifyOk(`Cuenta «${a.name}» eliminada`);
           refresh();
         } catch (e) {
-          if (e instanceof ApiError && e.status === 409) notifyError(new Error('La cuenta tiene movimientos. Editala y marcala como archivada en lugar de borrarla.'));
+          const movements = e instanceof ApiError && e.status === 409 ? (e.data as { movements?: number } | undefined)?.movements : undefined;
+          if (movements !== undefined) removeWithMovements(movements);
           else notifyError(e);
         }
       },

@@ -35,7 +35,7 @@ function SettleModal({ settle, onClose }: { settle: Settle; onClose: () => void 
     setSaving(true);
     try {
       await api.post('/balances/settle', { from_account_id: Number(fromId), to_account_id: Number(toId), amount: toCents(amount), date: day, note: note || undefined });
-      notifyOk('Pago registrado');
+      notifyOk(`Pago de ${money(toCents(amount), settle.currency)} de ${name(settle.from)} a ${name(settle.to)} registrado`);
       refresh();
       onClose();
     } catch (e) {

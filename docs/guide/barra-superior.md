@@ -137,6 +137,16 @@ Click your name or initial:
 
 Click **Nuevo movimiento** in the sidebar. The form (**Gasto**, **Ingreso**, **Transferencia** or **Ajuste**) opens on top of the page you're on, and you stay there after saving. See [Movimientos](movimientos.md).
 
+### Undo an action
+
+After an action that is hard to reverse by hand (recording, editing or deleting movements, deleting an account, a category, a budget, an objective or a rule, linking a payment in **Pendientes**, importing, settling up, and so on), a message appears at the bottom of the page, for example "Movimiento eliminado **Deshacer**".
+
+- Click **Deshacer** within the next 7 seconds (the thin line under the message shows the time left; while the pointer rests on the message it waits, and starts over when the pointer leaves). Everything the action changed comes back as it was, including what went with it: the movements of a deleted account, the parts of a shared expense, the payments linked automatically, a deleted receipt or picture. The message changes to "Deshecho".
+- It only works for the person who did it, in the same data profile, within 2 minutes.
+- If something changed afterwards (for example the same movement was edited again), the message reads "No se puede deshacer: hubo cambios después" and nothing is changed. After the time is up it reads "Ya no se puede deshacer".
+- Simple switches (for example **Activa** on a rule, or **Ocultar centavos**) don't offer it: switch them back instead. Logins, data profiles, Mercado Pago, the sending email account, uploads (receipts, pictures) and backups can't be undone either.
+- [Actividad](actividad.md) records the undo as "Deshizo: …" followed by the original line.
+
 ### Pick a month
 
 1. Click the month button to open a small panel with **Mes** (a list) and **Año** (a number from 2000 to 2100). The page updates as you change either.

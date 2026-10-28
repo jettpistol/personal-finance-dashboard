@@ -673,7 +673,9 @@ export const AUDIT_ROUTES: Record<string, Descriptor | Skip | Manual> = {
     describe: (c) => {
       const a = c.before as Account | undefined;
       if (!a) return null;
-      return { action: 'borrar', entity: 'account', entityId: a.id, summary: `Borró la cuenta ${q(a.name)} (${a.currency})`, privateTo: privateAccount(a) ? a.owner_id : null };
+      const n = num(c.res?.movements) || 0;
+      const withTx = n ? ` con ${n === 1 ? 'su movimiento' : `sus ${n} movimientos`}` : '';
+      return { action: 'borrar', entity: 'account', entityId: a.id, summary: `Borró la cuenta ${q(a.name)} (${a.currency})${withTx}`, privateTo: privateAccount(a) ? a.owner_id : null };
     },
   }),
 

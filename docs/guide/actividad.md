@@ -17,6 +17,7 @@ Every action that changes data, as soon as it is saved:
 - **Mercado Pago**: connecting, disconnecting, checks and report settings.
 - **Accesos**: logins, logouts, switching account, wrong passwords for an existing user, password changes, new users.
 - **Actividad**: clearing entries is itself recorded, with how many were deleted.
+- **Deshacer**: an undone action gets its own line, "Deshizo: …" followed by the original one, in the same section and visible to the same people (see [Undo an action](barra-superior.md#undo-an-action)).
 
 Looking at reports, inflation or the list of movements is not recorded. Neither is anything that fails: an entry means the change was saved.
 

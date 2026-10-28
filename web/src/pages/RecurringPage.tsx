@@ -123,7 +123,8 @@ function PendingList({ items }: { items: TxList['items'] }) {
       await api.post(`/transactions/${id}/confirm`, {
         amount: toCents(amounts[id]),
       });
-      notifyOk('Movimiento confirmado');
+      const t = items.find((x) => x.id === id);
+      notifyOk(t ? `«${t.description}» confirmado por ${money(toCents(amounts[id]), t.currency)}` : 'Movimiento confirmado');
       refresh();
     } catch (e) {
       notifyError(e);
@@ -141,6 +142,7 @@ function PendingList({ items }: { items: TxList['items'] }) {
       onConfirm: async () => {
         try {
           await api.del(`/transactions/${id}`);
+          notifyOk(`«${description}» descartado`);
           refresh();
         } catch (e) {
           notifyError(e);
@@ -225,6 +227,7 @@ function TemplatesSection({ onEdit }: { onEdit: (r: Recurring) => void }) {
       onConfirm: async () => {
         try {
           await api.del(`/recurring/${r.id}`);
+          notifyOk(`Recurrente «${r.description}» eliminado`);
           refresh();
         } catch (e) {
           notifyError(e);
