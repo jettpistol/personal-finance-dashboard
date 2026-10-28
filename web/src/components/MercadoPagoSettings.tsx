@@ -11,7 +11,7 @@ import { date, today } from '../lib/format';
 import { errorFields, notifyError, notifyOk } from '../lib/queries';
 
 type Check = { key: 'identity' | 'payments' | 'balance' | 'release_report' | 'settlement_report'; status: 'ok' | 'unconfigured' | 'unavailable' | 'error'; http: number | null };
-type Setup = { key: 'release_report' | 'settlement_report'; result: 'exists' | 'created' | 'failed'; http: number | null };
+type Setup = { key: 'release_report' | 'settlement_report'; result: 'exists' | 'created' | 'failed'; http: number | null; message?: string };
 type Connection =
   | { connected: false }
   | {
@@ -170,7 +170,9 @@ export function MercadoPagoSettings() {
       qc.setQueryData(KEY, view);
       setShowSources(true);
       const failed = setup.filter((x) => x.result === 'failed');
-      if (failed.length) notifyError(new Error(`Mercado Pago no aceptó: ${failed.map((x) => `${SOURCES[x.key]}${x.http ? ` (código ${x.http})` : ''}`).join(', ')}.`));
+      // Mercado Pago's own reason (in its words) helps tell a wrong setting from an account that can't have reports.
+      if (failed.length)
+        notifyError(new Error(`Mercado Pago no aceptó: ${failed.map((x) => `${SOURCES[x.key]}${x.http ? ` (código ${x.http})` : ''}${x.message ? `: «${x.message}»` : ''}`).join('; ')}.`));
       else notifyOk('Reportes configurados');
     } catch (e) {
       notifyError(e);

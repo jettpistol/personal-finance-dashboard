@@ -76,6 +76,17 @@ export function createProfile(name: string, opts: { isDefault?: boolean } = {}):
   return p;
 }
 
+/** Empties a profile: its database file is recreated from scratch (same id, same name). */
+export function resetProfile(id: number): Profile {
+  const p = getProfile(id);
+  if (!p) throw new HttpError(404, 'Perfil no encontrado');
+  open.get(id)?.close();
+  open.delete(id);
+  for (const suffix of ['', '-wal', '-shm']) fs.rmSync(path.join(config.dataDir, p.file) + suffix, { force: true });
+  profileDb(p);
+  return p;
+}
+
 export function renameProfile(id: number, name: string) {
   const res = coreDb().prepare('UPDATE profiles SET name = ? WHERE id = ?').run(name.trim(), id);
   if (!res.changes) throw new HttpError(404, 'Perfil no encontrado');

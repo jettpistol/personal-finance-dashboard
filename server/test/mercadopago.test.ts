@@ -25,6 +25,8 @@ const fake = http.createServer((req, res) => {
     if (url.pathname === '/v1/account/settlement_report/config') return send(200, { columns: [] });
     if (url.pathname === '/v1/account/release_report/config') {
       if (req.method === 'POST') {
+        // Refuses the long column list once, like a real account might, and takes the short one.
+        if (JSON.parse(raw).columns.length > 3) return send(400, { message: 'invalid columns', error: 'bad_request', cause: [{ description: 'column X is not valid' }] });
         releaseConfigured = true;
         return send(201, {});
       }
@@ -146,15 +148,22 @@ describe('Mercado Pago connection', () => {
     const r = await call('ivan', 'POST', '/api/me/mercadopago/reports');
     expect(r.status).toBe(200);
     expect(r.body.setup).toEqual([
-      { key: 'release_report', result: 'created', http: 201 },
+      { key: 'release_report', result: 'created', http: 201, columns: 'minimal' },
       { key: 'settlement_report', result: 'exists', http: 200 },
     ]);
     expect(r.body.checks.find((c: { key: string }) => c.key === 'release_report').status).toBe('ok');
     const writes = seen.filter((x) => x.method !== 'GET');
-    expect(writes.map((w) => `${w.method} ${w.path}`)).toEqual(['POST /v1/account/release_report/config']);
-    expect(writes[0].body).toMatchObject({ display_timezone: 'GMT-03', notification_email_list: [], include_withdrawal: true });
+    expect(writes.map((w) => `${w.method} ${w.path}`)).toEqual(['POST /v1/account/release_report/config', 'POST /v1/account/release_report/config']);
+    expect(writes[0].body).toMatchObject({ display_timezone: 'GMT-03', notification_email_list: [], include_withdrawal_at_end: true });
+    expect((writes[1].body as { columns: { key: string }[] }).columns.map((c) => c.key)).toEqual(['DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE']);
     expect(raw(r)).not.toContain('ab12ab12');
     expect((await call('ivan', 'POST', '/api/me/mercadopago/reports')).status).toBe(429);
+  });
+
+  it("passes on Mercado Pago's reason when it refuses both attempts", async () => {
+    // The fake refuses any other token (401 with a message) on every call.
+    const r = await lib.setupReports(`APP_USR-0000000000000000-102716-${'ff00'.repeat(8)}-111111111`);
+    expect(r[0]).toEqual({ key: 'release_report', result: 'failed', http: 401, message: 'invalid access token' });
   });
 
   it('allows no write except report settings and report requests', async () => {

@@ -1,10 +1,12 @@
 // Creates two demo users and a "Prueba (demo)" data profile with ~5 months of realistic data.
 // The default "Vacío" profile stays empty.
 // Usage: npm run demo (seeds server/data-demo once, then starts the app on it)
+//        npm run demo:reset (`--reset`: reloads only the "Prueba (demo)" profile. Logins, the other
+//        profiles, the email setup, Mercado Pago connections and the encryption key are kept.)
 // Exchange rates and CPI are synthetic (source "demo"); refresh them from Ajustes once online.
 import { config } from './config.js';
 import { coreDb, db, setDb } from './db/index.js';
-import { createProfile, initProfiles, profileDb, syncUsers } from './lib/profiles.js';
+import { createProfile, initProfiles, listProfiles, profileDb, resetProfile, syncUsers } from './lib/profiles.js';
 
 const DEMO_PROFILE = 'Prueba (demo)';
 import { hashPassword } from './lib/auth.js';
@@ -14,7 +16,8 @@ import { createInstallmentPlan, createTx, type TxInput } from './lib/transaction
 import { upsertRate } from './lib/fx.js';
 
 initProfiles();
-if ((coreDb().prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n > 0) {
+const reset = process.argv.includes('--reset');
+if (!reset && (coreDb().prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }).n > 0) {
   if (process.argv.includes('--if-empty')) {
     console.log(`Demo ya cargada en ${config.dataDir}.`);
     process.exit(0);
@@ -29,10 +32,17 @@ const between = (a: number, b: number) => Math.round(a + rnd() * (b - a));
 
 const PASSWORD = 'demo-finanzas';
 const insertUser = coreDb().prepare('INSERT INTO users (username, display_name, password_hash, color) VALUES (?, ?, ?, ?)');
-const ivan = Number(insertUser.run('ivan', 'Iván', await hashPassword(PASSWORD), 'blue').lastInsertRowid);
-const milagros = Number(insertUser.run('milagros', 'Milagros', await hashPassword(PASSWORD), 'pink').lastInsertRowid);
-// The demo data goes into its own profile; the default profile stays empty.
-const demoProfile = createProfile(DEMO_PROFILE);
+// On a reset the existing users (and their passwords) stay; only missing ones are created.
+const demoUser = async (username: string, name: string, color: string) => {
+  const found = coreDb().prepare('SELECT id FROM users WHERE username = ?').get(username) as { id: number } | undefined;
+  return found ? found.id : Number(insertUser.run(username, name, await hashPassword(PASSWORD), color).lastInsertRowid);
+};
+const ivan = await demoUser('ivan', 'Iván', 'blue');
+const milagros = await demoUser('milagros', 'Milagros', 'pink');
+// The demo data goes into its own profile; the default profile stays empty. A reset empties that
+// profile's file and keeps its id, so a browser that had it selected stays on it.
+const existing = reset ? listProfiles().find((p) => p.name === DEMO_PROFILE) : undefined;
+const demoProfile = existing ? resetProfile(existing.id) : createProfile(DEMO_PROFILE);
 syncUsers();
 setDb(profileDb(demoProfile));
 

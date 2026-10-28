@@ -79,7 +79,7 @@ Standing instructions for any agent working in this repo. They come from the own
 npm test                 # server tests (add tests for new server behavior)
 npm run typecheck
 npm run build
-npm run demo:reset       # rebuilds and reloads demo data on http://localhost:3000
+npm run demo:reset       # reloads only the Prueba (demo) profile, keeps logins and connections; serves http://localhost:3000
 ```
 
 - Log in as `ivan` / `demo-finanzas` and switch to the **Prueba (demo)** profile. Check the change in the browser, in light and dark mode, and at phone width (390 px) when the layout changed.
@@ -95,6 +95,8 @@ npm run demo:reset       # rebuilds and reloads demo data on http://localhost:30
 - Tests use a local fake (`MP_API_URL`); never call the real API with a real token from code or tests.
 
 ## Never
+
+- Delete a whole data folder (`data/`, `data-demo/`) from a script or npm command: it holds logins, connections and the encryption key. Reset one profile instead (`resetProfile` in `lib/profiles.ts`).
 
 - Read, print or commit `.env`, `secret.key`, the Gmail app password, Mercado Pago tokens or other secrets. Never ask the owner to paste a token in chat. The API never returns the mail password.
 - Commit data folders (`data/`, `data-demo/`) or uploaded files.

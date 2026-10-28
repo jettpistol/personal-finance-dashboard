@@ -124,30 +124,53 @@ export async function checkSources(token: string, mpUserId: number): Promise<MpC
 
 // ---- Reports (the full history, in and out) ----
 
-// The columns Mercado Pago documents for both reports. Amounts use a dot as decimal separator once
-// the column separator is a comma; parse them explicitly when importing.
-const REPORT_COLUMNS = [
-  'DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE', 'RECORD_TYPE', 'DESCRIPTION', 'NET_CREDIT_AMOUNT', 'NET_DEBIT_AMOUNT', 'GROSS_AMOUNT',
-  'SELLER_AMOUNT', 'MP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'COUPON_AMOUNT', 'INSTALLMENTS',
-  'PAYMENT_METHOD', 'TAX_DETAIL', 'TAX_AMOUNT_TELCO', 'TRANSACTION_APPROVAL_DATE', 'POS_ID', 'POS_NAME', 'EXTERNAL_POS_ID', 'STORE_ID',
-  'STORE_NAME', 'EXTERNAL_STORE_ID', 'TAXES_DISAGGREGATED', 'METADATA', 'REFUND_ID',
-];
+// Report settings, modelled on Mercado Pago's own examples (POST {base}/config). The two reports
+// don't share column names: the transactions report dates rows with TRANSACTION_DATE, the
+// released-money one with DATE. If Mercado Pago refuses the full list, setupReports() retries once
+// with the short list from its examples; columns can be widened later with PUT.
+const COLUMNS: Record<ReportKind, { full: string[]; minimal: string[] }> = {
+  release_report: {
+    full: [
+      'DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE', 'RECORD_TYPE', 'DESCRIPTION', 'NET_CREDIT_AMOUNT', 'NET_DEBIT_AMOUNT', 'GROSS_AMOUNT',
+      'MP_FEE_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'COUPON_AMOUNT', 'INSTALLMENTS', 'PAYMENT_METHOD',
+    ],
+    minimal: ['DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE'],
+  },
+  settlement_report: {
+    full: [
+      'TRANSACTION_DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE', 'TRANSACTION_TYPE', 'PAYMENT_METHOD_TYPE', 'PAYMENT_METHOD', 'TRANSACTION_AMOUNT',
+      'TRANSACTION_CURRENCY', 'SELLER_AMOUNT', 'FEE_AMOUNT', 'SETTLEMENT_NET_AMOUNT', 'SETTLEMENT_CURRENCY', 'SETTLEMENT_DATE', 'REAL_AMOUNT',
+      'COUPON_AMOUNT', 'FINANCING_FEE_AMOUNT', 'SHIPPING_FEE_AMOUNT', 'TAXES_AMOUNT', 'INSTALLMENTS', 'STORE_NAME', 'POS_NAME',
+    ],
+    minimal: ['TRANSACTION_DATE', 'SOURCE_ID', 'EXTERNAL_REFERENCE'],
+  },
+};
 
-/** Settings for a new report: no emails, Argentina's time, every documented column. Scheduling stays off. */
-export function reportConfig(kind: ReportKind) {
+/** Settings for a new report: Argentina's time, no emails. The frequency is only stored: nothing schedules it. */
+export function reportConfig(kind: ReportKind, columns: 'full' | 'minimal' = 'full') {
   return {
-    file_name_prefix: kind === 'release_report' ? 'finanzas-liberado' : 'finanzas-transacciones',
+    file_name_prefix: kind === 'release_report' ? 'release-report-finanzas' : 'settlement-report-finanzas',
+    columns: COLUMNS[kind][columns].map((key) => ({ key })),
+    frequency: { hour: 0, type: 'monthly', value: 1 },
     display_timezone: 'GMT-03',
-    report_translation: 'en',
     separator: ',',
     notification_email_list: [],
-    frequency: { type: 'daily', value: 1, hour: 6 },
-    ...(kind === 'release_report' ? { include_withdrawal: true } : {}),
-    columns: REPORT_COLUMNS.map((key) => ({ key })),
+    ...(kind === 'release_report' ? { include_withdrawal_at_end: true, execute_after_withdrawal: false } : { include_withdrawal: true }),
   };
 }
 
-export type ReportSetup = { key: ReportKind; result: 'exists' | 'created' | 'failed'; http: number | null };
+export type ReportSetup = { key: ReportKind; result: 'exists' | 'created' | 'failed'; http: number | null; columns?: 'full' | 'minimal'; message?: string };
+
+/** Mercado Pago's own explanation of a refusal (it never contains credentials), kept short. */
+function mpMessage(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return typeof body === 'string' && body.trim() ? body.trim().slice(0, 200) : undefined;
+  const b = body as { message?: unknown; error?: unknown; cause?: unknown };
+  const causes = Array.isArray(b.cause) ? b.cause.map((c) => (c && typeof c === 'object' ? (c as { description?: unknown }).description : c)).filter((x) => typeof x === 'string') : [];
+  const parts = [b.message, b.error, ...causes].filter((x): x is string => typeof x === 'string' && x.trim() !== '');
+  return parts.length ? [...new Set(parts)].join(' · ').slice(0, 200) : undefined;
+}
+
+const ok = (status: number) => status >= 200 && status < 300;
 
 /** Saves the settings of each report that has none yet; reports already set up are left alone. */
 export async function setupReports(token: string): Promise<ReportSetup[]> {
@@ -160,8 +183,15 @@ export async function setupReports(token: string): Promise<ReportSetup[]> {
         out.push({ key, result: 'exists', http: 200 });
         continue;
       }
-      const r = await mpWrite(token, 'POST', base, reportConfig(key));
-      out.push({ key, result: r.status >= 200 && r.status < 300 ? 'created' : 'failed', http: r.status });
+      let r = await mpWrite(token, 'POST', base, reportConfig(key, 'full'));
+      let columns: 'full' | 'minimal' = 'full';
+      if (!ok(r.status)) {
+        const first = r;
+        r = await mpWrite(token, 'POST', base, reportConfig(key, 'minimal'));
+        columns = 'minimal';
+        if (!ok(r.status)) r = { status: r.status, body: mpMessage(r.body) ? r.body : first.body };
+      }
+      out.push(ok(r.status) ? { key, result: 'created', http: r.status, columns } : { key, result: 'failed', http: r.status, message: mpMessage(r.body) });
     } catch {
       out.push({ key, result: 'failed', http: null });
     }

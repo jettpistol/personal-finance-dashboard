@@ -84,6 +84,8 @@ npm run update
 npm run demo:reset   # or: npm run build && npm start, for your real data
 ```
 
+`demo:reset` only reloads the **Prueba (demo)** profile: your logins, the **Vacío** profile, the email setup and your Mercado Pago connection stay. (Before 0.11.1 it erased all of them.)
+
 If `git pull` ever says *Your local changes to the following files would be overwritten by merge: package-lock.json*, the update didn't happen: `npm run update` avoids that.
 
 Then check the version number in the footer.
