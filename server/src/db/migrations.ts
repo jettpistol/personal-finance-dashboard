@@ -352,4 +352,19 @@ export const migrations: string[] = [
   ALTER TABLE goals ADD COLUMN notes TEXT;
   ALTER TABLE goals ADD COLUMN priority TEXT CHECK (priority IN ('high', 'medium', 'low'));
   `,
+  // Mercado Pago, one connection per person (kept in the core database, like the logins). The
+  // access token is stored only encrypted (lib/secrets.ts) and never sent back to the browser.
+  `
+  CREATE TABLE mp_connections (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    token_enc TEXT NOT NULL,
+    mp_user_id INTEGER,
+    nickname TEXT,
+    site_id TEXT,
+    history_start TEXT,
+    connected_at TEXT NOT NULL,
+    checked_at TEXT,
+    checks TEXT
+  );
+  `,
 ];

@@ -1391,3 +1391,27 @@ a {
   min-height: 0;
   max-height: none !important;
 }
+
+/* Ajustes → Mercado Pago: label / value rows, and the list of data sources. */
+.pfd-mp-details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  gap: 8px 20px;
+  margin: 0;
+  font-size: var(--mantine-font-size-sm);
+}
+
+.pfd-mp-details dt {
+  color: var(--mantine-color-dimmed);
+}
+
+.pfd-mp-details dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.pfd-mp-sources {
+  border-top: 1px solid var(--pfd-rule);
+  padding-top: 8px;
+}

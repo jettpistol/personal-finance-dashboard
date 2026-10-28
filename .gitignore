@@ -10,3 +10,6 @@ data-demo/
 .impeccable/review/
 .impeccable/questions/
 .impeccable/config.local.json
+
+# Encryption key for stored credentials (see server/src/lib/secrets.ts)
+secret.key

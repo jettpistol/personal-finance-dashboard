@@ -6,12 +6,13 @@ Your own profile and password, email (and Telegram) alerts, the household's shar
 
 ## What you see
 
-Open it from the sidebar, the user menu or the footer. The page has seven tabs and opens on the first one (the address remembers the tab you're on, e.g. `/ajustes?tab=currencies`):
+Open it from the sidebar, the user menu or the footer. The page has eight tabs and opens on the first one (the address remembers the tab you're on, e.g. `/ajustes?tab=currencies`):
 
 | Tab | What it holds | Applies to |
 | --- | --- | --- |
 | **Perfil** | Your name, color, dashboard sharing and password | You, in every data profile |
 | **Notificaciones** | Your email for alerts, which alerts to receive, optional Telegram | You, in every data profile |
+| **Mercado Pago** | Your own Mercado Pago connection (token, start date, what it can read) | You only, in every data profile |
 | **Hogar** | Household name, default split, BNA quote, budget alerts, inflation indexing; the people | Settings: the data profile in use. People: every profile |
 | **Categorías** | Expense and income categories | The data profile in use |
 | **Monedas** | **Ocultar centavos** for ARS and USD | The data profile in use |
@@ -79,6 +80,10 @@ Each of you links your own Telegram.
 - **Cierre de mes (documento .docx)**: last month's review, sent in the first three days of each month.
 
 Each switch saves as soon as you flip it. The notice that budgets were raised by inflation is always sent when Telegram is linked. If the server has its public address set, messages include a link to the right page.
+
+### Mercado Pago
+
+Connect your own Mercado Pago account with its production **Access Token**. It's checked with Mercado Pago, stored encrypted and never shown again; your partner can't see it. Step by step, and what each line means: [Connect Mercado Pago](mercado-pago.md).
 
 ### Hogar
 

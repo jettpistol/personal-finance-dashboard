@@ -47,4 +47,6 @@ export const config = {
   },
   cpiUrl: env('CPI_URL', 'https://api.argentinadatos.com/v1/finanzas/indices/inflacion'),
   maxReceiptBytes: 3 * 1024 * 1024,
+  // Mercado Pago's API (overridable only so tests can point it at a local fake).
+  mpApiUrl: env('MP_API_URL', 'https://api.mercadopago.com'),
 };

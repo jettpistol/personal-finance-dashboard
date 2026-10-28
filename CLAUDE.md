@@ -57,6 +57,7 @@ Standing instructions for any agent working in this repo. They come from the own
 - **Transf. propia between currencies:** the received amount is never typed. It is calculated from the amount and the **Tipo de cambio**, which starts at today's BNA quote.
 - **Objetivos:** a goal linked to an account follows that account's balance. Only unlinked goals get **Registrar aporte**.
 - **Notifications:** bell plus email (one shared Gmail with an app password, set in **Ajustes → Notificaciones**). Telegram stays optional and is not promoted; a future mobile app may carry notifications.
+- **Mercado Pago:** each person connects their own account in **Ajustes → Mercado Pago**. The owner's guidelines are in [`docs/mercadopago/`](docs/mercadopago/); the note at the top of the agent brief says how this repo deviates from it.
 - **Data profiles:** a new install opens on the empty **Vacío** profile; demo data lives in **Prueba (demo)**.
 - Changing the data profile or the account keeps you on the same page and refreshes it.
 
@@ -85,9 +86,17 @@ npm run demo:reset       # rebuilds and reloads demo data on http://localhost:30
 - In cloud sessions Playwright and Chromium are preinstalled: `require('playwright')`, `chromium.launch()`. Don't run `playwright install`.
 - Guide screenshots live in `docs/guide/img/` at 1366×860, taken from the demo profile. A new wiki image only shows after a rebuild.
 
+## Credentials that touch money (Mercado Pago and any future bank)
+
+- Store them only through `encryptSecret` / `decryptSecret` (`lib/secrets.ts`): AES-256-GCM, bound to the user, key in `SECRET_KEY` or `DATA_DIR/secret.key`, never in a database.
+- Never return them from the API, not even partly; never log them; validate them by hand (not with a schema that could echo the input). The browser keeps a typed token only in component state until it's saved.
+- Each person's connection is theirs only: routes act on `req.userId`, never on another user.
+- Mercado Pago calls go through `mpGet()` (GET only, path allowlist). Never add payment, refund or other money-moving endpoints. Report generation (POST/PUT) needs the owner's explicit approval, one path at a time.
+- Tests use a local fake (`MP_API_URL`); never call the real API with a real token from code or tests.
+
 ## Never
 
-- Read, print or commit `.env`, the Gmail app password or other secrets. The API never returns the mail password.
+- Read, print or commit `.env`, `secret.key`, the Gmail app password, Mercado Pago tokens or other secrets. Never ask the owner to paste a token in chat. The API never returns the mail password.
 - Commit data folders (`data/`, `data-demo/`) or uploaded files.
 - Use the owner's email for anything but authorship.
 - Open a pull request, or push to a branch other than the one you were given, without being asked.
