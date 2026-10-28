@@ -1,26 +1,15 @@
-import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { db } from '../db/index.js';
 import { HttpError } from '../lib/http.js';
 import { accountVisible, loadAccounts } from '../lib/domain.js';
 import { parseRows, presetConfigSchema, readTable, type Cell } from '../lib/importer.js';
-import { applyRules, loadRules } from '../lib/rules.js';
-import { assertWritable, importHash, insertTx, normaliseTx } from '../lib/transactions.js';
+import { buildPreviewItems } from '../lib/import-preview.js';
+import { assertWritable, insertTx, normaliseTx } from '../lib/transactions.js';
 import { autoLink } from '../lib/commitments.js';
 import { loadConverter } from '../lib/fx.js';
+import { getUpload, saveUpload } from '../lib/uploads.js';
 import { idParam, parse } from './util.js';
-
-// Uploaded files are kept in memory for a short while so the preset builder can re-parse them.
-const uploads = new Map<string, { userId: number; fileName: string; data: Buffer; expires: number }>();
-const UPLOAD_TTL = 30 * 60_000;
-
-function getUpload(id: string, userId: number) {
-  for (const [k, u] of uploads) if (u.expires < Date.now()) uploads.delete(k);
-  const u = uploads.get(id);
-  if (!u || u.userId !== userId) throw new HttpError(404, 'El archivo expiró. Volvé a subirlo.');
-  return u;
-}
 
 const presetSchema = z.object({ name: z.string().trim().min(1).max(60), config: presetConfigSchema });
 
@@ -69,8 +58,7 @@ export default async function importRoutes(app: FastifyInstance) {
     const file = await req.file();
     if (!file) throw new HttpError(400, 'Falta el archivo');
     const data = await file.toBuffer();
-    const id = crypto.randomUUID();
-    uploads.set(id, { userId: req.userId, fileName: file.filename, data, expires: Date.now() + UPLOAD_TTL });
+    const id = saveUpload(req.userId, file.filename, data);
     return { upload_id: id, file_name: file.filename, size: data.length };
   });
 
@@ -106,39 +94,7 @@ export default async function importRoutes(app: FastifyInstance) {
       throw new HttpError(400, `No se pudo leer el archivo: ${(e as Error).message}`);
     }
     const { rows, errors } = parseRows(table, config);
-    const rules = loadRules();
-    const kinds = new Map((db().prepare('SELECT id, kind FROM categories').all() as { id: number; kind: string }[]).map((c) => [c.id, c.kind]));
-    const hashExists = db().prepare('SELECT 1 FROM transactions WHERE import_hash = ? LIMIT 1');
-    const similar = db().prepare('SELECT id, description FROM transactions WHERE account_id = ? AND date = ? AND amount = ? LIMIT 1');
-    const items = rows.map((r) => {
-      const amount = Math.abs(r.amount);
-      const direction = r.amount < 0 ? 'out' : 'in';
-      const hash = importHash(account.id, r.date, r.amount, r.description);
-      const patch = applyRules(rules, { description: r.description, amount: r.amount, account_id: account.id });
-      const type = patch?.type ?? (direction === 'out' ? 'expense' : 'income');
-      // A rule's category only applies when it matches the row's kind (gasto / ingreso).
-      const categoryId = patch?.category_id != null && kinds.get(patch.category_id) === type ? patch.category_id : null;
-      const dup = hashExists.get(hash) ? 'exact' : similar.get(account.id, r.date, amount) ? 'similar' : null;
-      return {
-        line: r.line,
-        date: r.date,
-        description: r.description,
-        amount,
-        direction,
-        currency_mismatch: r.currency != null && r.currency !== account.currency,
-        type,
-        category_id: categoryId,
-        merchant: patch?.merchant ?? r.merchant,
-        notes: r.notes,
-        tags: patch?.tags ?? [],
-        to_account_id: patch?.to_account_id ?? null,
-        is_shared: patch?.is_shared ?? false,
-        rule: patch ? patch.rule_name : null,
-        duplicate: dup,
-        import_hash: hash,
-        include: dup !== 'exact' && !(r.currency != null && r.currency !== account.currency),
-      };
-    });
+    const items = buildPreviewItems(rows, account);
     return { items, errors, total_rows: table.length };
   });
 

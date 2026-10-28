@@ -66,6 +66,8 @@ export const NOT_WRAPPED: Record<string, string> = {
   'POST /api/imports/upload': 'Keeps the file in memory; saves nothing.',
   'POST /api/imports/raw': 'Preview; saves nothing.',
   'POST /api/imports/preview': 'Preview; saves nothing.',
+  'POST /api/statements/detect': 'Recognition and checks; saves nothing.',
+  'POST /api/statements/preview': 'Preview; saves nothing.',
   'POST /api/fx/refresh': 'Downloads quotes (await).',
   'POST /api/cpi/refresh': 'Downloads the CPI (await).',
   'POST /api/backups': 'Writes a backup file (await).',

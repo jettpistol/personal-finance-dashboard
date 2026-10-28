@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.14.1</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.15.0</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.15.0"><b>0.15.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.14.1"><b>0.14.1</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.14.0"><b>0.14.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.13.1"><b>0.13.1</b><span class="date">Oct 28, 2026</span></a>
@@ -88,6 +89,22 @@
 
       <td class="main">
         <p class="lead">What changed in each version</p>
+
+        <a name="v0.15.0"></a>
+        <h2>0.15.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>New <b>Resúmenes</b> section: upload a bank PDF or Excel file as the bank gives it and the app recognises the format by its content.</li>
+          <li>Reads Banco Galicia's Caja de Ahorro extract (Excel) and monthly statement (PDF), and the Visa and American Express card statements (PDF).</li>
+          <li>Checks that the numbers add up to the totals the document prints itself. A file that doesn't add up is not imported.</li>
+          <li>Rows go through the same review as <b>Importar</b>, and the import can be undone from its <b>Historial</b>.</li>
+          <li>Card payments and the conversion of a USD debt start unticked, because the payment is already recorded from the bank account. Dollar purchases stay in dollars.</li>
+          <li>Card installments show <b>cuota X/Y</b> and are dated on the statement's close date; the purchase date is kept in the note.</li>
+          <li>Categories come from your rules first, then from the suggested rules bank (marked <b>Sugerida</b>). Merchants in neither stay without a category. Card interest, taxes, salary and refunds get a fixed category.</li>
+          <li>The suggested rules bank now also recognises Uber Eats, Crunchyroll, Patreon, LinkedIn, Solo Deportes, neighbourhood supermarkets, fruit shops, Granja, and the shortened names card statements print (SportClub, Burger King, Cencosud Easy, pet shops).</li>
+          <li><b>Importar</b> can now open the Excel extract that Galicia exports, which it couldn't read before.</li>
+          <li>New help article: Resúmenes. The Docker image now includes <code>pdftotext</code>, needed to read PDFs.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.14.1"></a>
         <h2>0.14.1 <span class="date">&middot; Oct 28, 2026</span></h2>

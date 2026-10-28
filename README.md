@@ -18,6 +18,7 @@ Scope was decided with [`docs/feature-questionnaire.md`](docs/feature-questionna
 - **Installments (cuotas)**: one purchase becomes N monthly expenses; future months show as committed spending.
 - **Recurring bills**: generated as *pending* so you confirm the real amount.
 - **CSV / XLSX import** with **presets per bank** (column mapping, date format, decimal separator, split debit/credit columns, rows to skip, encoding), rule-based categorisation, duplicate detection, and undo.
+- **Statements (Resúmenes)**: upload a bank PDF or Excel file as the bank gives it; the app recognises the format by its content, checks that the numbers add up to the document's own totals, and sends the rows to the usual import review. Reads Banco Galicia's account extract (xlsx), account statement (PDF) and Visa and American Express statements (PDF); more banks and wallets will follow.
 - **Rules**: "description contains X" sets the category, merchant, shared flag, tags, or turns the row into a transfer.
 - **Budgets** per category and month (household or personal) with in-app and **Telegram** alerts at 80% and 100%.
 - **Savings goals** linked to an account or with manual contributions, showing how much to save per month.
@@ -29,7 +30,7 @@ Scope was decided with [`docs/feature-questionnaire.md`](docs/feature-questionna
 
 ## Run locally
 
-Requires Node 22+.
+Requires Node 22+. Reading PDF statements (**Resúmenes**) also needs `pdftotext` from poppler (`apt install poppler-utils` or `brew install poppler`); the Docker image already includes it.
 
 ```bash
 npm ci
@@ -62,7 +63,7 @@ npm run demo:reset   # rebuilds and reloads the "Prueba (demo)" profile only
 
 `npm run update` is the same as `git checkout -- package-lock.json && git pull --ff-only && npm ci`. Use `npm ci` rather than `npm install` to install: it never rewrites `package-lock.json`, so the next `git pull` can't be blocked by it.
 
-The footer shows the version you're running (`Finanzas v0.14.1 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
+The footer shows the version you're running (`Finanzas v0.15.0 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
 
 ### Development
 

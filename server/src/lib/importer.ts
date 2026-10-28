@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import ExcelJS from 'exceljs';
 import { z } from 'zod';
+import { readFirstSheet } from './statements/xlsx-reader.js';
 
 // Bank statement import. Each bank exports a different layout, so a preset describes
 // where the relevant values are and how to read them.
@@ -64,16 +65,25 @@ function cellToValue(v: ExcelJS.CellValue): Cell {
 export async function readTable(data: Buffer, fileName: string, cfg: Pick<PresetConfig, 'delimiter' | 'encoding' | 'sheet'>): Promise<Cell[][]> {
   if (/\.xls$/i.test(fileName)) throw new Error('El formato .xls antiguo no está soportado. Guardalo como .xlsx o .csv.');
   if (isXlsx(fileName, data)) {
-    const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(data as unknown as ExcelJS.Buffer);
-    const ws = wb.worksheets[cfg.sheet] ?? wb.worksheets[0];
-    if (!ws) return [];
-    const rows: Cell[][] = [];
-    ws.eachRow({ includeEmpty: true }, (row) => {
-      const values = (row.values as ExcelJS.CellValue[]).slice(1); // exceljs rows are 1-indexed
-      rows.push(values.map(cellToValue));
-    });
-    return rows;
+    try {
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(data as unknown as ExcelJS.Buffer);
+      const ws = wb.worksheets[cfg.sheet] ?? wb.worksheets[0];
+      if (!ws) return [];
+      const rows: Cell[][] = [];
+      ws.eachRow({ includeEmpty: true }, (row) => {
+        const values = (row.values as ExcelJS.CellValue[]).slice(1); // exceljs rows are 1-indexed
+        rows.push(values.map(cellToValue));
+      });
+      return rows;
+    } catch (e) {
+      // Some banks (Galicia) export workbooks that ExcelJS cannot open; a tolerant reader can.
+      try {
+        return readFirstSheet(new Uint8Array(data));
+      } catch {
+        throw e;
+      }
+    }
   }
   let text = new TextDecoder(cfg.encoding).decode(data);
   if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);

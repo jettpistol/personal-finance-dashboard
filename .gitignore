@@ -13,3 +13,10 @@ data-demo/
 
 # Encryption key for stored credentials (see server/src/lib/secrets.ts)
 secret.key
+
+# Real bank statements contain names, tax ids and card numbers. The tests use the
+# synthetic files in server/test/statements/fixtures instead.
+*.pdf
+*.xlsx
+samples/
+private/

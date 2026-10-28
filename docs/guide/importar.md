@@ -2,6 +2,8 @@
 
 Load the movements of a bank, card or wallet statement from a CSV or Excel file instead of typing them one by one.
 
+For the statements the app already knows (today, Banco Galicia's account extract and Visa and American Express card statements) there is a shorter way that needs no preset: see [Resúmenes](resumenes.md).
+
 ![Importar page with the three-step wizard](img/importar.png)
 
 ## What you see
@@ -100,4 +102,4 @@ Every movement that import created and that still exists is deleted, even if you
 - Create rules for the descriptions you see every month; the next import comes out categorized. See [Reglas](reglas.md).
 - Import each statement into the right account: the duplicate check is per account.
 
-See also: [Guide index](README.md) · [Reglas](reglas.md) · [Movimientos](movimientos.md) · [Cuentas](cuentas.md) · [Gastos compartidos](gastos-compartidos.md) · [Recurrentes](recurrentes.md)
+See also: [Guide index](README.md) · [Resúmenes](resumenes.md) · [Reglas](reglas.md) · [Movimientos](movimientos.md) · [Cuentas](cuentas.md) · [Gastos compartidos](gastos-compartidos.md) · [Recurrentes](recurrentes.md)

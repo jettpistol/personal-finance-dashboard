@@ -67,3 +67,10 @@ Found while writing the [user guide](guide/README.md) (v0.3.3), by reading the c
 49. **Patrimonio** counts archived accounts; the Inicio **Cuentas** card hides them. **Patrimonio** and **Comercios** never show the missing-quote alert.
 50. **Categorías:** an archived parent hides its active subcategories while **Mostrar archivadas** is off.
 51. **Exchange rates:** dates before the first stored quote use the earliest quote, so the missing-quote warning only appears when there are no quotes at all.
+
+## Resúmenes (v0.12.0)
+
+52. **Resúmenes:** only tested with statements that have one physical card. A statement with an additional card (the partner's) is read assuming each card's purchases are followed by its **Total Consumos** line, which has not been checked against a real one.
+53. **Resúmenes:** the marks `*`, `K` and `F` that Galicia prints next to card purchases are kept but not interpreted; nobody has confirmed what they mean.
+54. **Resúmenes:** a card payment seen from the account (**PAGO TARJETA VISA**) is proposed as a transfer, but the card's account is not chosen for you, and the payment is not matched with the payment line of the card statement.
+55. **Resúmenes:** transfers to the partner are read as ordinary expenses or income. The partner is not recognised by tax id yet.

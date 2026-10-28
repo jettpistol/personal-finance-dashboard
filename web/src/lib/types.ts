@@ -247,6 +247,10 @@ export type ImportItem = {
   to_account_id: number | null;
   is_shared: boolean;
   rule: string | null;
+  /** Name of the suggested-rules entry that proposed the category (not a rule of the household). */
+  suggested?: string | null;
+  /** Why a statement row starts unticked. */
+  hint?: { label: string; text: string } | null;
   duplicate: 'exact' | 'similar' | null;
   import_hash: string;
   include: boolean;
