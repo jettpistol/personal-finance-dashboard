@@ -76,7 +76,7 @@ Standing instructions for any agent working in this repo. They come from the own
 ## Verify before pushing
 
 ```bash
-npm test                 # server tests (add tests for new server behavior)
+npm test                 # server tests (add tests for new server behavior); each test file gets its own temp DATA_DIR (test/setup.ts)
 npm run typecheck
 npm run build
 npm run demo:reset       # reloads only the Prueba (demo) profile, keeps logins and connections; serves http://localhost:3000
