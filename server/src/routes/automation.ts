@@ -9,6 +9,7 @@ import { assertWritable, splitSchema } from '../lib/transactions.js';
 import { isValidDate } from '../lib/dates.js';
 import { idParam, parse } from './util.js';
 import { RULE_CATALOG } from '../lib/rule-catalog.js';
+import { categoryByPath } from '../lib/category-path.js';
 
 const ruleSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -92,13 +93,7 @@ export default async function automationRoutes(app: FastifyInstance) {
   // Suggested rules for Buenos Aires: browse them and add the ones you want. Nothing is applied by itself.
   const catalogView = () => {
     const cats = [...loadCategories().values()];
-    const byPath = (path: string | null) => {
-      if (!path) return null;
-      const [main, sub] = path.split(' > ');
-      const parent = cats.find((c) => c.parent_id === null && c.name === main && !c.archived);
-      if (!parent) return null;
-      return sub ? (cats.find((c) => c.parent_id === parent.id && c.name === sub && !c.archived) ?? null) : parent;
-    };
+    const byPath = (path: string | null) => categoryByPath(cats, path);
     // Already there: the same pattern, or a rule you wrote yourself for the same store.
     const rows = db().prepare('SELECT pattern, set_merchant FROM rules').all() as { pattern: string; set_merchant: string | null }[];
     const patterns = new Set(rows.map((r) => r.pattern));

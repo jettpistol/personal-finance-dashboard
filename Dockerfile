@@ -15,6 +15,8 @@ COPY web/package.json web/
 RUN npm ci --omit=dev --workspace server --include-workspace-root=false
 
 FROM node:22-bookworm-slim
+# pdftotext reads the text of PDF statements (Resúmenes)
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/package.json /app/package.json
 ENV NODE_ENV=production DATA_DIR=/data PORT=3000 TZ_APP=America/Argentina/Buenos_Aires
 WORKDIR /app/server

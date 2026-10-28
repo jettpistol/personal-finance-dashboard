@@ -16,6 +16,7 @@ import { BudgetsPage } from './pages/BudgetsPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { ImportPage } from './pages/ImportPage';
+import { StatementsPage } from './pages/StatementsPage';
 import { RulesPage } from './pages/RulesPage';
 import { RecurringPage } from './pages/RecurringPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -85,6 +86,7 @@ function AppScreens() {
         <Route path="/metas" element={<GoalsPage />} />
         <Route path="/reportes" element={<ReportsPage />} />
         <Route path="/importar" element={<ImportPage />} />
+        <Route path="/resumenes" element={<StatementsPage />} />
         <Route path="/reglas" element={<RulesPage />} />
         <Route path="/recurrentes" element={<RecurringPage />} />
         <Route path="/cierre" element={<ReviewPage />} />

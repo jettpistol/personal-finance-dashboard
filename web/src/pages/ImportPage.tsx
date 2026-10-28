@@ -1,44 +1,37 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
   Card,
-  Checkbox,
-  Collapse,
   FileButton,
   Group,
   Modal,
-  Pagination,
-  SegmentedControl,
   Select,
   Stack,
   Stepper,
-  Switch,
   Table,
   Tabs,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { IconAlertTriangle, IconArrowBackUp, IconEdit, IconFileSpreadsheet, IconTrash, IconUpload } from '@tabler/icons-react';
+import { IconArrowBackUp, IconEdit, IconFileSpreadsheet, IconTrash, IconUpload } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { date, money } from '../lib/format';
+import { date } from '../lib/format';
 import { notifyError, notifyOk, useAccounts, useRefreshData } from '../lib/queries';
 import type { ImportItem, Preset, PresetConfig } from '../lib/types';
 import { PageHeader } from '../components/Layout';
-import { AccountSelect, CategorySelect } from '../components/inputs';
+import { AccountSelect } from '../components/inputs';
 import { DEFAULT_PRESET, PresetBuilder, withDefaults } from '../components/PresetBuilder';
+import { ImportReview } from '../components/ImportReview';
 
 type Upload = { upload_id: string; file_name: string; size: number };
 type Preview = { items: ImportItem[]; errors: { line: number; message: string }[]; total_rows: number };
 type CommitResult = { batch_id: number; imported: number; failures: { description: string; error: string }[] };
 type Batch = { id: number; file_name: string; account_name: string | null; created_by_name: string | null; row_count: number; remaining: number; created_at: string };
 
-const PAGE = 50;
 const NEW_PRESET = 'new';
 
 function usePresets() {
@@ -257,12 +250,15 @@ function ImportWizard() {
 
         <Stepper.Step label="Revisar" description="Categorías y duplicados">
           {preview && (
-            <PreviewStep
-              preview={preview}
+            <ImportReview
+              errors={preview.errors}
               items={items}
               setItems={setItems}
               currency={account?.currency ?? 'ARS'}
               onBack={() => setStep(1)}
+              backLabel="Volver al preset"
+              errorsHint="Si son muchas, volvé al preset y revisá columnas, formato de fecha o filas a saltear."
+
               onCommit={commit}
               committing={committing}
             />
@@ -295,242 +291,6 @@ function ImportWizard() {
         </Stepper.Completed>
       </Stepper>
     </Card>
-  );
-}
-
-function PreviewStep({
-  preview,
-  items,
-  setItems,
-  currency,
-  onBack,
-  onCommit,
-  committing,
-}: {
-  preview: Preview;
-  items: ImportItem[];
-  setItems: (fn: (prev: ImportItem[]) => ImportItem[]) => void;
-  currency: 'ARS' | 'USD';
-  onBack: () => void;
-  onCommit: () => void;
-  committing: boolean;
-}) {
-  const [page, setPage] = useState(1);
-  const [showErrors, setShowErrors] = useState(false);
-  const [bulkKind, setBulkKind] = useState<'expense' | 'income'>('expense');
-  const [bulkCategory, setBulkCategory] = useState<number | null>(null);
-
-  const update = (idx: number, patch: Partial<ImportItem>) => setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
-  const included = items.filter((i) => i.include);
-  const totals = useMemo(() => {
-    let out = 0;
-    let inn = 0;
-    for (const i of included) {
-      if (i.type === 'transfer') continue;
-      if (i.direction === 'out') out += i.amount;
-      else inn += i.amount;
-    }
-    return { out, inn };
-  }, [included]);
-
-  const pages = Math.max(1, Math.ceil(items.length / PAGE));
-  const slice = items.slice((page - 1) * PAGE, page * PAGE);
-  const dupCount = items.filter((i) => i.duplicate === 'exact').length;
-  const uncategorized = included.filter((i) => i.type !== 'transfer' && i.category_id == null).length;
-
-  const applyBulk = () => {
-    if (bulkCategory == null) return;
-    const n = items.filter((it) => it.include && it.type === bulkKind).length;
-    setItems((prev) => prev.map((it) => (it.include && it.type === bulkKind ? { ...it, category_id: bulkCategory } : it)));
-    notifyOk(`Categoría asignada a ${n} ${bulkKind === 'expense' ? 'gastos' : 'ingresos'} seleccionados`);
-  };
-
-  return (
-    <Stack mt="md">
-      <Group gap="xs">
-        <Badge variant="light" size="lg">
-          {items.length} filas leídas
-        </Badge>
-        <Badge variant="light" color="teal" size="lg">
-          {included.length} a importar
-        </Badge>
-        {dupCount > 0 && (
-          <Badge variant="light" color="yellow" size="lg">
-            {dupCount} duplicadas
-          </Badge>
-        )}
-        {uncategorized > 0 && (
-          <Badge variant="light" color="gray" size="lg">
-            {uncategorized} sin categoría
-          </Badge>
-        )}
-        <Text size="sm" c="dimmed">
-          Salidas {money(totals.out, currency)} · Entradas {money(totals.inn, currency)}
-        </Text>
-      </Group>
-
-      {preview.errors.length > 0 && (
-        <Alert color="yellow" icon={<IconAlertTriangle size={16} />} title={`${preview.errors.length} filas no se pudieron leer`}>
-          <Button size="compact-xs" variant="subtle" onClick={() => setShowErrors((s) => !s)}>
-            {showErrors ? 'Ocultar detalle' : 'Ver detalle'}
-          </Button>
-          <Collapse in={showErrors}>
-            <Stack gap={2} mt="xs">
-              {preview.errors.slice(0, 100).map((e, i) => (
-                <Text key={i} size="xs">
-                  Línea {e.line}: {e.message}
-                </Text>
-              ))}
-            </Stack>
-          </Collapse>
-          <Text size="xs" mt={4}>
-            Si son muchas, volvé al preset y revisá columnas, formato de fecha o filas a saltear.
-          </Text>
-        </Alert>
-      )}
-
-      <Group align="flex-end" gap="xs">
-        <SegmentedControl
-          size="xs"
-          value={bulkKind}
-          onChange={(v) => {
-            setBulkKind(v as 'expense' | 'income');
-            setBulkCategory(null);
-          }}
-          data={[
-            { value: 'expense', label: 'Gastos' },
-            { value: 'income', label: 'Ingresos' },
-          ]}
-        />
-        <CategorySelect size="xs" w={240} kind={bulkKind} value={bulkCategory} onChange={setBulkCategory} placeholder="Categoría" />
-        <Button size="xs" variant="default" onClick={applyBulk} disabled={bulkCategory == null}>
-          Asignar categoría a seleccionados
-        </Button>
-        <Button size="xs" variant="subtle" onClick={() => setItems((prev) => prev.map((i) => ({ ...i, include: i.duplicate !== 'exact' })))}>
-          Seleccionar todos (sin duplicados)
-        </Button>
-        <Button size="xs" variant="subtle" onClick={() => setItems((prev) => prev.map((i) => ({ ...i, include: false })))}>
-          Ninguno
-        </Button>
-      </Group>
-
-      <Table.ScrollContainer minWidth={980}>
-        <Table verticalSpacing={4} fz="sm">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th w={32} />
-              <Table.Th w={90}>Fecha</Table.Th>
-              <Table.Th>Descripción</Table.Th>
-              <Table.Th ta="right">Monto</Table.Th>
-              <Table.Th w={140}>Tipo</Table.Th>
-              <Table.Th w={230}>Categoría / destino</Table.Th>
-              <Table.Th w={90}>Compartido</Table.Th>
-              <Table.Th>Info</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {slice.map((it, i) => {
-              const idx = (page - 1) * PAGE + i;
-              return (
-                <Table.Tr key={it.import_hash + idx} opacity={it.include ? 1 : 0.5}>
-                  <Table.Td>
-                    <Checkbox size="xs" aria-label="Incluir" checked={it.include} onChange={(e) => update(idx, { include: e.currentTarget.checked })} />
-                  </Table.Td>
-                  <Table.Td className="num">{date(it.date, 'DD/MM/YY')}</Table.Td>
-                  <Table.Td>
-                    <Text size="sm" lineClamp={2}>
-                      {it.description}
-                    </Text>
-                    {it.merchant && (
-                      <Text size="xs" c="dimmed">
-                        {it.merchant}
-                      </Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td ta="right">
-                    <Text size="sm" fw={600} className="num" c={it.direction === 'in' ? 'teal' : undefined}>
-                      {it.direction === 'out' ? '-' : '+'}
-                      {money(it.amount, currency)}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Select
-                      size="xs"
-                      value={it.type}
-                      allowDeselect={false}
-                      onChange={(v) => update(idx, { type: (v ?? 'expense') as ImportItem['type'], category_id: null })}
-                      data={[
-                        { value: 'expense', label: 'Gasto' },
-                        { value: 'income', label: 'Ingreso' },
-                        { value: 'transfer', label: 'Transferencia' },
-                      ]}
-                    />
-                  </Table.Td>
-                  <Table.Td>
-                    {it.type === 'transfer' ? (
-                      <AccountSelect
-                        size="xs"
-                        placeholder={it.direction === 'out' ? 'Hacia la cuenta…' : 'Desde la cuenta…'}
-                        value={it.to_account_id}
-                        onChange={(v) => update(idx, { to_account_id: v })}
-                        error={it.include && !it.to_account_id}
-                      />
-                    ) : (
-                      <CategorySelect size="xs" kind={it.type} value={it.category_id} onChange={(v) => update(idx, { category_id: v })} placeholder="Sin categoría" />
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    {it.type === 'expense' && <Switch size="xs" aria-label="Compartido" checked={it.is_shared} onChange={(e) => update(idx, { is_shared: e.currentTarget.checked })} />}
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap={4}>
-                      {it.rule && (
-                        <Tooltip label={`Regla: ${it.rule}`}>
-                          <Badge size="xs" variant="light" color="blue">
-                            Regla
-                          </Badge>
-                        </Tooltip>
-                      )}
-                      {it.duplicate === 'exact' && (
-                        <Tooltip label="Ya importaste esta fila antes">
-                          <Badge size="xs" color="yellow">
-                            Duplicado
-                          </Badge>
-                        </Tooltip>
-                      )}
-                      {it.duplicate === 'similar' && (
-                        <Tooltip label="Ya hay un movimiento con la misma fecha y monto en esta cuenta">
-                          <Badge size="xs" color="yellow" variant="light">
-                            Posible duplicado
-                          </Badge>
-                        </Tooltip>
-                      )}
-                      {it.currency_mismatch && (
-                        <Tooltip label="La moneda de esta fila no coincide con la de la cuenta">
-                          <Badge size="xs" color="red" variant="light">
-                            Otra moneda
-                          </Badge>
-                        </Tooltip>
-                      )}
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              );
-            })}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
-      {pages > 1 && <Pagination value={page} onChange={setPage} total={pages} size="sm" />}
-
-      <Group justify="space-between">
-        <Button variant="subtle" onClick={onBack}>
-          Volver al preset
-        </Button>
-        <Button onClick={onCommit} loading={committing} disabled={!included.length}>
-          Importar {included.length} movimientos
-        </Button>
-      </Group>
-    </Stack>
   );
 }
 

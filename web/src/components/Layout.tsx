@@ -31,6 +31,7 @@ import {
   IconCalendarCheck,
   IconChartPie,
   IconFileImport,
+  IconFileText,
   IconHome,
   IconListDetails,
   IconLogout,
@@ -74,6 +75,7 @@ const NAV = [
   { to: '/cierre', label: 'Cierre de mes', icon: IconCalendarCheck },
   { section: 'Automatización' },
   { to: '/importar', label: 'Importar', icon: IconFileImport },
+  { to: '/resumenes', label: 'Resúmenes', icon: IconFileText },
   { to: '/reglas', label: 'Reglas', icon: IconWand },
   { to: '/recurrentes', label: 'Recurrentes', icon: IconRepeat },
   { section: '' },
@@ -216,6 +218,7 @@ const PAGE_WIDTH: Record<string, 'narrow' | 'medium' | 'wide'> = {
   '/reglas': 'medium',
   '/actividad': 'medium',
   '/importar': 'medium',
+  '/resumenes': 'medium',
 };
 
 export function Layout({ children }: { children: ReactNode }) {

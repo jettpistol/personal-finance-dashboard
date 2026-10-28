@@ -1,0 +1,63 @@
+                               Resumen de Caja de Ahorro en Pesos
+
+      JUAN PEREZ                                   CUIL del Responsable Impositivo : 20-11111111-2
+
+Datos de la cuenta                            Período de movimientos                      Saldos
+      Tipo de cuenta
+      Caja de Ahorro en Pesos
+
+                                                                                                                 $100.000,00
+      Número de cuenta
+      N° 1234567-8 139-1
+
+      CBU                                         26/09/2025                 31/10/2025                       $475.439,60
+
+
+Movimientos
+Fecha       Descripción                        Origen               Crédito                 Débito                Saldo
+
+29/09/25    PAGO EN TRANSPORTE              0001                                                     -1.000,00             99.000,00
+            SUBE Viajes
+            9999999999999999
+
+29/09/25    REINTEGRO PROMOCION GALICIA                                                               1.000,00            100.000,00
+            Colectivo
+
+29/09/25    COMPRA DEBITO                   0407                                                     -8.000,00             92.000,00
+            PVS*SUPER RIO DE JAN
+            9999999999999999
+
+30/09/25    ACREDITAMIENTO DE HABERES                                                             1.000.000,00          1.092.000,00
+            ACME SA
+            30711111111
+            ACRED.HABERES
+
+01/10/25    TRANSFERENCIA DE CUENTA                                                                  50.000,00          1.142.000,00
+            PROPIA
+            JUAN PEREZ
+            20111111112
+            00000031000000000001
+            VARIOS
+
+02/10/25    TRANSFERENCIA A TERCEROS                                                                -30.000,00          1.112.000,00
+            MARIA GOMEZ
+            27222222223
+            VARIOS
+            BANCO DE GALICIA Y B
+
+03/10/25    ANULACION REINTEGRO PROMO                                                                -1.000,00          1.111.000,00
+            GALICIA
+            Uber
+            005056AD38DC1FE0A7D8
+
+13/10/25    PAGO TARJETA VISA                                                                      -450.000,00            661.000,00
+            OPERACION 1312806
+
+31/10/25    COMPRA DEBITO                   0793                                                   -185.560,40            475.439,60
+            PAGO TC CENCO
+            9999999999999999
+
+    Total                                                         $ 1.051.000,00           -$ 675.560,40          $ 475.439,60
+
+Resumen de Caja de Ahorro en Pesos                                                                            Página   1/1
+20251031000000000P

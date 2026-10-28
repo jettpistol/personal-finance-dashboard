@@ -31,6 +31,7 @@ The order follows the sidebar.
 | [Cierre de mes](cierre-de-mes.md) | The monthly sit-down: review, notes and the downloadable .docx report. |
 | **Automatización** | |
 | [Importar](importar.md) | Load bank statements from CSV or Excel, with a saved setup per bank. |
+| [Resúmenes](resumenes.md) | Load a bank or card statement (PDF or Excel) as the bank gives it: the app recognises the format and checks the numbers. |
 | [Reglas](reglas.md) | "If the description contains X, set category Y" and similar automatic fixes. |
 | [Recurrentes](recurrentes.md) | Rent, bills, subscriptions and salaries that repeat; you confirm each one with the real amount. |
 | | |

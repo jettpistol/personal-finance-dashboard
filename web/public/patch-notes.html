@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.15.0</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.15.1</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.15.1"><b>0.15.1</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.15.0"><b>0.15.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.14.1"><b>0.14.1</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.14.0"><b>0.14.0</b><span class="date">Oct 28, 2026</span></a>
@@ -90,16 +91,32 @@
       <td class="main">
         <p class="lead">What changed in each version</p>
 
-        <a name="v0.15.0"></a>
-        <h2>0.15.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <a name="v0.15.1"></a>
+        <h2>0.15.1 <span class="date">&middot; Oct 28, 2026</span></h2>
         <ul>
-          <li>On wide screens every page now sits in a centered column instead of stretching edge to edge. Pages with little on them are narrower: Pendientes and Perfil de datos the most, then Ajustes, Gastos compartidos, Deudores, Objetivos, Recurrentes, Reglas, Actividad and Importar. Inicio, Movimientos, Cuentas, Presupuestos, Reportes and Cierre de mes keep the widest column.</li>
+          <li>On wide screens every page now sits in a centered column instead of stretching edge to edge. Pages with little on them are narrower: Pendientes and Perfil de datos the most, then Ajustes, Gastos compartidos, Deudores, Objetivos, Recurrentes, Reglas, Actividad, Importar and Resúmenes. Inicio, Movimientos, Cuentas, Presupuestos, Reportes and Cierre de mes keep the widest column.</li>
           <li><b>Ajustes → Monedas</b>: one small card, <b>Ocultar centavos</b>, with a switch per currency and its example next to it, instead of two half-page cards.</li>
           <li><b>Ajustes → Mercado Pago</b>: the card is centered.</li>
           <li><b>Ajustes</b>: a short card no longer stretches to the height of the card beside it.</li>
           <li><b>Actividad</b>: the section tag and the lock are next to the person, right before what happened, instead of at the far right.</li>
           <li><b>Cierre de mes</b>: the inflation figures sit next to their title instead of at the far right.</li>
           <li><b>Deudores</b>: a person with fewer loans no longer leaves an empty card as tall as the one beside it.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
+
+        <a name="v0.15.0"></a>
+        <h2>0.15.0 <span class="date">&middot; Oct 28, 2026</span></h2>
+        <ul>
+          <li>New <b>Resúmenes</b> section: upload a bank PDF or Excel file as the bank gives it and the app recognises the format by its content.</li>
+          <li>Reads Banco Galicia's Caja de Ahorro extract (Excel) and monthly statement (PDF), and the Visa and American Express card statements (PDF).</li>
+          <li>Checks that the numbers add up to the totals the document prints itself. A file that doesn't add up is not imported.</li>
+          <li>Rows go through the same review as <b>Importar</b>, and the import can be undone from its <b>Historial</b>.</li>
+          <li>Card payments and the conversion of a USD debt start unticked, because the payment is already recorded from the bank account. Dollar purchases stay in dollars.</li>
+          <li>Card installments show <b>cuota X/Y</b> and are dated on the statement's close date; the purchase date is kept in the note.</li>
+          <li>Categories come from your rules first, then from the suggested rules bank (marked <b>Sugerida</b>). Merchants in neither stay without a category. Card interest, taxes, salary and refunds get a fixed category.</li>
+          <li>The suggested rules bank now also recognises Uber Eats, Crunchyroll, Patreon, LinkedIn, Solo Deportes, neighbourhood supermarkets, fruit shops, Granja, and the shortened names card statements print (SportClub, Burger King, Cencosud Easy, pet shops).</li>
+          <li><b>Importar</b> can now open the Excel extract that Galicia exports, which it couldn't read before.</li>
+          <li>New help article: Resúmenes. The Docker image now includes <code>pdftotext</code>, needed to read PDFs.</li>
         </ul>
         <p class="top"><a href="#top">&uarr; Back to top</a></p>
 

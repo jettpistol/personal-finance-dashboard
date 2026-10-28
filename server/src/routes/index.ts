@@ -3,6 +3,7 @@ import authRoutes from './auth.js';
 import coreRoutes from './core.js';
 import transactionRoutes from './transactions.js';
 import importRoutes from './imports.js';
+import statementRoutes from './statements.js';
 import automationRoutes from './automation.js';
 import planningRoutes from './planning.js';
 import reportRoutes from './reports.js';
@@ -20,6 +21,7 @@ export async function registerRoutes(app: FastifyInstance) {
   await app.register(coreRoutes);
   await app.register(transactionRoutes);
   await app.register(importRoutes);
+  await app.register(statementRoutes);
   await app.register(automationRoutes);
   await app.register(planningRoutes);
   await app.register(reportRoutes);

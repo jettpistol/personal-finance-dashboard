@@ -1142,6 +1142,8 @@ export const AUDIT_ROUTES: Record<string, Descriptor | Skip | Manual> = {
   'POST /api/imports/upload': { skip: 'Keeps the file in memory for the preview; saves nothing.' },
   'POST /api/imports/raw': { skip: 'Shows the raw grid of an uploaded file; saves nothing.' },
   'POST /api/imports/preview': { skip: 'Previews the rows to import; saves nothing.' },
+  'POST /api/statements/detect': { skip: 'Recognises and checks an uploaded statement; saves nothing.' },
+  'POST /api/statements/preview': { skip: 'Previews the rows of a statement; saves nothing.' },
   'POST /api/imports/commit': D('Importar', {
     describe: (c) => {
       const a = accountRow(Number(c.body?.account_id));

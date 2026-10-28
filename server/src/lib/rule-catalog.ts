@@ -36,16 +36,19 @@ const SECTIONS: [section: string, rows: Row[]][] = [
       ['vital', 'Vital', 'supermayorista vital|\\bvital\\b', 'Supermercado > Almacén', ['super', 'mayorista']],
       ['josimar', 'Josimar', 'josimar', 'Supermercado > Almacén', ['super']],
       ['carniceria', 'Carnicería', 'carnicer[ií]a', 'Supermercado > Carnicería', ['super']],
-      ['verduleria', 'Verdulería', 'verduler[ií]a|fruter[ií]a', 'Supermercado > Verdulería', ['super']],
+      ['granja', 'Granja', '\\bgranja\\b', 'Supermercado > Almacén', ['super']],
+      ['super', 'Supermercado de barrio', '\\bsuper(mercados?)?\\b', 'Supermercado > Almacén', ['super']],
+      ['verduleria', 'Verdulería', 'verduler[ií]a|fruter[ií]a|\\bfruta\\b', 'Supermercado > Verdulería', ['super']],
     ],
   ],
   [
     'Delivery y comida rápida',
     [
+      ['ubereats', 'Uber Eats', 'uber ?eats', 'Salidas > Delivery', ['delivery']],
       ['pedidosya', 'PedidosYa', 'pedidos ?ya', 'Salidas > Delivery', ['delivery']],
       ['rappi', 'Rappi', '\\brappi', 'Salidas > Delivery', ['delivery']],
       ['mcdonalds', "McDonald's", 'mc ?donald|arcos dorados', 'Salidas > Restaurantes', ['comida rápida']],
-      ['burgerking', 'Burger King', 'burger king', 'Salidas > Restaurantes', ['comida rápida']],
+      ['burgerking', 'Burger King', 'burger ?king', 'Salidas > Restaurantes', ['comida rápida']],
       ['mostaza', 'Mostaza', '\\bmostaza\\b', 'Salidas > Restaurantes', ['comida rápida']],
       ['kfc', 'KFC', '\\bkfc\\b', 'Salidas > Restaurantes', ['comida rápida']],
       ['starbucks', 'Starbucks', 'starbucks', 'Salidas > Bares', ['café']],
@@ -104,11 +107,14 @@ const SECTIONS: [section: string, rows: Row[]][] = [
       ['max', 'Max (HBO)', '\\bhbo\\b|\\bmax\\.com|hbo ?max', 'Suscripciones > Streaming', ['suscripción']],
       ['prime', 'Amazon Prime Video', 'prime ?video|amazon prime|amzn', 'Suscripciones > Streaming', ['suscripción']],
       ['paramount', 'Paramount+', 'paramount', 'Suscripciones > Streaming', ['suscripción']],
+      ['crunchyroll', 'Crunchyroll', 'crunchyro', 'Suscripciones > Streaming', ['suscripción']],
       ['youtube', 'YouTube Premium', 'youtube', 'Suscripciones > Streaming', ['suscripción']],
       ['apple', 'Apple (iCloud, Music, apps)', 'apple\\.com|itunes|\\bapple\\b', 'Suscripciones > Software', ['suscripción']],
       ['google', 'Google (One, Play)', 'google ?(one|play|\\*)|google storage', 'Suscripciones > Software', ['suscripción']],
       ['microsoft', 'Microsoft 365 / Xbox', 'microsoft|xbox|msft', 'Suscripciones > Software', ['suscripción']],
       ['openai', 'ChatGPT', 'openai|chatgpt', 'Suscripciones > Software', ['suscripción']],
+      ['patreon', 'Patreon', 'patreon', 'Suscripciones > Software', ['suscripción']],
+      ['linkedin', 'LinkedIn', 'linkedin', 'Suscripciones > Software', ['suscripción']],
       ['steam', 'Steam', '\\bsteam', 'Suscripciones > Software', ['juegos']],
       ['playstation', 'PlayStation', 'playstation|\\bpsn\\b|sony interactive', 'Suscripciones > Software', ['juegos']],
     ],
@@ -124,7 +130,7 @@ const SECTIONS: [section: string, rows: Row[]][] = [
       ['farmacity', 'Farmacity', 'farmacity', 'Salud > Farmacia', ['salud']],
       ['drahorro', 'Dr. Ahorro', 'dr\\.? ?ahorro', 'Salud > Farmacia', ['salud']],
       ['farmacia', 'Farmacia', 'farmacia', 'Salud > Farmacia', ['salud']],
-      ['sportclub', 'SportClub', 'sport ?club', 'Suscripciones > Gimnasio', ['deporte']],
+      ['sportclub', 'SportClub', 'sport ?clu', 'Suscripciones > Gimnasio', ['deporte']],
       ['megatlon', 'Megatlon', 'megatlon', 'Suscripciones > Gimnasio', ['deporte']],
       ['smartfit', 'Smart Fit', 'smart ?fit', 'Suscripciones > Gimnasio', ['deporte']],
     ],
@@ -138,6 +144,7 @@ const SECTIONS: [section: string, rows: Row[]][] = [
       ['megatone', 'Megatone', 'megatone', 'Compras > Tecnología', ['electro']],
       ['naldo', 'Naldo', '\\bnaldo\\b', 'Compras > Tecnología', ['electro']],
       ['oncity', 'OnCity', 'on ?city', 'Compras > Tecnología', ['electro', 'online']],
+      ['solodeportes', 'Solo Deportes / Solo Urbano', 'solo (deportes|urbano)', 'Compras > Ropa', ['ropa', 'deporte']],
       ['zara', 'Zara', '\\bzara\\b', 'Compras > Ropa', ['ropa']],
       ['nike', 'Nike', '\\bnike\\b', 'Compras > Ropa', ['ropa', 'deporte']],
       ['adidas', 'Adidas', 'adidas', 'Compras > Ropa', ['ropa', 'deporte']],
@@ -145,11 +152,11 @@ const SECTIONS: [section: string, rows: Row[]][] = [
       ['grimoldi', 'Grimoldi', 'grimoldi', 'Compras > Ropa', ['ropa']],
       ['mimo', 'Mimo & Co', '\\bmimo\\b', 'Compras > Ropa', ['ropa', 'chicos']],
       ['sodimac', 'Sodimac', 'sodimac', 'Compras > Hogar', ['hogar']],
-      ['easy', 'Easy', '\\beasy\\b', 'Compras > Hogar', ['hogar']],
+      ['easy', 'Easy', '\\beasy\\b|cencosud ?easy', 'Compras > Hogar', ['hogar']],
       ['blaisten', 'Blaisten', 'blaisten', 'Compras > Hogar', ['hogar']],
       ['ikea', 'Muebles (Ikea, Mercado de Muebles)', 'ikea|muebler[ií]a', 'Compras > Hogar', ['hogar']],
       ['puppis', 'Puppis', 'puppis', 'Otros gastos > Varios', ['mascotas']],
-      ['veterinaria', 'Veterinaria', 'veterinari', 'Otros gastos > Varios', ['mascotas']],
+      ['veterinaria', 'Veterinaria', 'veterinari|pet ?shop', 'Otros gastos > Varios', ['mascotas']],
       ['yenny', 'Yenny / El Ateneo', 'yenny|el ateneo|cuspide', 'Educación > Libros', ['libros']],
     ],
   ],
@@ -201,7 +208,7 @@ const SECTIONS: [section: string, rows: Row[]][] = [
 ];
 
 // Generic patterns (a kind of shop, a tax) set the category but not a merchant name.
-const GENERIC = new Set(['carniceria', 'verduleria', 'estacionamiento', 'patente', 'expensas', 'abl', 'ausa', 'farmacia', 'veterinaria', 'ikea', 'plataforma10', 'impdebcred', 'percepcion', 'iibb', 'monotributo', 'mantenimiento', 'interesestarjeta', 'iva', 'sueldo', 'rendimientos', 'reintegro', 'ventaml']);
+const GENERIC = new Set(['granja', 'super', 'carniceria', 'verduleria', 'estacionamiento', 'patente', 'expensas', 'abl', 'ausa', 'farmacia', 'veterinaria', 'ikea', 'plataforma10', 'impdebcred', 'percepcion', 'iibb', 'monotributo', 'mantenimiento', 'interesestarjeta', 'iva', 'sueldo', 'rendimientos', 'reintegro', 'ventaml']);
 
 export const RULE_CATALOG: CatalogRule[] = SECTIONS.flatMap(([section, rows]) =>
   rows.map(([id, name, pattern, category, tags]) => ({ id, section, name, pattern, category, merchant: GENERIC.has(id) ? '' : name.replace(/ \(.*\)$/, ''), tags })),
