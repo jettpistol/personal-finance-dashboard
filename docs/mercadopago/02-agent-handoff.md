@@ -125,6 +125,39 @@ Content-Type: application/json
 ```
 
 - `file_name` comes from the matching `/list` endpoint (`/v1/account/settlement_report/list` or `/v1/account/release_report/list`).
+
+#### Report list response (documented for `release_report/list`)
+
+`GET {base}/list` returns a JSON **array** (the docs wrongly say "no response body"):
+
+```json
+[
+  {
+    "id": 99336983670,
+    "account_id": 167345291,
+    "user_id": 123456789,
+    "report_id": 17012160,
+    "begin_date": "2022-08-01T03:00:00Z",
+    "end_date": "2022-08-08T02:59:59Z",
+    "generation_date": "2024-02-16T15:55:22.258-04:00",
+    "last_modified": "2024-02-16T15:55:22.261-04:00",
+    "created_from": "manual",
+    "status": "processed",
+    "sub_type": "release",
+    "currency_id": "ARS",
+    "format": "CSV",
+    "is_reserve": false,
+    "is_test": false,
+    "retries": 0
+  }
+]
+```
+
+How to use it:
+- **Ready check:** a report can be downloaded once `status == "processed"`. Treat any other status as "still generating" and poll again with backoff (e.g. 10s, 20s, 40s, up to ~10 min), then give up and log it in `sync_runs`.
+- **Matching:** find the report you just requested by its `begin_date` and `end_date` (UTC; `T03:00:00Z` is local midnight in Argentina, GMT-3). Prefer the newest `generation_date` if there are duplicates.
+- **Filter:** skip entries with `is_test: true`. `created_from` tells manual reports from scheduled ones.
+- **⚠️ `file_name` isn't in the documented example**, but the download endpoint needs it. Real responses have historically included a `file_name` field. Check this first with a real token. If it's missing, check whether `GET {base}/{id}` works, and if it doesn't, report back to the owner before building the sync around it.
 - `200` returns the raw file (`.csv` or `.xlsx`, depending on config) with **no JSON body**, so handle it as text/binary, not JSON.
 - `401` means the token is invalid; `404 not_found` means the file name is wrong or the file isn't ready yet (keep polling `/list`).
 
