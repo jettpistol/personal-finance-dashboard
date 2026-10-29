@@ -111,5 +111,6 @@ DATE,SOURCE_ID,EXTERNAL_REFERENCE,RECORD_TYPE,DESCRIPTION,NET_CREDIT_AMOUNT,NET_
 2018-04-17T15:11:12.000-04:00,,,release,payment,225.96,0.00,269.00,-43.04,0.00,0.00,0.00,0.00,1,account_money
 ```
 
+- **Status in a real account (2026-10-29):** a finished release report was listed with `status: "enabled"`, not the documented `"processed"`. The app downloads any listed report that has a `file_name` unless its status says it's still being made (`pending`, `processing`…) or failed (`error`, `failed`…).
 - **Balance:** the first row, `RECORD_TYPE = initial_available_balance`, is the available balance at the start of the range. With the rows after it, that gives the balance at any point, so the blocked balance endpoint isn't needed.
 - `RECORD_TYPE` `release` rows carry `DESCRIPTION` (`payment`, `withdrawal`, …) and credit or debit amounts.

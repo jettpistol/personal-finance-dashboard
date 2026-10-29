@@ -29,6 +29,9 @@ import { stableId } from './statements/money.js';
 export const MP_PLATFORM = 'Mercado Pago';
 // What the sync did, in the server's terminal (never the token or the report's contents), for diagnosis.
 const log = (msg: string) => console.log(`[mercadopago] ${msg}`);
+// Report statuses that mean "not yet" and "won't be". Anything else with a file is tried.
+const IN_PROGRESS = /^(pending|processing|in_progress|in-progress|queued|waiting|generating|created|scheduled)$/;
+const FAILED = /^(error|failed|failure|rejected|cancell?ed|expired|deleted)$/;
 const SYNC_EVERY_MS = 60 * 60_000;
 const GIVE_UP_MS = 30 * 60_000;
 const CHUNK_DAYS = 31;
@@ -336,8 +339,16 @@ async function fetchReport(token: string, kind: ReportKind, p: Pending): Promise
   log(`${kind}: ${entries.length} en la lista${newest ? ` (últimos: ${newest})` : ''}; pedido ${p.begin}→${p.end}: ${mine.length ? 'encontrado' : 'no figura'}`);
   const entry = mine[0]?.e;
   if (!entry) return { wait: `El reporte de ${label} todavía no figura en la lista de Mercado Pago.` };
-  if (entry.status && entry.status !== 'processed') return { wait: `Mercado Pago está preparando el reporte de ${label} (estado «${entry.status.slice(0, 30)}»).` };
-  if (!entry.file_name) throw new SyncError('Mercado Pago terminó el reporte pero no indicó el nombre del archivo.');
+  // The docs say "processed" when it's ready; real accounts also answer "enabled". So the file
+  // decides: with a file name it's downloaded, unless the status clearly says it's still being
+  // made or it failed.
+  const status = (entry.status ?? '').toLowerCase();
+  const said = entry.status ? ` (estado «${entry.status.slice(0, 30)}»)` : '';
+  if (FAILED.test(status)) throw new SyncError(`Mercado Pago no pudo generar el reporte de ${label}${said}. Probá de nuevo más tarde.`);
+  if (!entry.file_name || IN_PROGRESS.test(status)) {
+    if (!entry.file_name && status === 'processed') throw new SyncError('Mercado Pago terminó el reporte pero no indicó el nombre del archivo.');
+    return { wait: `Mercado Pago está preparando el reporte de ${label}${said}.` };
+  }
   if (!/^[\w.-]+\.csv$/i.test(entry.file_name)) throw new SyncError(`El reporte llegó como «${entry.file_name.slice(-40)}»; la app lee reportes en CSV.`);
   const file = await mpGet(token, `/v1/account/${kind}/${entry.file_name}`);
   log(`${kind}: descarga de ${entry.file_name}: código ${file.status}${typeof file.body === 'string' ? `, ${file.body.length} caracteres` : ''}`);

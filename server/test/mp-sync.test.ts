@@ -20,6 +20,8 @@ const made: Made[] = [];
 let hideFileName = false;
 // Real accounts may round the dates in the list and serve the file through a redirect.
 let roundDates = false;
+// What a finished report's status says: the docs show "processed", a real account showed "enabled".
+let doneStatus = 'processed';
 let redirect: 'none' | 'same' | 'bad' = 'none';
 const files: Record<string, (n: number) => string> = {};
 
@@ -55,6 +57,7 @@ const fake = http.createServer((req, res) => {
           .filter((r) => r.kind === kind)
           .map(({ n: _n, kind: _k, file_name, ...r }) => ({
             ...r,
+            status: r.status === 'processed' ? doneStatus : r.status,
             ...(roundDates ? { begin_date: `${r.begin_date.slice(0, 10)}T00:00:00Z`, end_date: `${r.end_date.slice(0, 10)}T23:59:59Z`, generation_date: new Date().toISOString() } : {}),
             ...(hideFileName ? {} : { file_name }),
           })),
@@ -316,6 +319,28 @@ describe('what real accounts may do', () => {
     // Nothing outside the allowed reads was ever asked for.
     expect(seen.some((x) => x.path === '/v1/advanced_payments')).toBe(false);
     redirect = 'none';
+  });
+
+  it('downloads a finished report whose status says "enabled"', async () => {
+    reset();
+    doneStatus = 'enabled';
+    await sync.advanceSync(id, { start: true });
+    // Still being made: it waits and says so.
+    expect((await sync.advanceSync(id)).note).toMatch(/preparando.*pending/);
+    processAll();
+    expect((await sync.advanceSync(id)).status).toBe('review');
+    doneStatus = 'processed';
+  });
+
+  it('stops with the reason when Mercado Pago says the report failed', async () => {
+    reset();
+    doneStatus = 'error';
+    await sync.advanceSync(id, { start: true });
+    processAll();
+    const v = await sync.advanceSync(id);
+    expect(v.status).toBe('error');
+    expect(v.error).toMatch(/no pudo generar.*error/);
+    doneStatus = 'processed';
   });
 
   it('a report that takes long to make does not start the first import over', async () => {
