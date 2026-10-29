@@ -29,6 +29,11 @@ export function TxAmount({ t }: { t: Tx }) {
           → {money(t.to_amount, toCurrency)} · TC $ {rate.toLocaleString('es-AR', { maximumFractionDigits: 2 })}
         </Text>
       )}
+      {!!t.fees?.length && (
+        <Text className="num" size="xs" c="dimmed" ta="right">
+          Comisión {money(t.fees.reduce((s, f) => s + f.amount, 0), t.currency)}
+        </Text>
+      )}
     </>
   );
 }

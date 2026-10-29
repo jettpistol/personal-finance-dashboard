@@ -13,7 +13,10 @@ import {
   Switch,
   Text,
   TextInput,
+  Tooltip,
+  UnstyledButton,
 } from '@mantine/core';
+import dayjs from 'dayjs';
 import { modals } from '@mantine/modals';
 import { IconDots, IconEdit, IconListDetails, IconLock, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -224,6 +227,7 @@ function AccountCard({ a, onEdit }: { a: Account; onEdit: () => void }) {
                 Archivada
               </Badge>
             )}
+            {a.live && <LiveTag live={a.live} />}
           </Group>
         </div>
         <Menu position="bottom-end" withArrow>
@@ -255,6 +259,7 @@ function AccountCard({ a, onEdit }: { a: Account; onEdit: () => void }) {
       </Group>
       <Text mt="md" size="xs" c="dimmed">
         {isDebt ? 'Deuda' : 'Saldo'}
+        {a.live?.state === 'live' && a.live.at && ` · actualizado ${dayjs(a.live.at).format(dayjs(a.live.at).isSame(dayjs(), 'day') ? 'HH:mm' : 'D MMM HH:mm')}`}
       </Text>
       <Text className="num" fz={22} fw={800} c={isDebt ? 'red' : a.balance < 0 ? 'red' : undefined}>
         {money(isDebt ? -a.balance : a.balance, a.currency)}
@@ -273,6 +278,26 @@ function AccountCard({ a, onEdit }: { a: Account; onEdit: () => void }) {
         </Button>
       </Group>
     </Card>
+  );
+}
+
+const LIVE = {
+  connected: { label: 'Conectada', tip: 'Conectada a Mercado Pago. Los movimientos llegan solos después de la primera revisión.' },
+  live: { label: 'En vivo', tip: 'Se actualiza sola desde Mercado Pago cada hora.' },
+  error: { label: 'Sin actualizar', tip: 'Mercado Pago no respondió. Ver Ajustes → Mercado Pago.' },
+} as const;
+
+/** Your Mercado Pago account, filled by the connection: green with a pulsing dot while it's working. */
+function LiveTag({ live }: { live: NonNullable<Account['live']> }) {
+  const navigate = useNavigate();
+  const t = LIVE[live.state];
+  return (
+    <Tooltip label={t.tip} multiline w={240}>
+      <UnstyledButton className="pfd-live" data-state={live.state} onClick={() => navigate('/ajustes?tab=mercadopago')}>
+        <span className="pfd-live-dot" aria-hidden />
+        {t.label}
+      </UnstyledButton>
+    </Tooltip>
   );
 }
 

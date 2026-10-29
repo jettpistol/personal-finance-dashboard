@@ -32,6 +32,7 @@ import type { SplitMethod, Tx, TxType } from '../lib/types';
 import { AccountSelect, CategorySelect, MoneyInput } from './inputs';
 import { SplitEditor, splitProblem } from './SplitEditor';
 import { CsvImportModal } from './CsvImportModal';
+import { FeesEditor, feeDrafts, feesPayload, type FeeDraft } from './FeesEditor';
 
 type Form = {
   type: TxType;
@@ -55,6 +56,7 @@ type Form = {
   installments: boolean;
   count: number | string;
   first_date: string;
+  fees: FeeDraft[];
 };
 
 const empty = (type: TxType = 'expense', accountId: number | null = null): Form => ({
@@ -78,6 +80,7 @@ const empty = (type: TxType = 'expense', accountId: number | null = null): Form 
   installments: false,
   count: 3,
   first_date: today(),
+  fees: [],
 });
 
 /** Pesos per dollar implied by a conversion, whichever way it goes. */
@@ -111,6 +114,7 @@ function fromTx(t: Tx): Form {
     split_values: values,
     is_private: !!t.is_private,
     is_settlement: !!t.is_settlement,
+    fees: feeDrafts(t.fees),
   };
 }
 
@@ -253,6 +257,9 @@ export function TxFormModal() {
     if (crossCurrency && !(toCents(form.to_amount) > 0)) return fail(new FieldError('Indicá el tipo de cambio.', ['rate']));
     const splitIssue = splittable && form.is_shared ? splitProblem(form.split_method, form.split_values, users, toCents(form.amount), account?.currency) : null;
     if (splitIssue) return fail(new FieldError(splitIssue, ['split']));
+    const fees = feesPayload(form.fees);
+    if (form.fees.some((f) => toCents(f.amount) > 0 && !f.platform.trim())) return fail(new FieldError('Indicá la plataforma de cada comisión.', ['fees']));
+    if (fees.reduce((sum, f) => sum + f.amount, 0) > Math.abs(toCents(form.amount))) return fail(new FieldError('Las comisiones no pueden ser más que el monto.', ['fees']));
     if (pendingPartial && !reason.trim()) return fail(new FieldError(pending!.kind === 'collect' ? 'Es un cobro parcial: escribí por qué no se cobró todo.' : 'Es un pago parcial: escribí por qué no se pagó todo.', ['reason']));
     setSaving(true);
     try {
@@ -281,6 +288,7 @@ export function TxFormModal() {
           to_amount: crossCurrency ? toCents(form.to_amount) : null,
           is_settlement: crossOwner ? form.is_settlement : null,
           status: tx?.status,
+          fees: form.type === 'adjustment' ? [] : fees,
           // Linked to the Pendientes item in the same save: nothing is saved if it can't count.
           ...(pending ? { pending: { source: pending.source, id: pending.id, reason: pendingPartial ? reason.trim() : null } } : {}),
         };
@@ -579,6 +587,7 @@ export function TxFormModal() {
             <TagsInput label="Etiquetas" placeholder="Ej: vacaciones-2027" data={tags.data ?? []} value={form.tags} onChange={(v) => set('tags', v)} clearable />
           </SimpleGrid>
           <Textarea label="Notas" autosize minRows={1} maxRows={4} value={form.notes} onChange={(e) => set('notes', e.currentTarget.value)} />
+          {form.type !== 'adjustment' && !inCuotas && <FeesEditor value={form.fees} onChange={(v) => set('fees', v)} currency={account?.currency ?? 'ARS'} error={bad.has('fees')} />}
 
           <Group gap="xs">
             <FileButton onChange={setReceipt} accept="image/jpeg,image/png,image/webp,application/pdf">

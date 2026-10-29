@@ -655,6 +655,65 @@ a {
   --tag-bottom: #566175;
 }
 
+/* Live account (filled by a connection such as Mercado Pago): a green tag with a pulsing dot. */
+.pfd-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 16px;
+  padding: 0 6px 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(#2f9e6e, #1f7a52);
+  white-space: nowrap;
+}
+
+.pfd-live[data-state='error'] {
+  background: linear-gradient(#e49536, #b9640a);
+}
+
+.pfd-live-dot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.pfd-live-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #fff;
+  animation: pfd-live-pulse 1.8s ease-out infinite;
+}
+
+.pfd-live[data-state='error'] .pfd-live-dot::after {
+  animation: none;
+}
+
+@keyframes pfd-live-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pfd-live-dot::after {
+    animation: none;
+  }
+}
+
 /* Tabs attached to their panel. */
 .mantine-Tabs-list {
   gap: 3px;
@@ -1412,7 +1471,7 @@ a {
 /* Ajustes → Mercado Pago: label / value rows, and the list of data sources. */
 .pfd-mp-details {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
   gap: 8px 20px;
   margin: 0;
@@ -1426,6 +1485,7 @@ a {
 .pfd-mp-details dd {
   margin: 0;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .pfd-mp-sources {

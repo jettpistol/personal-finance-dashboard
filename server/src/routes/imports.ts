@@ -5,28 +5,13 @@ import { HttpError } from '../lib/http.js';
 import { accountVisible, loadAccounts } from '../lib/domain.js';
 import { parseRows, presetConfigSchema, readTable, type Cell } from '../lib/importer.js';
 import { buildPreviewItems } from '../lib/import-preview.js';
-import { assertWritable, insertTx, normaliseTx } from '../lib/transactions.js';
+import { assertWritable } from '../lib/transactions.js';
+import { commitImportRows, commitRowSchema } from '../lib/import-commit.js';
 import { autoLink } from '../lib/commitments.js';
-import { loadConverter } from '../lib/fx.js';
 import { getUpload, saveUpload } from '../lib/uploads.js';
 import { idParam, parse } from './util.js';
 
 const presetSchema = z.object({ name: z.string().trim().min(1).max(60), config: presetConfigSchema });
-
-const commitRowSchema = z.object({
-  date: z.string(),
-  description: z.string().max(300),
-  amount: z.number().int().positive(),
-  direction: z.enum(['out', 'in']),
-  type: z.enum(['expense', 'income', 'transfer']),
-  category_id: z.number().int().nullish(),
-  merchant: z.string().nullish(),
-  notes: z.string().nullish(),
-  tags: z.array(z.string()).default([]),
-  to_account_id: z.number().int().nullish(),
-  is_shared: z.boolean().default(false),
-  import_hash: z.string(),
-});
 
 export default async function importRoutes(app: FastifyInstance) {
   // ---- Presets ----
@@ -103,72 +88,12 @@ export default async function importRoutes(app: FastifyInstance) {
       z.object({ file_name: z.string().max(200), account_id: z.number().int(), preset_id: z.number().int().nullish(), rows: z.array(commitRowSchema).min(1).max(5000) }),
       req.body,
     );
-    const accounts = loadAccounts();
-    const account = accounts.get(account_id);
+    const account = loadAccounts().get(account_id);
     if (!account || !accountVisible(account, req.userId)) throw new HttpError(400, 'Cuenta inválida');
     assertWritable(account, req.userId);
-    const fx = loadConverter();
-    const created: number[] = [];
-    const result = db().transaction(() => {
-      const batchId = Number(
-        db().prepare('INSERT INTO import_batches (file_name, preset_id, account_id, created_by) VALUES (?, ?, ?, ?)').run(file_name, preset_id ?? null, account_id, req.userId)
-          .lastInsertRowid,
-      );
-      let count = 0;
-      const failures: { description: string; error: string }[] = [];
-      for (const r of rows) {
-        try {
-          // The row amount is always in this account's currency.
-          let from = account.id;
-          let to: number | null = null;
-          let amount = r.amount;
-          let toAmount: number | null = null;
-          if (r.type === 'transfer') {
-            if (r.to_account_id == null) throw new Error('Falta la cuenta destino de la transferencia');
-            const other = accounts.get(r.to_account_id);
-            if (!other) throw new Error('Cuenta destino inválida');
-            const converted = other.currency === account.currency ? r.amount : fx.convert(r.amount, account.currency, other.currency, r.date);
-            if (!converted) throw new Error('No hay cotización para convertir la transferencia');
-            if (r.direction === 'out') {
-              to = other.id;
-              if (other.currency !== account.currency) toAmount = converted;
-            } else {
-              // Money coming in is a transfer from the other account into this one.
-              from = other.id;
-              to = account.id;
-              amount = converted;
-              if (other.currency !== account.currency) toAmount = r.amount;
-            }
-          }
-          const tx = normaliseTx(
-            {
-              type: r.type,
-              date: r.date,
-              amount,
-              account_id: from,
-              to_account_id: to,
-              to_amount: toAmount,
-              category_id: r.category_id ?? null,
-              description: r.description,
-              merchant: r.merchant ?? null,
-              notes: r.notes ?? null,
-              tags: r.tags,
-              is_shared: r.is_shared,
-              is_private: false,
-            },
-            req.userId,
-          );
-          created.push(insertTx({ ...tx, import_batch_id: batchId, import_hash: r.import_hash }));
-          count++;
-        } catch (e) {
-          failures.push({ description: r.description, error: (e as Error).message });
-        }
-      }
-      db().prepare('UPDATE import_batches SET row_count = ? WHERE id = ?').run(count, batchId);
-      return { batch_id: batchId, imported: count, failures };
-    })();
-    for (const id of created) autoLink(id);
-    return result;
+    const r = db().transaction(() => commitImportRows(account, rows, req.userId, { file_name, preset_id }))();
+    for (const id of r.created) autoLink(id);
+    return { batch_id: r.batch_id, imported: r.imported, merged: r.merged, failures: r.failures };
   });
 
   app.get('/imports', async () =>

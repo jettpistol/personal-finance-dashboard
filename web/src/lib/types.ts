@@ -39,6 +39,8 @@ export type Account = {
   balance_ars: number | null;
   balance_usd: number | null;
   can_edit: boolean;
+  /** Your own Mercado Pago account's sync state (only you get it). */
+  live?: { state: 'connected' | 'live' | 'error'; at: string | null } | null;
 };
 
 export type Category = {
@@ -80,6 +82,8 @@ export type Tx = {
   recurring_id: number | null;
   import_batch_id: number | null;
   has_receipt: boolean;
+  /** Platform fees already inside the amount. */
+  fees?: Fee[];
   masked: boolean;
   owner_id: number | null;
   /** Whose movement it is: shared (or in a joint account), or a user id. */
@@ -254,7 +258,14 @@ export type ImportItem = {
   duplicate: 'exact' | 'similar' | null;
   import_hash: string;
   include: boolean;
+  /** From a platform sync (Mercado Pago): its own id, its fees, and the typed movement it completes. */
+  external_id?: string;
+  fees?: Fee[];
+  merge_with?: number | null;
 };
+
+export type FeeKind = 'fee' | 'financing' | 'shipping' | 'tax' | 'other';
+export type Fee = { platform: string; kind: FeeKind; amount: number };
 
 export type Notification = { id: number; kind: string; title: string; body: string; link: string | null; read: number; created_at: string };
 

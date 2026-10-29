@@ -1,6 +1,6 @@
 # Connect Mercado Pago
 
-Each of you can connect your own personal Mercado Pago account in **Ajustes → Mercado Pago**. For now this only saves the connection and checks what Mercado Pago lets the app read; bringing in the movements comes next.
+Each of you can connect your own personal Mercado Pago account in **Ajustes → Mercado Pago**. The app then brings your Mercado Pago movements into your Mercado Pago account in [Cuentas](cuentas.md): the first time everything since the start date, for you to review; after that, new movements every hour by themselves.
 
 ![Ajustes, Mercado Pago tab with a connected account and the list of data sources](img/mercado-pago.png)
 
@@ -16,7 +16,7 @@ How Finanzas keeps it:
 - It's checked with Mercado Pago, then stored **encrypted**. The key that opens it is not in the database, so a copy of the database or a backup alone is useless.
 - It's **never shown again**, not even to you: the screen only shows the account name and ID.
 - It's yours only. Your partner can't see it, use it or even tell whether you connected one.
-- The app only **reads** from Mercado Pago, with one exception you approved: it can save the settings of the two history reports and ask for a report. It's built so it can't create payments, refunds, transfers or anything else that moves money.
+- The app only **reads** from Mercado Pago, with one exception you approved: it can save the settings of the two history reports and ask for a report (that's how it gets your movements). It's built so it can't create payments, refunds, transfers or anything else that moves money.
 
 ## Get the token (about 15 minutes, on a computer)
 
@@ -61,6 +61,8 @@ Common messages:
 - **Cuenta**: your Mercado Pago name, user ID and country (**MLA** is Argentina).
 - **Desde**: the start date (1 October 2026 unless you changed it); the pencil changes it.
 - **En Cuentas**: the account it fills.
+- **Movimientos**: how the import is going (see [Bring in your movements](#bring-in-your-movements)).
+- **Saldo**: your available balance according to Mercado Pago, with the time of that figure. If the app's balance for the account is different, a line underneath says **En la app: $ …**: something is missing, doubled or typed with another amount.
 - **Datos**: after **Probar conexión**, how many data sources your account allows. Click it for the list:
   - **Datos de la cuenta**: who you are.
   - **Pagos recibidos**: money that came in, almost in real time.
@@ -70,6 +72,37 @@ Common messages:
 - **⋯ → Reemplazar token**: after renewing it in Mercado Pago.
 - **⋯ → Desconectar**: deletes the token from Finanzas. To cancel it in Mercado Pago too, renew it there.
 - **Volvé a conectar** (yellow): the server can no longer open the saved token (its key changed). Paste the token again.
+
+## Bring in your movements
+
+The app reads two Mercado Pago reports: **dinero liberado** (every movement of your available balance, and the balance at the start) and **todas las transacciones** (the store or person behind each one). Mercado Pago makes them when asked; it takes a few minutes.
+
+**The first time**
+
+1. In **Ajustes → Mercado Pago**, next to **Movimientos**, click **Traer movimientos**. If the reports had no settings in Mercado Pago, the app saves them first (the same as **Configurar reportes**).
+2. It shows **Buscando en Mercado Pago…** and checks every 15 seconds. You can leave the page: the server keeps checking. From an early start date it asks month by month.
+3. When everything is in: **N para revisar** and **Revisar**. Nothing is saved yet.
+4. **Revisar** opens the same review table as [Importar](importar.md), with:
+   - **Usar $ … como saldo inicial de «Mercado Pago»** (ticked): sets the account's starting balance so that, on the start date, it matches Mercado Pago's own figure. Untick it to keep yours.
+   - One row per movement, with a category from your [Reglas](reglas.md) or the suggested ones (**Sugerida**). Change type, category, destination or **Compartido** as usual, or untick a row to leave it out.
+   - **Retiro**: a withdrawal to a bank account or in cash. Choose where the money went in **Hacia la cuenta…**; it becomes a **Transf. propia**.
+   - **Ya cargado**: you had already typed this movement by hand (same amount, at most a day apart). It isn't added again: your movement keeps its description, category, notes and links, and gets Mercado Pago's date, store and fees.
+5. **Importar N movimientos**. From then on the account is **En vivo** in Cuentas.
+
+![Review of the first Mercado Pago import, with the starting balance, a withdrawal and a movement already typed](img/mercado-pago-revisar.png)
+
+**After that**
+
+- Every hour the app asks Mercado Pago for what's new (the last two days, so nothing is missed) and saves it without asking, with your rules applied and duplicates skipped. A movement with exactly the amount of something in [Pendientes](pagos-pendientes.md) settles it, as when you type it.
+- What needs a choice waits: **N para revisar** next to **Movimientos** (a withdrawal, which needs the account it went to). Rows you left out in a review aren't brought back.
+- **Al día · HH:mm** says when it last updated; the round arrow asks right away.
+- If something fails, the reason shows in red with **Reintentar**, and Cuentas shows **Sin actualizar**.
+
+**Amounts and fees.** Each movement's amount is what really reached or left your balance, after Mercado Pago's fees. The fees are recorded on the movement (a **Comisión $ …** line in [Movimientos](movimientos.md)) and add up in [Reportes → Comisiones](reportes.md#comisiones).
+
+**Undoing.** Right after **Importar**, **Deshacer** in the message takes it all back, including the starting balance. Later, each import is in **Importar → Historial** (*Mercado Pago · revisión* or *Mercado Pago · date*), where **Deshacer** removes the movements it added (movements you had typed and it completed stay).
+
+**It's per data profile.** Only the profile where you click **Traer movimientos** fills; another profile (for example **Prueba (demo)**) stays as it is until you start it there.
 
 What Mercado Pago doesn't offer to the app at all: the Mercado Pago credit card, Mercado Crédito loans, investment yields and crypto. Those still come in through [Importar](importar.md).
 

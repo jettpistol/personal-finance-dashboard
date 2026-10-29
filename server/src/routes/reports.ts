@@ -4,7 +4,7 @@ import { db } from '../db/index.js';
 import { HttpError } from '../lib/http.js';
 import { addMonthsToMonth, currentMonth, isValidDate, today } from '../lib/dates.js';
 import { accountBalances, accountVisible, fetchTxs, loadAccounts, loadUsers, presentTx, scopeAccounts, scopeEntry, txVisibility } from '../lib/domain.js';
-import { balances, inflationReport, merchants, monthSummary, netWorth, perPerson, trend } from '../lib/reports.js';
+import { balances, feeReport, inflationReport, merchants, monthSummary, netWorth, perPerson, trend } from '../lib/reports.js';
 import { budgetStatus } from '../lib/budgets.js';
 import { latestRate, loadConverter, refreshRates, upsertRate } from '../lib/fx.js';
 import { loadCpi, refreshCpi } from '../lib/cpi.js';
@@ -119,6 +119,12 @@ export default async function reportRoutes(app: FastifyInstance) {
     const scope = scopeQuery(req.query, req.userId);
     const { from, to } = rangeQuery(req.query, 3);
     return merchants(from, to, { scope, currency: currencyQuery(req.query), viewer: req.userId });
+  });
+
+  app.get('/reports/fees', async (req) => {
+    const scope = scopeQuery(req.query, req.userId);
+    const { from, to } = rangeQuery(req.query, 12);
+    return feeReport(from, to, { scope, currency: currencyQuery(req.query), viewer: req.userId });
   });
 
   app.get('/reports/inflation', async (req) => {

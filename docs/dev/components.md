@@ -65,4 +65,6 @@ The window version leaves validation and errors to the caller: throw from `onCon
 | `GroupedSelect` | `components/GroupedSelect.tsx` | Select with collapsible groups (accounts, categories). Tick at the end; no item counts. |
 | `MoneyInput`, `AccountSelect`, `CategorySelect` | `components/inputs.tsx` | Amounts in units with es-AR separators and only a `$` prefix (the currency is shown next to it, never twice). |
 | Dropdown resize corner | `lib/dropdown-resize.ts` | Every dropdown list can be stretched from its bottom-right corner. |
+| `ImportReview` | `components/ImportReview.tsx` | The review table of any import (Importar, Resúmenes, Mercado Pago). Rows may carry `external_id`, `fees` and `merge_with`; the server saves them with `commitImportRows()` (`server/src/lib/import-commit.ts`). |
+| `FeesEditor` | `components/FeesEditor.tsx` | Platform fees inside a movement's amount (`tx_fees`, `server/src/lib/fees.ts`), for any platform. Used in the movement form; a future broker or marketplace import fills the same `fees` array. |
 | `money()`, `moneyShort()` | `lib/format.ts` | All amounts. `USD 1.234`, never `US$`; honours **Ajustes → Monedas → Ocultar centavos**. |

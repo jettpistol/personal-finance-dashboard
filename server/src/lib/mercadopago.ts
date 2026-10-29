@@ -94,8 +94,8 @@ export type MpCheck = {
   http: number | null;
 };
 
-const REPORTS = ['release_report', 'settlement_report'] as const;
-type ReportKind = (typeof REPORTS)[number];
+export const REPORTS = ['release_report', 'settlement_report'] as const;
+export type ReportKind = (typeof REPORTS)[number];
 
 /**
  * Which data sources this account can read (the brief's verification step). Read-only requests,
@@ -170,7 +170,7 @@ export function reportConfig(kind: ReportKind, tier = 0) {
 export type ReportSetup = { key: ReportKind; result: 'exists' | 'created' | 'failed'; http: number | null; tier?: number; message?: string };
 
 /** Mercado Pago's own explanation of a refusal (it never contains credentials), kept short. */
-function mpMessage(body: unknown): string | undefined {
+export function mpMessage(body: unknown): string | undefined {
   if (!body || typeof body !== 'object') return typeof body === 'string' && body.trim() ? body.trim().slice(0, 200) : undefined;
   const b = body as { message?: unknown; error?: unknown; cause?: unknown };
   const causes = Array.isArray(b.cause) ? b.cause.map((c) => (c && typeof c === 'object' ? (c as { description?: unknown }).description : c)).filter((x) => typeof x === 'string') : [];
@@ -207,6 +207,36 @@ export async function setupReports(token: string): Promise<ReportSetup[]> {
     }
   }
   return out;
+}
+
+// Columns the import can't do without, per report. The transactions report only adds detail.
+const NEEDED: Record<ReportKind, string[]> = {
+  release_report: ['DATE', 'SOURCE_ID', 'RECORD_TYPE', 'DESCRIPTION', 'NET_CREDIT_AMOUNT', 'NET_DEBIT_AMOUNT'],
+  settlement_report: ['SOURCE_ID', 'DESCRIPTION', 'STORE_NAME'],
+};
+
+/**
+ * Makes sure a report has settings that include the columns the import reads: saves them (POST)
+ * when there are none, or widens an older, shorter list (PUT). Both are approved writes. Returns
+ * false with Mercado Pago's reason if it refuses.
+ */
+export async function ensureReportColumns(token: string, kind: ReportKind): Promise<{ ok: boolean; message?: string }> {
+  const base = `/v1/account/${kind}/config`;
+  const current = await mpGet(token, base);
+  // No settings yet (404): save them, as «Configurar reportes» does.
+  if (current.status !== 200 && current.status !== 404) return { ok: false, message: mpMessage(current.body) ?? `código ${current.status}` };
+  const have = new Set(((current.body as { columns?: { key?: string }[] })?.columns ?? []).map((c) => c.key));
+  if (current.status === 200 && NEEDED[kind].every((k) => have.has(k))) return { ok: true };
+  let reason: string | undefined;
+  for (let tier = 0; tier < COLUMN_TIERS[kind].length; tier++) {
+    const cfg = reportConfig(kind, tier);
+    if (!NEEDED[kind].every((k) => cfg.columns.some((c) => c.key === k))) break;
+    const r = await mpWrite(token, current.status === 404 ? 'POST' : 'PUT', base, cfg);
+    if (ok(r.status)) return { ok: true };
+    reason = mpMessage(r.body) ?? `código ${r.status}`;
+    if (r.status === 401 || r.status === 403) break;
+  }
+  return { ok: false, message: reason };
 }
 
 /** Asks Mercado Pago to build a report for [begin, end] (UTC ISO). It's ready later: poll the list. */
@@ -280,6 +310,11 @@ type Row = {
 const context = (userId: number) => `mp:${userId}`;
 export const DEFAULT_HISTORY_START = '2026-10-01';
 
+/** Where this person's Mercado Pago history starts. */
+export function historyStartOf(userId: number): string {
+  return row(userId)?.history_start ?? DEFAULT_HISTORY_START;
+}
+
 function row(userId: number): Row | undefined {
   return coreDb().prepare('SELECT * FROM mp_connections WHERE user_id = ?').get(userId) as Row | undefined;
 }
@@ -330,6 +365,14 @@ export function setHistoryStart(userId: number, historyStart: string | null) {
 
 export function saveChecks(userId: number, checks: MpCheck[]) {
   coreDb().prepare('UPDATE mp_connections SET checked_at = ?, checks = ? WHERE user_id = ?').run(new Date().toISOString(), JSON.stringify(checks), userId);
+}
+
+/** A report just came in: the saved checks say so, without asking Mercado Pago again. */
+export function markReportsReady(userId: number, kinds: ReportKind[]) {
+  const r = row(userId);
+  if (!r?.checks) return;
+  const checks = (JSON.parse(r.checks) as MpCheck[]).map((c) => (kinds.includes(c.key as ReportKind) ? { ...c, status: 'ok' as const, http: 200 } : c));
+  coreDb().prepare('UPDATE mp_connections SET checks = ? WHERE user_id = ?').run(JSON.stringify(checks), userId);
 }
 
 export function deleteConnection(userId: number) {

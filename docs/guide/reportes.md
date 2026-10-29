@@ -10,7 +10,7 @@ Reportes shows how your money moved over several months: spending per category, 
 
 - Under the **Reportes** title: the dashboard name and the display currency. In USD it adds "(al dólar BNA del día de cada movimiento)".
 - On the right, two controls that appear only on the tabs where they apply:
-  - **6 meses / 12 meses / 24 meses**: the period, always ending with the current month. Used by **Tendencia**, **Ahorro**, **Patrimonio** and **Comercios**. Default: 12 months.
+  - **6 meses / 12 meses / 24 meses**: the period, always ending with the current month. Used by **Tendencia**, **Ahorro**, **Patrimonio**, **Comercios** and **Comisiones**. Default: 12 months.
   - **Nominal / Real (IPC)**: amounts as recorded, or restated in today's pesos. Used by **Tendencia**, **Anual** and **Ahorro**. Disabled in USD.
 
 All tabs follow the dashboard (**Hogar**, **Mío**, partner) and currency chosen in the top bar, except **Por persona** (always both of you) and **Inflación** (always in pesos).
@@ -72,6 +72,15 @@ Which accounts are included: on **Hogar**, every account you can see (joint, you
 - A table of the top 20 with **Comercio / descripción**, **Categoría** (the category where most of that spending went), **Veces** (number of expenses), **Promedio** (average per expense), **Total** and **% del total** (a bar showing its share among the listed places).
 
 A "place" is the movement's merchant, or its description when there is no merchant. Names are grouped ignoring upper/lower case and extra spaces, so "JUMBO" and "Jumbo" are one place. Only expenses count.
+
+### Comisiones
+
+What platforms (Mercado Pago, a marketplace, a broker) kept as fees. The fees are already inside each movement's amount: this tab doesn't add them again, it shows how much of your money went to them.
+
+- **Comisiones por mes**: one bar per month, with the period's **Total**.
+- A table per platform, with a column for each kind of fee that appears (**Comisión**, **Financiación**, **Envío**, **Impuestos**, **Otro cargo**), **Movimientos** (how many fees) and **Total**.
+
+Fees come from the [Mercado Pago import](mercado-pago.md) or from the **Comisiones** part of the movement form. **Hogar** counts joint accounts and shared movements; **Mío** and your partner's dashboard count each person's own accounts. With nothing in the period: *No hay comisiones registradas en este período.*
 
 ### Inflación
 

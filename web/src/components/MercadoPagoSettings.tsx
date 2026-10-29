@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { ActionIcon, Anchor, Badge, Button, Card, Collapse, Group, Menu, Modal, PasswordInput, Radio, Stack, Text, Title, UnstyledButton } from '@mantine/core';
+import { ActionIcon, Anchor, Badge, Button, Card, Collapse, Group, Loader, Menu, Modal, PasswordInput, Radio, Stack, Text, Title, Tooltip, UnstyledButton } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { modals } from '@mantine/modals';
-import { IconChevronDown, IconChevronRight, IconDots, IconPencil } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronRight, IconDots, IconPencil, IconRefresh } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import { date, today } from '../lib/format';
+import { date, money, today } from '../lib/format';
+import { MercadoPagoReview } from './MercadoPagoReview';
 import { errorFields, notifyError, notifyOk } from '../lib/queries';
 
 type Check = { key: 'identity' | 'payments' | 'balance' | 'release_report' | 'settlement_report'; status: 'ok' | 'unconfigured' | 'unavailable' | 'error'; http: number | null };
@@ -27,7 +28,21 @@ type Connection =
       /** Its account in Cuentas (this data profile), or the existing ones it has to be tied to. */
       account: { id: number; name: string } | null;
       candidates: { id: number; name: string }[];
+      sync?: Sync;
     };
+
+/** How the movements import is going (lib/mp-sync.ts on the server). */
+type Sync = {
+  status: 'off' | 'fetching' | 'review' | 'live' | 'error';
+  live: boolean;
+  waiting: boolean;
+  review_count: number;
+  last_sync_at: string | null;
+  error: string | null;
+  balance: number | null;
+  balance_at: string | null;
+  app_balance: number | null;
+};
 
 const SOURCES: Record<Check['key'], string> = {
   identity: 'Datos de la cuenta',
@@ -61,8 +76,30 @@ export function MercadoPagoSettings() {
   const [showSources, setShowSources] = useState(false);
   const [bad, setBad] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState(false);
 
   const c = q.data;
+  const sync = c?.connected ? c.sync : undefined;
+  const waiting = !!sync && (sync.status === 'fetching' || sync.waiting);
+
+  // While Mercado Pago makes a report, ask every 15 s whether it's ready.
+  useEffect(() => {
+    if (!waiting) return;
+    const t = setInterval(async () => {
+      try {
+        const r = await api.post<Connection>('/me/mercadopago/sync', {});
+        qc.setQueryData(KEY, r);
+        if (r.connected && r.sync && !(r.sync.status === 'fetching' || r.sync.waiting)) {
+          qc.invalidateQueries({ queryKey: ['accounts'] });
+          qc.invalidateQueries({ queryKey: ['transactions'] });
+        }
+      } catch {
+        /* the next tick tries again */
+      }
+    }, 15_000);
+    return () => clearInterval(t);
+  }, [waiting, qc]);
+
   if (!c) return null;
 
   const run = async (key: string, fn: () => Promise<Connection>, ok?: string) => {
@@ -185,8 +222,54 @@ export function MercadoPagoSettings() {
     }
   };
 
+  const startSync = () => run('sync', () => api.post<Connection>('/me/mercadopago/sync', { start: true }));
+  const when = (iso: string) => dayjs(iso).format(dayjs(iso).isSame(dayjs(), 'day') ? '[hoy] HH:mm' : 'D MMM HH:mm');
+  const movements = !sync ? null : sync.status === 'off' ? (
+    <Button size="xs" variant="default" loading={busy === 'sync'} disabled={!c.account || !c.readable} onClick={startSync}>
+      Traer movimientos
+    </Button>
+  ) : sync.status === 'error' ? (
+    <Stack gap={6} align="flex-start">
+      <Text size="sm" c="red">
+        {sync.error}
+      </Text>
+      <Button size="xs" variant="default" loading={busy === 'sync'} onClick={startSync}>
+        Reintentar
+      </Button>
+    </Stack>
+  ) : sync.status === 'fetching' ? (
+    <Group gap="xs" wrap="nowrap">
+      <Loader size={14} />
+      <span>Buscando en Mercado Pago…</span>
+    </Group>
+  ) : sync.status === 'review' ? (
+    <Group gap="xs" wrap="nowrap">
+      <span>{sync.review_count} para revisar</span>
+      <Button size="xs" onClick={() => setReviewing(true)}>
+        Revisar
+      </Button>
+    </Group>
+  ) : (
+    <Group gap="xs" wrap="nowrap">
+      <span>{sync.waiting ? 'Actualizando…' : `Al día${sync.last_sync_at ? ` · ${when(sync.last_sync_at)}` : ''}`}</span>
+      {sync.review_count > 0 && (
+        <Button size="compact-xs" variant="default" onClick={() => setReviewing(true)}>
+          {sync.review_count} para revisar
+        </Button>
+      )}
+      {!sync.waiting && (
+        <Tooltip label="Buscar ahora">
+          <ActionIcon size="sm" variant="subtle" color="gray" aria-label="Buscar movimientos ahora" loading={busy === 'sync'} onClick={startSync}>
+            <IconRefresh size={14} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+    </Group>
+  );
+
   return (
     <Card maw={560} mx="auto">
+      <MercadoPagoReview opened={reviewing} onClose={() => setReviewing(false)} onSaved={(r) => qc.setQueryData(KEY, r)} />
       <Stack>
         <Group justify="space-between" wrap="nowrap">
           <Title order={4}>Mercado Pago</Title>
@@ -259,6 +342,29 @@ export function MercadoPagoSettings() {
           </dd>
           <dt>En Cuentas</dt>
           <dd>{c.account ? c.account.name : <Text span c="dimmed">Sin asignar</Text>}</dd>
+          {movements && (
+            <>
+              <dt>Movimientos</dt>
+              <dd>{movements}</dd>
+            </>
+          )}
+          {sync?.balance != null && sync.balance_at && (
+            <>
+              <dt>Saldo</dt>
+              <dd>
+                <span className="num">{money(sync.balance, 'ARS')}</span>
+                <Text span c="dimmed">
+                  {' '}
+                  · {when(sync.balance_at)}
+                </Text>
+                {sync.live && sync.app_balance != null && sync.app_balance !== sync.balance && (
+                  <Text size="xs" c="dimmed">
+                    En la app: <span className="num">{money(sync.app_balance, 'ARS')}</span>
+                  </Text>
+                )}
+              </dd>
+            </>
+          )}
           <dt>Conectada</dt>
           <dd>{date(c.connected_at.slice(0, 10), 'D MMM YYYY')}</dd>
           <dt>Datos</dt>

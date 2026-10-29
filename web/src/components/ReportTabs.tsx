@@ -5,7 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { api, qs } from '../lib/api';
 import { ACCOUNT_TYPE_LABEL, addMonths, currentMonth, money, monthName, pct } from '../lib/format';
-import type { AccountType, Currency, Scope } from '../lib/types';
+import type { AccountType, Currency, FeeKind, Scope } from '../lib/types';
+import { FEE_KINDS, FEE_LABELS } from '../lib/fees';
 import { MonthSelect } from './Layout';
 import { Delta, Empty, Kpi, MissingRatesAlert, RealPct, axisK, change, unitFormatter, units } from './ReportBits';
 
@@ -764,6 +765,80 @@ export function InflationTab({ scope }: { scope: Scope }) {
           </Card>
         </>
       )}
+    </Stack>
+  );
+}
+
+type FeeReport = {
+  total: number;
+  months: { month: string; amount: number }[];
+  platforms: { platform: string; total: number; count: number; kinds: Partial<Record<FeeKind, number>> }[];
+  missing_rates: boolean;
+};
+
+/** Fees that platforms (Mercado Pago and others) took from movements, already inside their amounts. */
+export function FeesTab({ p }: { p: ReportParams }) {
+  const q = useReport<FeeReport>('fees', `/reports/fees${qs({ scope: p.scope, currency: p.currency, from: p.from, to: p.to })}`);
+  if (!q.data) return <Loading />;
+  const r = q.data;
+  if (!r.platforms.length) return <Empty>No hay comisiones registradas en este período.</Empty>;
+  const kinds = FEE_KINDS.filter((k) => r.platforms.some((x) => x.kinds[k]));
+  return (
+    <Stack>
+      <MissingRatesAlert show={r.missing_rates} />
+      <Card>
+        <Group justify="space-between" mb="md">
+          <Title order={5}>Comisiones por mes</Title>
+          <Text size="sm" className="num">
+            Total <b>{money(r.total, p.currency)}</b>
+          </Text>
+        </Group>
+        <BarChart
+          h={220}
+          data={r.months.map((m) => ({ month: monthName(m.month, true), Comisiones: units(m.amount) }))}
+          dataKey="month"
+          series={[{ name: 'Comisiones', color: 'blue.6' }]}
+          valueFormatter={unitFormatter(p.currency, true)}
+          yAxisProps={axisK(p.currency)}
+          maxBarWidth={28}
+        />
+      </Card>
+      <Card>
+        <ScrollArea>
+          <Table verticalSpacing={6} fz="sm" miw={480}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Plataforma</Table.Th>
+                {kinds.map((k) => (
+                  <Table.Th key={k} ta="right">
+                    {FEE_LABELS[k]}
+                  </Table.Th>
+                ))}
+                <Table.Th ta="right">Movimientos</Table.Th>
+                <Table.Th ta="right">Total</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {r.platforms.map((x) => (
+                <Table.Tr key={x.platform}>
+                  <Table.Td fw={500}>{x.platform}</Table.Td>
+                  {kinds.map((k) => (
+                    <Table.Td key={k} ta="right" className="num">
+                      {x.kinds[k] ? money(x.kinds[k]!, p.currency) : '—'}
+                    </Table.Td>
+                  ))}
+                  <Table.Td ta="right" className="num">
+                    {x.count}
+                  </Table.Td>
+                  <Table.Td ta="right" className="num" fw={600}>
+                    {money(x.total, p.currency)}
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </ScrollArea>
+      </Card>
     </Stack>
   );
 }

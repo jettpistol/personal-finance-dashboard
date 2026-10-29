@@ -9,6 +9,7 @@ import { today } from '../lib/dates.js';
 import { telegramEnabled, findChatIdByCode, sendTelegramMessage } from '../lib/telegram.js';
 import { activeSmtp, clearSmtp, describeMailError, mailEnabled, saveSmtp, sendMail, storedSmtp, verifyMail } from '../lib/mail.js';
 import { assertSingleMpAccount } from '../lib/mercadopago.js';
+import { liveTag } from '../lib/mp-sync.js';
 import { bool, idParam, parse } from './util.js';
 import { accountMovementCount, deleteAccountWithMovements } from '../lib/accounts.js';
 import crypto from 'node:crypto';
@@ -234,6 +235,8 @@ export default async function coreRoutes(app: FastifyInstance) {
     const balances = accountBalances(accounts);
     const fx = loadConverter();
     const d = today();
+    // Your own Mercado Pago account carries its sync state; your partner never sees it.
+    const mp = liveTag(req.userId);
     return [...accounts.values()]
       .filter((a) => accountVisible(a, req.userId))
       .map((a) => {
@@ -244,6 +247,7 @@ export default async function coreRoutes(app: FastifyInstance) {
           balance_ars: fx.convert(balance, a.currency, 'ARS', d),
           balance_usd: fx.convert(balance, a.currency, 'USD', d),
           can_edit: a.owner_id === null || a.owner_id === req.userId,
+          live: mp && mp.account_id === a.id ? { state: mp.state, at: mp.at } : null,
         };
       });
   });

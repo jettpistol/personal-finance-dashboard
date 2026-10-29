@@ -1388,6 +1388,24 @@ export const AUDIT_ROUTES: Record<string, Descriptor | Skip | Manual> = {
       };
     },
   }),
+  // The hourly sync logs its own imports (lib/mp-sync.ts); a click that only asks for a report isn't worth a line.
+  'POST /api/me/mercadopago/sync': D('Mercado Pago', {
+    describe: (c) => (c.body?.start === true ? { action: 'sincronizar', entity: 'mercadopago', summary: 'Pidió a Mercado Pago los movimientos nuevos', privateTo: c.userId } : null),
+  }),
+  'POST /api/me/mercadopago/review': D('Mercado Pago', {
+    describe: (c) => {
+      const n = Number(c.res?.imported ?? 0);
+      const m = Number(c.res?.merged ?? 0);
+      const opening = typeof c.res?.opening === 'number' ? ` · saldo inicial ${money(c.res.opening, 'ARS')}` : '';
+      return {
+        action: 'importar',
+        entity: 'import_batch',
+        entityId: Number(c.res?.batch_id) || null,
+        summary: `Revisó y guardó ${n} movimiento${n === 1 ? '' : 's'} de Mercado Pago${m ? `, completó ${m} cargado${m === 1 ? '' : 's'} a mano` : ''}${opening}`,
+        privateTo: c.userId,
+      };
+    },
+  }),
   'DELETE /api/me/mercadopago': D('Mercado Pago', {
     global: true,
     describe: (c) => ({ action: 'desconectar', entity: 'mercadopago', summary: 'Desconectó su cuenta de Mercado Pago', privateTo: c.userId }),

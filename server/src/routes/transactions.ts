@@ -23,6 +23,7 @@ import { applyRules, loadRules } from '../lib/rules.js';
 import { today } from '../lib/dates.js';
 import { bool, idParam, parse } from './util.js';
 import { removeStoredFile, undoable } from '../lib/undo.js';
+import { feePlatforms, writeFees } from '../lib/fees.js';
 
 const listQuery = z.object({
   from: z.string().optional(),
@@ -158,7 +159,10 @@ export default async function transactionRoutes(app: FastifyInstance) {
     const existing = editable(id, req.userId);
     const input = parse(txInputSchema, req.body);
     const next = normaliseTx(input, req.userId, existing);
-    db().transaction(() => updateTx(id, next))();
+    db().transaction(() => {
+      updateTx(id, next);
+      if (input.fees) writeFees(id, input.fees);
+    })();
     const tx = getTx(id)!;
     afterWrite(tx);
     return presentTx(tx, req.userId, loadAccounts());
@@ -229,6 +233,9 @@ export default async function transactionRoutes(app: FastifyInstance) {
     })();
     return { changed };
   });
+
+  // Platforms already used in fees, for the form's suggestions.
+  app.get('/fees/platforms', async () => feePlatforms());
 
   app.get('/tags', async () => {
     const rows = db().prepare(`SELECT DISTINCT value FROM transactions, json_each(transactions.tags) ORDER BY value`).all() as { value: string }[];

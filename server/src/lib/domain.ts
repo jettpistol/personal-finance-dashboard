@@ -1,4 +1,5 @@
 import { db } from '../db/index.js';
+import { feesByTx, type Fee } from './fees.js';
 import type { Currency } from './money.js';
 import { today } from './dates.js';
 
@@ -73,6 +74,9 @@ export type Tx = {
   created_at: string;
   updated_at: string;
   splits: Split[];
+  /** Platform fees already inside the amount (lib/fees.ts); attached by fetchTxs. */
+  fees?: Fee[];
+  external_id?: string | null;
 };
 
 export type Category = {
@@ -163,6 +167,7 @@ export function presentTx(tx: Tx, viewer: number, accounts: Map<number, Account>
     account_id: fromVisible ? tx.account_id : null,
     to_account_id: toVisible ? tx.to_account_id : null,
     notes: vis === 'full' ? tx.notes : null,
+    fees: vis === 'full' ? (tx.fees ?? []) : [],
     receipt_file: undefined,
     has_receipt: vis === 'full' && !!tx.receipt_file,
     tags: JSON.parse(tx.tags) as string[],
@@ -331,6 +336,8 @@ export function attachSplits(rows: Tx[]) {
       .all(...chunk) as (Split & { transaction_id: number })[];
     for (const s of splits) byId.get(s.transaction_id)?.splits.push({ user_id: s.user_id, amount: s.amount });
   }
+  const fees = feesByTx(ids);
+  for (const r of rows) r.fees = fees.get(r.id) ?? [];
 }
 
 export function getTx(id: number): Tx | null {

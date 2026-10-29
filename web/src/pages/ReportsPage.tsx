@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Group, SegmentedControl, Tabs } from '@mantine/core';
 import { PageHeader } from '../components/Layout';
 import { NominalRealSwitch } from '../components/Informe';
-import { InflationTab, MerchantsTab, NetWorthTab, PeopleTab, SavingsTab, TrendTab, YearTab, type ReportParams } from '../components/ReportTabs';
+import { FeesTab, InflationTab, MerchantsTab, NetWorthTab, PeopleTab, SavingsTab, TrendTab, YearTab, type ReportParams } from '../components/ReportTabs';
 import { scopeName, useApp } from '../lib/app-state';
 import { addMonths, currentMonth } from '../lib/format';
 
-type Tab = 'trend' | 'year' | 'savings' | 'networth' | 'people' | 'merchants' | 'inflation';
+type Tab = 'trend' | 'year' | 'savings' | 'networth' | 'people' | 'merchants' | 'fees' | 'inflation';
 
 // Tabs where the month-range and constant-pesos controls apply.
-const USES_RANGE: Tab[] = ['trend', 'savings', 'networth', 'merchants'];
+const USES_RANGE: Tab[] = ['trend', 'savings', 'networth', 'merchants', 'fees'];
 const USES_REAL: Tab[] = ['trend', 'year', 'savings'];
 
 export function ReportsPage() {
@@ -54,6 +54,7 @@ export function ReportsPage() {
           <Tabs.Tab value="networth">Patrimonio</Tabs.Tab>
           <Tabs.Tab value="people">Por persona</Tabs.Tab>
           <Tabs.Tab value="merchants">Comercios</Tabs.Tab>
+          <Tabs.Tab value="fees">Comisiones</Tabs.Tab>
           <Tabs.Tab value="inflation">Inflación</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="trend">
@@ -73,6 +74,9 @@ export function ReportsPage() {
         </Tabs.Panel>
         <Tabs.Panel value="merchants">
           <MerchantsTab p={p} />
+        </Tabs.Panel>
+        <Tabs.Panel value="fees">
+          <FeesTab p={p} />
         </Tabs.Panel>
         <Tabs.Panel value="inflation">
           <InflationTab scope={scope} />

@@ -401,4 +401,33 @@ export const migrations: string[] = [
   ALTER TABLE loans ADD COLUMN period_count INTEGER;
   ALTER TABLE loans ADD COLUMN indexed INTEGER NOT NULL DEFAULT 0;
   `,
+  // Fees a platform (Mercado Pago, later others) charged on a movement. The movement's amount is
+  // already net of them: these rows only say how much of it went to fees, for Reportes → Comisiones.
+  // external_id: the source's own id for an imported movement (e.g. "mp:<source id>:<hash>"), so a
+  // sync never brings the same one twice. mp_sync: each person's Mercado Pago import in this profile.
+  `
+  CREATE TABLE tx_fees (
+    id INTEGER PRIMARY KEY,
+    transaction_id INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+    platform TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('fee', 'financing', 'shipping', 'tax', 'other')),
+    amount INTEGER NOT NULL CHECK (amount > 0)
+  );
+  CREATE INDEX idx_tx_fees_tx ON tx_fees(transaction_id);
+  ALTER TABLE transactions ADD COLUMN external_id TEXT;
+  CREATE UNIQUE INDEX idx_tx_external ON transactions(external_id) WHERE external_id IS NOT NULL;
+  CREATE TABLE mp_sync (
+    user_id INTEGER PRIMARY KEY,
+    status TEXT NOT NULL CHECK (status IN ('fetching', 'review', 'live', 'error')),
+    live INTEGER NOT NULL DEFAULT 0,
+    synced_until TEXT,
+    last_sync_at TEXT,
+    last_error TEXT,
+    pending TEXT,
+    review TEXT,
+    opening TEXT,
+    balance INTEGER,
+    balance_at TEXT
+  );
+  `,
 ];

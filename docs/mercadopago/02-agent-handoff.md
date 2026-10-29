@@ -5,6 +5,7 @@
 > - Reads go through `mpGet()` (GET only, path allowlist). The only writes, approved by the owner on 2026-10-28, go through `mpWrite()`: `POST`/`PUT {base}/config` and `POST {base}` (generate a report) for the two reports. `schedule` and everything else stays blocked; anything new needs the owner's approval.
 > - Report settings, columns, response codes and the balance trick are confirmed in [`03-reports-reference.md`](03-reports-reference.md), which overrides section 3.3 below.
 > - Storage is the app's SQLite and its own `transactions` table (integer cents), not the data model in section 4. Hosting is self-hosted (Docker), so the scheduler is the app's own (`lib/scheduler.ts`).
+> - The sync (`server/src/lib/mp-sync.ts`) reads the released-money report (movements and the starting balance), detailed with the transactions report by `SOURCE_ID` (store names); `payments/search` isn't used yet. Each movement's `external_id` (`mp:<SOURCE_ID>:<hash>`) keeps a sync from bringing it twice. The first import waits for a review; after it, reports for the last two days are asked for every hour and saved straight away (only withdrawals wait, for their destination). Amounts are net; fees go to `tx_fees`.
 
 
 **Audience:** the coding agent building the website.

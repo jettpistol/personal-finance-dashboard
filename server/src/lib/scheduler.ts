@@ -4,6 +4,7 @@ import { addMonthsToMonth, currentMonth, monthLabel, today } from './dates.js';
 import { generateDueRecurring } from './recurring.js';
 import { sendPendingReminders } from './commitments.js';
 import { refreshRates } from './fx.js';
+import { syncDue } from './mp-sync.js';
 import { refreshCpi } from './cpi.js';
 import { runBackup, todaysBackupExists } from './backup.js';
 import { listProfiles, profileDb, profilesEnabled } from './profiles.js';
@@ -60,6 +61,7 @@ async function sendMonthlyReviews() {
 async function tickProfile() {
   await step('recurring', () => generateDueRecurring());
   await step('pending reminders', () => sendPendingReminders());
+  await step('mercadopago', () => syncDue());
   if (due('fx_last_refresh', FX_EVERY_MS)) await step('fx', () => refreshRates());
   if (due('cpi_last_refresh', CPI_EVERY_MS)) await step('cpi', () => refreshCpi());
   await step('backup', async () => {

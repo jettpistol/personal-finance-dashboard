@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.15.1</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.16.0</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.16.0"><b>0.16.0</b><span class="date">Oct 29, 2026</span></a>
         <a class="idx" href="#v0.15.1"><b>0.15.1</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.15.0"><b>0.15.0</b><span class="date">Oct 28, 2026</span></a>
         <a class="idx" href="#v0.14.1"><b>0.14.1</b><span class="date">Oct 28, 2026</span></a>
@@ -90,6 +91,26 @@
 
       <td class="main">
         <p class="lead">What changed in each version</p>
+
+        <a name="v0.16.0"></a>
+        <h2>0.16.0 <span class="date">&middot; Oct 29, 2026</span></h2>
+        <ul>
+          <li><b>Ajustes → Mercado Pago</b>: new <b>Movimientos</b> line with <b>Traer movimientos</b>. The app asks Mercado Pago for its reports from the start date and shows <b>Buscando en Mercado Pago…</b> until they're ready.</li>
+          <li>The first import waits for a review (<b>N para revisar</b> → <b>Revisar</b>), in the same table as Importar. Nothing is saved before <b>Importar</b>.</li>
+          <li>The review can set the account's starting balance from Mercado Pago's own balance on the start date (<b>Usar $ … como saldo inicial</b>, ticked by default).</li>
+          <li>A withdrawal is marked <b>Retiro</b> and becomes a <b>Transf. propia</b> to the account you choose.</li>
+          <li>A movement you had already typed (same amount, at most a day apart) is marked <b>Ya cargado</b> and completed instead of added twice. It keeps your description, category and notes.</li>
+          <li>After the first review, new movements come in by themselves every hour. Only withdrawals wait for review, and rows you left out don't come back.</li>
+          <li>The <b>Movimientos</b> line shows <b>Al día · HH:mm</b>, a round arrow to update now, and the reason in red with <b>Reintentar</b> if something fails.</li>
+          <li>New <b>Saldo</b> line: your balance according to Mercado Pago, and <b>En la app: $ …</b> when the app's balance is different.</li>
+          <li>If the reports have no settings in Mercado Pago, or older settings without the amount columns, the app saves or widens them before asking.</li>
+          <li><b>Cuentas</b>: your Mercado Pago account has a green tag with a pulsing dot: <b>Conectada</b>, then <b>En vivo</b> with <i>actualizado HH:mm</i> under <b>Saldo</b>, or <b>Sin actualizar</b> (orange) after a failure. Only you see it.</li>
+          <li>Movement form: new optional <b>Comisión</b> part, for fees a platform (Mercado Pago or any other) kept from the movement. The amount stays what really moved; fees can't exceed it.</li>
+          <li><b>Movimientos</b>: a <b>Comisión $ …</b> line under the amount of movements with fees.</li>
+          <li><b>Reportes → Comisiones</b>: new tab with fees per month and per platform, by kind.</li>
+          <li><b>Actividad</b> records each Mercado Pago review and each automatic import.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.15.1"></a>
         <h2>0.15.1 <span class="date">&middot; Oct 28, 2026</span></h2>

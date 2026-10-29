@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { z } from 'zod';
+import { feesSchema, writeFees } from './fees.js';
 import { db, getSetting } from '../db/index.js';
 import { allocate } from './money.js';
 import { addMonths, isValidDate } from './dates.js';
@@ -32,6 +33,8 @@ export const txInputSchema = z.object({
   split: splitSchema.nullish(),
   is_private: z.boolean().default(false),
   is_settlement: z.boolean().nullish(),
+  // Platform fees inside the amount (lib/fees.ts). Left out = keep the ones the movement has.
+  fees: feesSchema.optional(),
 });
 export type TxInput = z.infer<typeof txInputSchema>;
 
@@ -182,7 +185,11 @@ function writeSplits(id: number, splits: Split[]) {
 }
 
 export function createTx(input: TxInput, viewer: number, extra: Partial<Normalised> = {}): Tx {
-  const id = db().transaction(() => insertTx({ ...normaliseTx(input, viewer), ...extra }))();
+  const id = db().transaction(() => {
+    const id = insertTx({ ...normaliseTx(input, viewer), ...extra });
+    if (input.fees?.length) writeFees(id, input.fees);
+    return id;
+  })();
   return getTx(id)!;
 }
 

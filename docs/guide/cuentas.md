@@ -31,6 +31,10 @@ Each card shows:
 
 - A colour square, the name and a padlock if the account is private.
 - Labels for the type (**Banco**, **Efectivo**, **Tarjeta de crédito**, **Ahorro**, **Inversión**, **Billetera virtual**) and the currency (**ARS** or **USD**).
+- On your own Mercado Pago account, once you've [connected it](mercado-pago.md), a green tag with a pulsing dot. Only you see it; click it to open **Ajustes → Mercado Pago**.
+  - **Conectada**: the connection works, and the first import hasn't been reviewed yet.
+  - **En vivo**: movements come in by themselves; **Saldo** adds *actualizado HH:mm*, the time of the last update.
+  - **Sin actualizar** (orange): the last update failed. The reason is in **Ajustes → Mercado Pago**.
 - **Saldo** and the balance in the account's own currency. A negative balance is shown in red.
 - For a credit card with a negative balance, the label reads **Deuda** and the amount is shown as a positive figure in red: it's what you owe on the card.
 - When the account's currency differs from the top-bar switch, a smaller line underneath gives the converted value (**≈ $ …**), at today's BNA quote.

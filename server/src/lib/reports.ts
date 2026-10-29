@@ -405,3 +405,36 @@ export function balances(): BalanceSummary[] {
     return { currency, users: nets, settlements };
   });
 }
+
+/**
+ * Platform fees (Mercado Pago and others) inside movements of the scope, per month and platform.
+ * Household: joint accounts and shared movements; a person: their own accounts.
+ */
+export function feeReport(fromMonth: string, toMonth: string, rc: ReportCtx) {
+  const c = ctx(rc);
+  const uid = scopeUserId(rc.scope);
+  const months = new Map(monthRange(fromMonth, toMonth).map((m) => [m, 0]));
+  const platforms = new Map<string, { platform: string; total: number; count: number; kinds: Record<string, number> }>();
+  let total = 0;
+  for (const tx of fetchTxs({ from: monthStart(fromMonth), to: monthEnd(toMonth), status: 'confirmed' })) {
+    if (!tx.fees?.length || txVisibility(tx, rc.viewer, c.accounts) !== 'full') continue;
+    const owner = c.accounts.get(tx.account_id)?.owner_id ?? null;
+    if (uid === null ? !(owner === null || tx.is_shared) : owner !== uid) continue;
+    for (const f of tx.fees) {
+      const v = value(c, { amount: f.amount, currency: tx.currency, date: tx.date });
+      total += v;
+      months.set(monthOf(tx.date), (months.get(monthOf(tx.date)) ?? 0) + v);
+      const p = platforms.get(f.platform) ?? { platform: f.platform, total: 0, count: 0, kinds: {} };
+      p.total += v;
+      p.count++;
+      p.kinds[f.kind] = (p.kinds[f.kind] ?? 0) + v;
+      platforms.set(f.platform, p);
+    }
+  }
+  return {
+    total,
+    months: [...months.entries()].map(([month, amount]) => ({ month, amount })),
+    platforms: [...platforms.values()].sort((a, b) => b.total - a.total),
+    missing_rates: c.missingRates,
+  };
+}

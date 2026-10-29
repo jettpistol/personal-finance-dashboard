@@ -53,7 +53,7 @@ Newest first, 50 rows per page, with page numbers at the bottom when there are m
 | **Descripción** | The description (or the merchant if there's no description, or **(sin descripción)**), followed by labels: **Pendiente**; whose it is (**Compartido**, or the person's name, see below); **Privado**; **Recurrente**; and a paperclip if a receipt is attached. Tags appear underneath. |
 | **Categoría** | For expenses and income, the category as **Main › Sub**, in a coloured tag. Otherwise **Transferencia**, **Pago de deuda** (a settlement between you two) or **Ajuste**. |
 | **Cuenta** | The account. Transfers show **origin → destination**. **Cuenta privada** means the account belongs to your partner and is private: you see the movement only because it's a shared expense or a payment to you. |
-| **Monto** | In the account's own currency (`$` or `USD`). Expenses carry a minus sign, income a plus sign in green, transfers no sign in grey (the amount that left the origin), adjustments their own sign. |
+| **Monto** | In the account's own currency (`$` or `USD`). Expenses carry a minus sign, income a plus sign in green, transfers no sign in grey (the amount that left the origin), adjustments their own sign. A line underneath shows **Comisión $ …** when a platform kept part of it. |
 
 **Whose a movement is.** Every movement carries one tag:
 
@@ -137,7 +137,8 @@ Fields marked with a red asterisk are required. Which fields appear depends on t
 6. **Comercio**: optional merchant name. Used by [Reportes](reportes.md) for top merchants.
 7. **Etiquetas**: type a tag and press Enter; existing tags are suggested. Up to 20 per movement.
 8. **Notas**: free text. Notes are visible only to people who can see the account; on a shared expense paid from a private account, your partner sees the movement but not the notes.
-9. **Adjuntar comprobante**: see [Receipts](#receipts).
+9. **Comisión** (optional): what a platform kept from this movement, for example Mercado Pago's fee on a sale. Click **+ Comisión** and fill in the platform (**Mercado Pago** is suggested, plus any you've used), the kind (**Comisión**, **Financiación**, **Envío**, **Impuestos**, **Otro cargo**) and the amount; **+ Otra comisión** adds one more, the **×** removes one. The fees are part of the amount, not on top of it: **Monto** stays what really moved (what reached or left the account), and the fees only show up in [Reportes → Comisiones](reportes.md#comisiones). They can't add up to more than the amount. Not available for **Ajuste** or a purchase in installments.
+10. **Adjuntar comprobante**: see [Receipts](#receipts).
 
 Click **Guardar**. A confirmation message appears at the bottom with **Deshacer**, and the form closes.
 

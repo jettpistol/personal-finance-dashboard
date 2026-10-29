@@ -58,6 +58,7 @@ export const NOT_WRAPPED: Record<string, string> = {
   'POST /api/me/mercadopago/check': 'Talks to Mercado Pago (await).',
   'POST /api/me/mercadopago/reports': 'Talks to Mercado Pago (await).',
   'POST /api/me/mercadopago/account': 'Personal connection setting.',
+  'POST /api/me/mercadopago/sync': 'Talks to Mercado Pago (await); the movements it saves are wrapped with undoable() in lib/mp-sync.ts.',
   'DELETE /api/me/mercadopago': 'Encrypted token (core database).',
   // Files and network: the writes come after an await.
   'POST /api/transactions/csv': 'Reads the upload first; the commit is wrapped with undoable() in lib/csv-movements.ts.',
