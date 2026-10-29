@@ -1,22 +1,22 @@
 {
   "name": "personal-finance-dashboard",
   "private": true,
-  "version": "0.16.3",
+  "version": "0.16.4",
   "workspaces": [
     "server",
     "web"
   ],
   "scripts": {
     "dev": "npm run dev --workspace server & npm run dev --workspace web",
-    "build": "npm run build --workspace web && npm run build --workspace server",
-    "start": "node scripts/ensure-native.mjs && npm run start --workspace server",
+    "build": "npm run build --workspace web && npm run build --workspace server && node scripts/build-stamp.mjs write",
+    "start": "node scripts/ensure-native.mjs && node scripts/build-stamp.mjs check && npm run start --workspace server",
     "test": "node scripts/ensure-native.mjs && npm test --workspace server",
     "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
     "seed:demo": "npm run seed:demo --workspace server",
     "demo": "node scripts/ensure-native.mjs && npm run build && npm run demo --workspace server",
     "demo:reset": "node scripts/ensure-native.mjs && npm run build && npm run demo:reset --workspace server",
     "data:recover": "node scripts/ensure-native.mjs && npm run data:recover --workspace server",
-    "update": "git checkout -- package-lock.json && git pull --ff-only && npm ci && node scripts/ensure-native.mjs"
+    "update": "git checkout -- package-lock.json && git pull --ff-only && npm ci && node scripts/ensure-native.mjs && npm run build"
   },
   "overrides": {
     "uuid": "^11.1.1"

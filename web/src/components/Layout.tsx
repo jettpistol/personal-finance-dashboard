@@ -381,9 +381,18 @@ export function PageHeader({ title, actions, badge }: { title: string; descripti
  * which otherwise looks like "the update didn't apply".
  */
 function VersionCheck() {
-  const health = useQuery({ queryKey: ['health'], queryFn: () => api.get<{ version?: string }>('/health'), refetchInterval: 5 * 60_000, refetchOnWindowFocus: true });
+  const health = useQuery({ queryKey: ['health'], queryFn: () => api.get<{ version?: string; build?: string | null }>('/health'), refetchInterval: 5 * 60_000, refetchOnWindowFocus: true });
   const server = health.data?.version;
   if (!server || server === __APP_VERSION__) return null;
+  // The code was updated but the app wasn't compiled again: reloading would bring the same page.
+  if (health.data?.build && health.data.build !== server)
+    return (
+      <Alert color="yellow" icon={<IconRefresh size={16} />} mb="md" p="xs">
+        <Text size="sm">
+          La versión {server} ya está descargada pero falta compilarla. En la terminal del servidor: cerrar la app (Ctrl+C) y volver a abrirla con «npm start».
+        </Text>
+      </Alert>
+    );
   return (
     <Alert color="yellow" icon={<IconRefresh size={16} />} mb="md" p="xs">
       <Group justify="space-between" wrap="nowrap" gap="sm">

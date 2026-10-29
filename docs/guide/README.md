@@ -81,10 +81,14 @@ The app can hold several independent sets of data, called profiles. The same two
 
 ## Getting a new version
 
+Close the app (Ctrl+C in its terminal), then:
+
 ```bash
-npm run update
-npm run demo:reset   # or: npm run build && npm start, for your real data
+npm run update   # downloads, installs and compiles the new version
+npm start
 ```
+
+From 0.16.4 on, `npm start` also compiles the app by itself when the downloaded version is newer than the compiled one, so a forgotten `npm run build` can't leave you on the old screens.
 
 `demo:reset` only reloads the **Prueba (demo)** profile: your logins, the **Vacío** profile, the email setup and your Mercado Pago connection stay. (Before 0.11.1 it erased all of them.)
 
@@ -97,6 +101,7 @@ Then check the version number in the footer.
 The footer is the test: no version number at all means the page is older than 0.3.0.
 
 - From 0.4.2 on, a yellow bar says *Esta pantalla es de la versión X, pero la app ya está en la Y* when the page is older than the server. Click **Recargar**.
+- If the bar stays after **Recargar**, the new version was downloaded but not compiled (the app runs from a compiled copy). From 0.16.4 on the bar says so: *falta compilarla*. Close the app and start it again with `npm start`; on older versions, run `npm run build && npm start`.
 - Close every other terminal running the app. If one is still open, a new start now says *El puerto 3000 ya está en uso…*. `lsof -i :3000` shows what holds the port.
 - `docker ps`: an old container from `docker compose up` also serves on port 3000. Stop it with `docker compose down`.
 - *The app asks to create the first user, as if new*: before 0.16.2, `npm start` and `npm run demo:reset` used different data folders. Update to 0.16.2 or later and start it again: your users come back (see the README, *One data folder*).

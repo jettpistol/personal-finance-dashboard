@@ -55,8 +55,9 @@ The demo data lives in the **Prueba (demo)** profile; the app opens on the empty
 ### Getting a new version
 
 ```bash
-npm run update       # discards local lockfile changes, pulls, installs exactly what the lockfile says
-npm run demo:reset   # rebuilds and reloads the "Prueba (demo)" profile only
+npm run update       # discards local lockfile changes, pulls, installs exactly what the lockfile says, compiles
+npm start            # your data; also compiles first if the compiled copy is older than the code
+npm run demo:reset   # or: rebuilds and reloads the "Prueba (demo)" profile only
 ```
 
 `demo:reset` only empties and refills the **Prueba (demo)** profile, after keeping a copy of it in `server/data/backups/guardados/`. Logins, the other profiles (such as **Vacío**), the email setup, Mercado Pago connections and the encryption key (`secret.key`) are kept. Keep your real data in another profile, not in **Prueba (demo)**.
@@ -67,7 +68,7 @@ npm run demo:reset   # rebuilds and reloads the "Prueba (demo)" profile only
 
 The database driver (better-sqlite3) has a compiled part that npm skips when install scripts are turned off (`ignore-scripts`, common on work laptops) or its download fails; the app would then stop with *Could not locate the bindings file*. `npm start`, `npm test`, `npm run demo:reset` and `npm run update` check it first and put it back: they download the ready-made copy, or compile it if that fails (on a Mac that needs `xcode-select --install`).
 
-The footer shows the version you're running (`Finanzas v0.16.3 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
+The footer shows the version you're running (`Finanzas v0.16.4 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
 
 ### Development
 

@@ -14,7 +14,18 @@ import pendingRoutes from './pending.js';
 import mercadoPagoRoutes from './mercadopago.js';
 import auditRoutes from './audit.js';
 import undoRoutes from './undo.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { config } from '../config.js';
 import { appVersion } from '../lib/version.js';
+
+function builtVersion(): string | null {
+  try {
+    return (JSON.parse(fs.readFileSync(path.join(config.webDir, 'build.json'), 'utf8')) as { version?: string }).version ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function registerRoutes(app: FastifyInstance) {
   await app.register(authRoutes);
@@ -32,5 +43,7 @@ export async function registerRoutes(app: FastifyInstance) {
   await app.register(mercadoPagoRoutes);
   await app.register(auditRoutes);
   await app.register(undoRoutes);
-  app.get('/health', async () => ({ ok: true, version: appVersion() }));
+  // `build`: the version the served web app was compiled from (scripts/build-stamp.mjs). When it
+  // differs from `version`, the code was updated but not compiled: reloading the page can't help.
+  app.get('/health', async () => ({ ok: true, version: appVersion(), build: builtVersion() }));
 }
