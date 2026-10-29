@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.16.2</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.16.3</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.16.3"><b>0.16.3</b><span class="date">Oct 29, 2026</span></a>
         <a class="idx" href="#v0.16.2"><b>0.16.2</b><span class="date">Oct 29, 2026</span></a>
         <a class="idx" href="#v0.16.1"><b>0.16.1</b><span class="date">Oct 29, 2026</span></a>
         <a class="idx" href="#v0.16.0"><b>0.16.0</b><span class="date">Oct 29, 2026</span></a>
@@ -93,6 +94,16 @@
 
       <td class="main">
         <p class="lead">What changed in each version</p>
+
+        <a name="v0.16.3"></a>
+        <h2>0.16.3 <span class="date">&middot; Oct 29, 2026</span></h2>
+        <ul>
+          <li><b>Ajustes → Mercado Pago</b>: <b>Buscando en Mercado Pago…</b> could spin forever. Fixed three causes: a report file served through a redirect or taking more than 10 seconds to download, a report listed with slightly different dates than asked, and a slow report making the first import start over.</li>
+          <li>While it waits, a line says when it asked and what Mercado Pago answered last (for example "está preparando el reporte… (estado «pending»)"), with <b>Cancelar</b>.</li>
+          <li>It stops with the reason in red after 30 minutes, or after six checks in a row that couldn't reach Mercado Pago.</li>
+          <li>The server's terminal shows each step in lines starting with <code>[mercadopago]</code>, without the token or the movements.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.16.2"></a>
         <h2>0.16.2 <span class="date">&middot; Oct 29, 2026</span></h2>

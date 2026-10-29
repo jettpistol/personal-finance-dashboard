@@ -27,6 +27,8 @@ import { stableId } from './statements/money.js';
 // starts it there.
 
 export const MP_PLATFORM = 'Mercado Pago';
+// What the sync did, in the server's terminal (never the token or the report's contents), for diagnosis.
+const log = (msg: string) => console.log(`[mercadopago] ${msg}`);
 const SYNC_EVERY_MS = 60 * 60_000;
 const GIVE_UP_MS = 30 * 60_000;
 const CHUNK_DAYS = 31;
@@ -35,7 +37,9 @@ const MAX_DISMISSED = 2000;
 
 export type MpItem = ReturnType<typeof buildPreviewItems>[number] & { external_id: string; fees: Fee[]; merge_with: number | null };
 
-type Pending = { begin: string; end: string; requested_at: number; kinds: ReportKind[] };
+// note: what Mercado Pago said on the last check (shown under «Buscando…»); fails: checks in a row
+// that couldn't reach it.
+type Pending = { begin: string; end: string; requested_at: number; kinds: ReportKind[]; note?: string; fails?: number };
 type Review = { items: MpItem[]; dismissed: string[]; skipped: number };
 type SyncRow = {
   user_id: number;
@@ -236,13 +240,15 @@ export function syncView(userId: number) {
   const r = getRow(userId);
   const link = mpAccountState(userId).account;
   const appBalance = link ? (accountBalances(loadAccounts()).get(link.id) ?? null) : null;
-  if (!r) return { status: 'off' as const, live: false, waiting: false, review_count: 0, last_sync_at: null, error: null, balance: null, balance_at: null, app_balance: appBalance };
+  if (!r) return { status: 'off' as const, live: false, waiting: false, waiting_since: null, note: null, review_count: 0, last_sync_at: null, error: null, balance: null, balance_at: null, app_balance: appBalance };
   const review = reviewOf(r);
   return {
     status: r.status,
     live: !!r.live,
-    // A report was asked for and isn't in yet.
+    // A report was asked for and isn't in yet: since when, and what Mercado Pago says.
     waiting: !!r.pending,
+    waiting_since: r.pending ? new Date((JSON.parse(r.pending) as Pending).requested_at).toISOString() : null,
+    note: r.pending ? ((JSON.parse(r.pending) as Pending).note ?? null) : null,
     review_count: review.items.length,
     last_sync_at: r.last_sync_at,
     synced_until: r.synced_until,
@@ -278,6 +284,7 @@ async function requestRange(token: string, begin: string, end: string): Promise<
   if (!cols.ok) throw new SyncError(`Mercado Pago no aceptó las columnas del reporte de dinero liberado${cols.message ? `: ${cols.message}` : ''}.`);
   const kinds: ReportKind[] = [];
   const r = await requestReport(token, 'release_report', begin, end);
+  log(`pedir reporte de dinero liberado: código ${r.status}${mpMessage(r.body) ? ` (${mpMessage(r.body)})` : ''}`);
   if (r.status < 200 || r.status > 299 || r.status === 203)
     throw new SyncError(`Mercado Pago no generó el reporte de dinero liberado (código ${r.status})${mpMessage(r.body) ? `: ${mpMessage(r.body)}` : ''}.`);
   kinds.push('release_report');
@@ -293,24 +300,50 @@ async function requestRange(token: string, begin: string, end: string): Promise<
   return { begin, end, requested_at: Date.now(), kinds };
 }
 
-type ListEntry = { id?: number; begin_date?: string; end_date?: string; file_name?: string; status?: string; is_test?: boolean; generation_date?: string; date_created?: string };
+type ListEntry = {
+  id?: number;
+  begin_date?: string;
+  end_date?: string;
+  file_name?: string;
+  status?: string;
+  is_test?: boolean;
+  generation_date?: string;
+  date_created?: string;
+  last_modified?: string;
+};
 
-/** The finished report for the range, or null while Mercado Pago is still making it. */
-async function fetchReport(token: string, kind: ReportKind, p: Pending): Promise<string | null> {
+
+/**
+ * The report asked for in `p`, from Mercado Pago's list: same range (it may round the dates, so
+ * the closest within a day and a half, made after the request), then downloaded. While it isn't
+ * ready, says what Mercado Pago shows instead.
+ */
+async function fetchReport(token: string, kind: ReportKind, p: Pending): Promise<{ text: string } | { wait: string }> {
+  const label = kind === 'release_report' ? 'dinero liberado' : 'todas las transacciones';
   const list = await mpGet(token, `/v1/account/${kind}/list`);
-  if (list.status !== 200 || !Array.isArray(list.body)) throw new SyncError(`Mercado Pago no devolvió la lista de reportes (código ${list.status}).`);
-  const near = (a: string | undefined, b: string) => !!a && Math.abs(Date.parse(a) - Date.parse(b)) < 2000;
-  const mine = (list.body as ListEntry[])
-    .filter((e) => !e.is_test && near(e.begin_date, p.begin) && near(e.end_date, p.end))
-    .sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
-  const entry = mine[0];
-  if (!entry || (entry.status && entry.status !== 'processed')) return null;
+  if (list.status !== 200 || !Array.isArray(list.body)) throw new SyncError(`Mercado Pago no devolvió la lista de reportes de ${label} (código ${list.status}).`);
+  const entries = (list.body as ListEntry[]).filter((e) => !e.is_test);
+  const gap = (a: string | undefined, b: string) => (a && !Number.isNaN(Date.parse(a)) ? Math.abs(Date.parse(a) - Date.parse(b)) : Infinity);
+  const made = (e: ListEntry) => Date.parse(e.generation_date ?? e.date_created ?? e.last_modified ?? '') || null;
+  const mine = entries
+    .map((e) => ({ e, off: gap(e.begin_date, p.begin) + gap(e.end_date, p.end) }))
+    .filter(({ e, off }) => off < 36 * 3600_000 && (off < 4000 || (made(e) ?? Infinity) >= p.requested_at - 5 * 60_000))
+    .sort((a, b) => a.off - b.off || (b.e.id ?? 0) - (a.e.id ?? 0));
+  const newest = entries
+    .slice(-3)
+    .map((e) => `${e.begin_date ?? '?'}→${e.end_date ?? '?'} ${e.status ?? 'sin estado'}${e.file_name ? '' : ' sin archivo'}`)
+    .join('; ');
+  log(`${kind}: ${entries.length} en la lista${newest ? ` (últimos: ${newest})` : ''}; pedido ${p.begin}→${p.end}: ${mine.length ? 'encontrado' : 'no figura'}`);
+  const entry = mine[0]?.e;
+  if (!entry) return { wait: `El reporte de ${label} todavía no figura en la lista de Mercado Pago.` };
+  if (entry.status && entry.status !== 'processed') return { wait: `Mercado Pago está preparando el reporte de ${label} (estado «${entry.status.slice(0, 30)}»).` };
   if (!entry.file_name) throw new SyncError('Mercado Pago terminó el reporte pero no indicó el nombre del archivo.');
   if (!/^[\w.-]+\.csv$/i.test(entry.file_name)) throw new SyncError(`El reporte llegó como «${entry.file_name.slice(-40)}»; la app lee reportes en CSV.`);
   const file = await mpGet(token, `/v1/account/${kind}/${entry.file_name}`);
-  if (file.status === 404) return null;
-  if (file.status !== 200 || typeof file.body !== 'string') throw new SyncError(`No se pudo descargar el reporte (código ${file.status}).`);
-  return file.body;
+  log(`${kind}: descarga de ${entry.file_name}: código ${file.status}${typeof file.body === 'string' ? `, ${file.body.length} caracteres` : ''}`);
+  if (file.status === 404) return { wait: `El archivo del reporte de ${label} todavía no está disponible.` };
+  if (file.status !== 200 || typeof file.body !== 'string') throw new SyncError(`No se pudo descargar el reporte de ${label} (código ${file.status}).`);
+  return { text: file.body };
 }
 
 // ---- Turning a report into movements ----
@@ -399,17 +432,36 @@ export async function advanceSync(userId: number, opts: { start?: boolean; wrap?
       const end = Math.min(from + CHUNK_DAYS * 86_400_000, Date.now() - 60_000);
       lastAsked.set(userId, Date.now());
       const next = await requestRange(stored.token, iso(from), iso(end));
+      log(`pedido ${next.begin}→${next.end}: ${next.kinds.join(' y ')}`);
       save(userId, { status: r?.live ? 'live' : 'fetching', pending: JSON.stringify(next), last_error: null });
       return syncView(userId);
     }
 
-    if (Date.now() - pending.requested_at > GIVE_UP_MS) throw new SyncError('Mercado Pago no terminó el reporte en 30 minutos. Probá de nuevo más tarde.');
-    const text = await fetchReport(stored.token, 'release_report', pending);
-    if (text === null) return syncView(userId);
+    if (Date.now() - pending.requested_at > GIVE_UP_MS)
+      throw new SyncError(`Mercado Pago no entregó el reporte en 30 minutos${pending.note ? ` (${pending.note.replace(/\.$/, '')})` : ''}. Probá de nuevo más tarde.`);
+    // Waiting or unreachable: keep what it said, so the screen shows it, and try again next time.
+    const hold = (note: string, failed = false) => {
+      const fails = failed ? (pending.fails ?? 0) + 1 : 0;
+      if (fails >= 6) throw new SyncError(`${note} Probá de nuevo más tarde.`);
+      save(userId, { pending: JSON.stringify({ ...pending, note, fails }) });
+      return syncView(userId);
+    };
+    let release: Awaited<ReturnType<typeof fetchReport>>;
+    try {
+      release = await fetchReport(stored.token, 'release_report', pending);
+    } catch (e) {
+      if (e instanceof HttpError) return hold(e.message, true);
+      throw e;
+    }
+    if ('wait' in release) return hold(release.wait);
+    const text = release.text;
     let detail: string | null = null;
-    if (pending.kinds.includes('settlement_report')) detail = await fetchReport(stored.token, 'settlement_report', pending).catch(() => null);
-    // The transactions report may take longer; give it a few minutes before going without it.
-    if (detail === null && pending.kinds.includes('settlement_report') && Date.now() - pending.requested_at < 5 * 60_000) return syncView(userId);
+    if (pending.kinds.includes('settlement_report')) {
+      const d = await fetchReport(stored.token, 'settlement_report', pending).catch(() => null);
+      detail = d && 'text' in d ? d.text : null;
+      // The transactions report only adds store names: give it a few minutes, then go without it.
+      if (detail === null && Date.now() - pending.requested_at < 5 * 60_000) return hold(d && 'wait' in d ? d.wait : 'Esperando el reporte de todas las transacciones.');
+    }
 
     const parsed = parseReleaseReport(text, detail);
     markReportsReady(userId, detail === null ? ['release_report'] : ['release_report', 'settlement_report']);
@@ -423,7 +475,8 @@ export async function advanceSync(userId: number, opts: { start?: boolean; wrap?
         if (!cur?.live) {
           // First import: everything waits for the review, chunk after chunk until today.
           const opening = cur?.opening ?? (parsed.initial === null ? null : JSON.stringify({ date: historyStartOf(userId), amount: parsed.initial }));
-          const more = Date.parse(pending.end) < Date.now() - 10 * 60_000;
+          // More to fetch only if the range stopped short of when it was asked for (a month's cap).
+          const more = Date.parse(pending.end) < pending.requested_at - 10 * 60_000;
           save(userId, { ...base, status: more ? 'fetching' : 'review', opening, review: JSON.stringify({ ...review, items: [...review.items, ...items], skipped: review.skipped + parsed.skipped }) });
           return [];
         }
@@ -458,6 +511,15 @@ export async function advanceSync(userId: number, opts: { start?: boolean; wrap?
   } finally {
     running.delete(userId);
   }
+}
+
+/** Stops waiting for a report asked for; a first import can then be started again from scratch. */
+export function cancelSync(userId: number) {
+  const r = getRow(userId);
+  if (!r?.pending) return syncView(userId);
+  log('búsqueda cancelada');
+  save(userId, r.live ? { pending: null, status: 'live' } : { pending: null, status: 'error', last_error: 'Búsqueda cancelada.' });
+  return syncView(userId);
 }
 
 // ---- The review ----

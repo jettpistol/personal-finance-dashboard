@@ -18,6 +18,9 @@ const configs: Record<string, { columns: { key: string }[] }> = {
 type Made = { id: number; kind: string; begin_date: string; end_date: string; file_name?: string; status: string; n: number };
 const made: Made[] = [];
 let hideFileName = false;
+// Real accounts may round the dates in the list and serve the file through a redirect.
+let roundDates = false;
+let redirect: 'none' | 'same' | 'bad' = 'none';
 const files: Record<string, (n: number) => string> = {};
 
 const fake = http.createServer((req, res) => {
@@ -45,8 +48,21 @@ const fake = http.createServer((req, res) => {
       made.push({ id: made.length + 1, kind, begin_date: body.begin_date, end_date: body.end_date, status: 'pending', n, file_name: `${kind}-finanzas-${n}.csv` });
       return send(202, {});
     }
-    if (rest === '/list') return send(200, made.filter((r) => r.kind === kind).map(({ n: _n, kind: _k, file_name, ...r }) => ({ ...r, ...(hideFileName ? {} : { file_name }) })));
-    const file = made.find((r) => r.kind === kind && rest === `/${r.file_name}`);
+    if (rest === '/list')
+      return send(
+        200,
+        made
+          .filter((r) => r.kind === kind)
+          .map(({ n: _n, kind: _k, file_name, ...r }) => ({
+            ...r,
+            ...(roundDates ? { begin_date: `${r.begin_date.slice(0, 10)}T00:00:00Z`, end_date: `${r.end_date.slice(0, 10)}T23:59:59Z`, generation_date: new Date().toISOString() } : {}),
+            ...(hideFileName ? {} : { file_name }),
+          })),
+      );
+    const moved = /^\/moved-(.+)$/.exec(rest ?? '');
+    if (redirect !== 'none' && !moved && made.some((r) => r.kind === kind && rest === `/${r.file_name}`))
+      return res.writeHead(302, { location: redirect === 'same' ? `/v1/account/${kind}/moved-${rest!.slice(1)}` : '/v1/advanced_payments' }).end();
+    const file = made.find((r) => r.kind === kind && (rest === `/${r.file_name}` || moved?.[1] === r.file_name));
     if (file && file.status === 'processed') return res.writeHead(200, { 'content-type': 'text/csv' }).end(files[kind](file.n));
     return send(404, { message: 'not_found' });
   });
@@ -93,7 +109,7 @@ let ivanId = 0;
 let mpAccount = 0;
 let bank = 0;
 
-async function call(who: 'ivan' | 'mili', method: string, url: string, payload?: unknown) {
+async function call(who: 'ivan' | 'mili' | 'tercero', method: string, url: string, payload?: unknown) {
   const res = await app.inject({ method: method as 'GET', url, payload: payload as object, headers: { cookie: cookies[who] } });
   return { status: res.statusCode, body: res.json() };
 }
@@ -261,6 +277,56 @@ describe('a first import longer than a month', () => {
     expect(Date.parse(asks[1].begin_date)).toBeLessThan(Date.parse(asks[0].end_date));
     processAll();
     expect((await sync.advanceSync(miliId)).status).toBe('review');
+  });
+});
+
+describe('what real accounts may do', () => {
+  let id = 0;
+  const reset = () => dbm.db().prepare('DELETE FROM mp_sync WHERE user_id = ?').run(id);
+  beforeAll(async () => {
+    await app.inject({ method: 'POST', url: '/api/users', payload: { username: 'tercero', display_name: 'Tercero', password: 'tercera-contraseña' }, headers: { cookie: cookies.ivan } });
+    const r = await app.inject({ method: 'POST', url: '/api/auth/login', payload: { username: 'tercero', password: 'tercera-contraseña' } });
+    cookies.tercero = r.headers['set-cookie']!.toString().split(';')[0];
+    await call('tercero', 'PUT', '/api/me/mercadopago', { access_token: TOKEN, history_start: day(20) });
+    id = (await call('tercero', 'GET', '/api/me')).body.id;
+  });
+
+  it('finds the report when Mercado Pago rounds its dates, and follows a redirected download', async () => {
+    reset();
+    roundDates = true;
+    redirect = 'same';
+    await sync.advanceSync(id, { start: true });
+    processAll();
+    expect((await sync.advanceSync(id)).status).toBe('review');
+    expect(seen.some((x) => x.path.includes('/moved-'))).toBe(true);
+    roundDates = false;
+    redirect = 'none';
+  });
+
+  it('shows why it waits instead of spinning silently, and gives up with the reason', async () => {
+    reset();
+    redirect = 'bad';
+    await sync.advanceSync(id, { start: true });
+    processAll();
+    let v = await sync.advanceSync(id);
+    expect(v).toMatchObject({ status: 'fetching', waiting: true, note: 'No se pudo descargar el reporte de Mercado Pago.' });
+    for (let i = 0; i < 5; i++) v = await sync.advanceSync(id);
+    expect(v.status).toBe('error');
+    expect(v.error).toMatch(/descargar/);
+    // Nothing outside the allowed reads was ever asked for.
+    expect(seen.some((x) => x.path === '/v1/advanced_payments')).toBe(false);
+    redirect = 'none';
+  });
+
+  it('a report that takes long to make does not start the first import over', async () => {
+    reset();
+    await sync.advanceSync(id, { start: true });
+    const row = dbm.db().prepare('SELECT pending FROM mp_sync WHERE user_id = ?').get(id) as { pending: string };
+    const p = JSON.parse(row.pending);
+    // Asked for 20 minutes ago (Mercado Pago was slow); the range ended a minute before that.
+    dbm.db().prepare('UPDATE mp_sync SET pending = ? WHERE user_id = ?').run(JSON.stringify({ ...p, requested_at: Date.now() - 20 * 60_000 }), id);
+    processAll();
+    expect((await sync.advanceSync(id)).status).toBe('review');
   });
 });
 

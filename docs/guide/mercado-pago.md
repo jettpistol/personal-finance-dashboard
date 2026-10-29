@@ -81,6 +81,10 @@ The app reads two Mercado Pago reports: **dinero liberado** (every movement of y
 
 1. In **Ajustes → Mercado Pago**, next to **Movimientos**, click **Traer movimientos**. If the reports had no settings in Mercado Pago, the app saves them first (the same as **Configurar reportes**).
 2. It shows **Buscando en Mercado Pago…** and checks every 15 seconds. You can leave the page: the server keeps checking. From an early start date it asks month by month.
+   - The line underneath says when it asked (**Pedido hoy 18:50**) and what Mercado Pago answered on the last check, for example *Mercado Pago está preparando el reporte de dinero liberado (estado «pending»)* or *todavía no figura en la lista*.
+   - **Cancelar** stops waiting; **Reintentar** then asks again from the start.
+   - If Mercado Pago hasn't delivered after 30 minutes, or can't be reached six checks in a row, it stops with the reason in red.
+   - Whoever runs the server sees each step in its terminal, in lines that start with `[mercadopago]` (dates, report status, download codes; never the token or your movements).
 3. When everything is in: **N para revisar** and **Revisar**. Nothing is saved yet.
 4. **Revisar** opens the same review table as [Importar](importar.md), with:
    - **Usar $ … como saldo inicial de «Mercado Pago»** (ticked): sets the account's starting balance so that, on the start date, it matches Mercado Pago's own figure. Untick it to keep yours.

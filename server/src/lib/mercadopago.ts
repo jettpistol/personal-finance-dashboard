@@ -30,22 +30,33 @@ const WRITES: { method: 'POST' | 'PUT'; path: RegExp }[] = [
 ];
 
 const TIMEOUT_MS = 10_000;
+// Report files can be large and slow to come.
+const DOWNLOAD_TIMEOUT_MS = 90_000;
 
 export type MpResponse = { status: number; body: unknown };
 
-async function send(token: string, method: 'GET' | 'POST' | 'PUT', url: URL, payload?: unknown): Promise<MpResponse> {
+async function send(token: string, method: 'GET' | 'POST' | 'PUT', url: URL, payload?: unknown, download = false): Promise<MpResponse> {
   let res: Response;
   try {
     res = await fetch(url, {
       method,
-      headers: { authorization: `Bearer ${token}`, accept: 'application/json', ...(payload === undefined ? {} : { 'content-type': 'application/json' }) },
+      headers: { authorization: `Bearer ${token}`, accept: download ? '*/*' : 'application/json', ...(payload === undefined ? {} : { 'content-type': 'application/json' }) },
       body: payload === undefined ? undefined : JSON.stringify(payload),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      redirect: 'error',
+      signal: AbortSignal.timeout(download ? DOWNLOAD_TIMEOUT_MS : TIMEOUT_MS),
+      redirect: download ? 'manual' : 'error',
     });
+    // A report file may be served from Mercado Pago's file storage: follow that one link, over
+    // HTTPS and without the token (it never leaves api.mercadopago.com).
+    const location = res.headers.get('location');
+    if (download && res.status >= 300 && res.status < 400 && location) {
+      const next = new URL(location, url);
+      // Same host: only to an allowed read path. Elsewhere: HTTPS only, and no token.
+      if (next.origin === url.origin ? !READ_ONLY.some((re) => re.test(next.pathname)) : next.protocol !== 'https:') throw new Error('redirect not allowed');
+      res = await fetch(next, { headers: next.origin === url.origin ? { authorization: `Bearer ${token}` } : {}, signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS), redirect: 'error' });
+    }
   } catch {
     // The underlying error may carry request details; never pass it on.
-    throw new HttpError(502, 'No se pudo contactar a Mercado Pago. Probá de nuevo en unos minutos.');
+    throw new HttpError(502, download ? 'No se pudo descargar el reporte de Mercado Pago.' : 'No se pudo contactar a Mercado Pago. Probá de nuevo en unos minutos.');
   }
   const text = await res.text();
   let body: unknown = text;
@@ -60,7 +71,8 @@ async function send(token: string, method: 'GET' | 'POST' | 'PUT', url: URL, pay
 export async function mpGet(token: string, pathAndQuery: string): Promise<MpResponse> {
   const url = new URL(pathAndQuery, config.mpApiUrl);
   if (!READ_ONLY.some((re) => re.test(url.pathname))) throw new Error(`Mercado Pago path not allowed: ${url.pathname}`);
-  return send(token, 'GET', url);
+  // Report files (…_report/<name>.csv) are downloads: longer wait, and they may be redirected.
+  return send(token, 'GET', url, undefined, /_report\/[\w.-]+\.(csv|xlsx)$/.test(url.pathname));
 }
 
 /** One of the approved report writes (see WRITES); anything else throws before a request is made. */

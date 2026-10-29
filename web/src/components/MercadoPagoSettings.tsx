@@ -36,6 +36,9 @@ type Sync = {
   status: 'off' | 'fetching' | 'review' | 'live' | 'error';
   live: boolean;
   waiting: boolean;
+  waiting_since: string | null;
+  /** What Mercado Pago said on the last check while waiting. */
+  note: string | null;
   review_count: number;
   last_sync_at: string | null;
   error: string | null;
@@ -224,6 +227,17 @@ export function MercadoPagoSettings() {
 
   const startSync = () => run('sync', () => api.post<Connection>('/me/mercadopago/sync', { start: true }));
   const when = (iso: string) => dayjs(iso).format(dayjs(iso).isSame(dayjs(), 'day') ? '[hoy] HH:mm' : 'D MMM HH:mm');
+  const cancel = () => run('cancel', () => api.post<Connection>('/me/mercadopago/sync', { cancel: true }));
+  // While a report is on its way: since when, what Mercado Pago says, and a way out.
+  const waitingLine = sync?.waiting && sync.waiting_since && (
+    <Text size="xs" c="dimmed">
+      Pedido {when(sync.waiting_since)}
+      {sync.note ? ` · ${sync.note.replace(/\.$/, '')}` : ''} ·{' '}
+      <Anchor component="button" size="xs" onClick={cancel}>
+        Cancelar
+      </Anchor>
+    </Text>
+  );
   const movements = !sync ? null : sync.status === 'off' ? (
     <Button size="xs" variant="default" loading={busy === 'sync'} disabled={!c.account || !c.readable} onClick={startSync}>
       Traer movimientos
@@ -238,10 +252,13 @@ export function MercadoPagoSettings() {
       </Button>
     </Stack>
   ) : sync.status === 'fetching' ? (
-    <Group gap="xs" wrap="nowrap">
-      <Loader size={14} />
-      <span>Buscando en Mercado Pago…</span>
-    </Group>
+    <Stack gap={2}>
+      <Group gap="xs" wrap="nowrap">
+        <Loader size={14} />
+        <span>Buscando en Mercado Pago…</span>
+      </Group>
+      {waitingLine}
+    </Stack>
   ) : sync.status === 'review' ? (
     <Group gap="xs" wrap="nowrap">
       <span>{sync.review_count} para revisar</span>
@@ -250,21 +267,24 @@ export function MercadoPagoSettings() {
       </Button>
     </Group>
   ) : (
-    <Group gap="xs" wrap="nowrap">
-      <span>{sync.waiting ? 'Actualizando…' : `Al día${sync.last_sync_at ? ` · ${when(sync.last_sync_at)}` : ''}`}</span>
-      {sync.review_count > 0 && (
-        <Button size="compact-xs" variant="default" onClick={() => setReviewing(true)}>
-          {sync.review_count} para revisar
-        </Button>
-      )}
-      {!sync.waiting && (
-        <Tooltip label="Buscar ahora">
-          <ActionIcon size="sm" variant="subtle" color="gray" aria-label="Buscar movimientos ahora" loading={busy === 'sync'} onClick={startSync}>
-            <IconRefresh size={14} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-    </Group>
+    <Stack gap={2}>
+      <Group gap="xs" wrap="nowrap">
+        <span>{sync.waiting ? 'Actualizando…' : `Al día${sync.last_sync_at ? ` · ${when(sync.last_sync_at)}` : ''}`}</span>
+        {sync.review_count > 0 && (
+          <Button size="compact-xs" variant="default" onClick={() => setReviewing(true)}>
+            {sync.review_count} para revisar
+          </Button>
+        )}
+        {!sync.waiting && (
+          <Tooltip label="Buscar ahora">
+            <ActionIcon size="sm" variant="subtle" color="gray" aria-label="Buscar movimientos ahora" loading={busy === 'sync'} onClick={startSync}>
+              <IconRefresh size={14} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+      </Group>
+      {waitingLine}
+    </Stack>
   );
 
   return (

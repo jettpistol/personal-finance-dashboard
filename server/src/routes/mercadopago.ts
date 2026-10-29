@@ -4,7 +4,7 @@ import { logAction } from '../lib/audit.js';
 import { isValidDate, today } from '../lib/dates.js';
 import { db } from '../db/index.js';
 import { commitRowSchema } from '../lib/import-commit.js';
-import { advanceSync, afterReview, commitReview, reviewItems, syncView } from '../lib/mp-sync.js';
+import { advanceSync, afterReview, cancelSync, commitReview, reviewItems, syncView } from '../lib/mp-sync.js';
 import { undoable } from '../lib/undo.js';
 import { parse } from './util.js';
 import { z } from 'zod';
@@ -111,7 +111,14 @@ export default async function mercadoPagoRoutes(app: FastifyInstance) {
   // Movements: `start` asks Mercado Pago for what's new (the first time, everything since the start
   // date); without it, it only collects a report already asked for (the screen polls while it waits).
   app.post('/me/mercadopago/sync', async (req) => {
-    const start = (req.body as { start?: unknown } | null)?.start === true;
+    const body = (req.body ?? {}) as { start?: unknown; cancel?: unknown };
+    if (body.cancel === true) {
+      cancelSync(req.userId);
+      // Cancelling is for starting over: the next click may ask right away.
+      lastCheck.delete(req.userId);
+      return view(req.userId);
+    }
+    const start = body.start === true;
     if (start) takeTurn(req.userId);
     else {
       if (Date.now() - (lastPoll.get(req.userId) ?? 0) < POLL_EVERY_MS) return view(req.userId);
