@@ -1,7 +1,7 @@
 {
   "name": "personal-finance-dashboard",
   "private": true,
-  "version": "0.16.0",
+  "version": "0.16.1",
   "workspaces": [
     "server",
     "web"
@@ -9,13 +9,13 @@
   "scripts": {
     "dev": "npm run dev --workspace server & npm run dev --workspace web",
     "build": "npm run build --workspace web && npm run build --workspace server",
-    "start": "npm run start --workspace server",
-    "test": "npm test --workspace server",
+    "start": "node scripts/ensure-native.mjs && npm run start --workspace server",
+    "test": "node scripts/ensure-native.mjs && npm test --workspace server",
     "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
     "seed:demo": "npm run seed:demo --workspace server",
-    "demo": "npm run build && npm run demo --workspace server",
-    "demo:reset": "npm run build && npm run demo:reset --workspace server",
-    "update": "git checkout -- package-lock.json && git pull --ff-only && npm ci"
+    "demo": "node scripts/ensure-native.mjs && npm run build && npm run demo --workspace server",
+    "demo:reset": "node scripts/ensure-native.mjs && npm run build && npm run demo:reset --workspace server",
+    "update": "git checkout -- package-lock.json && git pull --ff-only && npm ci && node scripts/ensure-native.mjs"
   },
   "overrides": {
     "uuid": "^11.1.1"

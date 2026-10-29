@@ -61,9 +61,11 @@ npm run demo:reset   # rebuilds and reloads the "Prueba (demo)" profile only
 
 `demo:reset` only empties and refills the **Prueba (demo)** profile. Logins, the other profiles (such as **Vacío**), the email setup, Mercado Pago connections and the encryption key (`secret.key`) are kept. Before 0.11.1 it deleted the whole `data-demo` folder. To really start over, stop the app and delete `server/data-demo` by hand.
 
-`npm run update` is the same as `git checkout -- package-lock.json && git pull --ff-only && npm ci`. Use `npm ci` rather than `npm install` to install: it never rewrites `package-lock.json`, so the next `git pull` can't be blocked by it.
+`npm run update` is the same as `git checkout -- package-lock.json && git pull --ff-only && npm ci`, plus a check of the database driver (`scripts/ensure-native.mjs`). Use `npm ci` rather than `npm install` to install: it never rewrites `package-lock.json`, so the next `git pull` can't be blocked by it.
 
-The footer shows the version you're running (`Finanzas v0.16.0 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
+The database driver (better-sqlite3) has a compiled part that npm skips when install scripts are turned off (`ignore-scripts`, common on work laptops) or its download fails; the app would then stop with *Could not locate the bindings file*. `npm start`, `npm test`, `npm run demo:reset` and `npm run update` check it first and put it back: they download the ready-made copy, or compile it if that fails (on a Mac that needs `xcode-select --install`).
+
+The footer shows the version you're running (`Finanzas v0.16.1 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
 
 ### Development
 

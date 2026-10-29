@@ -97,6 +97,7 @@ npm run demo:reset       # reloads only the Prueba (demo) profile, keeps logins 
 - Log in as `ivan` / `demo-finanzas` and switch to the **Prueba (demo)** profile. Check the change in the browser, in light and dark mode, and at phone width (390 px) when the layout changed.
 - In cloud sessions Playwright and Chromium are preinstalled: `require('playwright')`, `chromium.launch()`. Don't run `playwright install`.
 - Guide screenshots live in `docs/guide/img/` at 1366×860, taken from the demo profile. A new wiki image only shows after a rebuild.
+- The owner's Mac installs packages without install scripts, so better-sqlite3's compiled driver goes missing after `npm ci`. `scripts/ensure-native.mjs` puts it back and runs before `start`, `test`, `demo`, `demo:reset` and `update`: keep it in any new script that starts the server.
 
 ## Credentials that touch money (Mercado Pago and any future bank)
 
