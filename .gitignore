@@ -1,0 +1,3 @@
+node_modules/
+# Bank statements and debug captures contain personal financial data
+out/

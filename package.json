@@ -1,0 +1,21 @@
+{
+  "name": "personal-finance-dashboard",
+  "version": "1.0.0",
+  "description": "Personal finance dashboard for a couple",
+  "scripts": {
+    "galicia:check": "node scripts/galicia/fetch-statements.js --check",
+    "galicia:fetch": "NODE_USE_ENV_PROXY=1 node scripts/galicia/fetch-statements.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jettpistol/personal-finance-dashboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jettpistol/personal-finance-dashboard/issues"
+  },
+  "homepage": "https://github.com/jettpistol/personal-finance-dashboard#readme",
+  "dependencies": {
+    "@bitwarden/sdk-napi": "1.0.0"
+  },
+  "private": true
+}
