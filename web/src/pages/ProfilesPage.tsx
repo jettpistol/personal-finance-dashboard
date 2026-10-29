@@ -50,7 +50,7 @@ export function ProfilesPage() {
   const remove = (p: ProfileInfo) =>
     modals.openConfirmModal({
       title: `Borrar «${p.name}»`,
-      children: <Text size="sm">Se borran para siempre sus {p.accounts} cuentas y {p.transactions} movimientos. Los usuarios no se tocan.</Text>,
+      children: <Text size="sm">Se quitan sus {p.accounts} cuentas y {p.transactions} movimientos de la app; queda una copia en la carpeta de respaldos. Los usuarios no se tocan.</Text>,
       labels: { confirm: 'Borrar perfil', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
       onConfirm: async () => {

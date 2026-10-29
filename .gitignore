@@ -6,6 +6,8 @@ data/
 .env
 coverage/
 data-demo/
+# Data folders set aside (never deleted) by lib/data-folder.ts, e.g. data-vacia-20261029-120000
+data-*/
 *.tsbuildinfo
 .impeccable/review/
 .impeccable/questions/

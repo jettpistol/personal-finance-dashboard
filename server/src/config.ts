@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { resolveDataFolder } from './lib/data-folder.js';
 
 // Optional settings file next to package.json (git-ignored), e.g. the email password. Real
 // environment variables win over it.
@@ -13,8 +14,10 @@ function env(name: string, fallback: string): string {
   return v === undefined || v === '' ? fallback : v;
 }
 
-// `--demo` (used by `npm run demo`) keeps demo data apart from real data without needing env vars.
-const dataDir = path.resolve(env('DATA_DIR', path.join(process.cwd(), process.argv.includes('--demo') ? 'data-demo' : 'data')));
+// One data folder for everything, demo included (the demo is a profile inside it): server/data.
+// An install that lived in server/data-demo (the demo commands' folder up to 0.16.1) is copied
+// over on the first start; see lib/data-folder.ts.
+const dataDir = path.resolve(process.env.DATA_DIR ? process.env.DATA_DIR : resolveDataFolder(process.cwd()));
 
 export const config = {
   port: Number(env('PORT', '3000')),

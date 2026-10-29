@@ -1,6 +1,6 @@
 // Creates two demo users and a "Prueba (demo)" data profile with ~5 months of realistic data.
 // The default "Vacío" profile stays empty.
-// Usage: npm run demo (seeds server/data-demo once, then starts the app on it)
+// Usage: npm run demo (seeds the demo once into server/data, the app's only data folder, then starts the app)
 //        npm run demo:reset (`--reset`: reloads only the "Prueba (demo)" profile. Logins, the other
 //        profiles, the email setup, Mercado Pago connections and the encryption key are kept.)
 // Exchange rates and CPI are synthetic (source "demo"); refresh them from Ajustes once online.

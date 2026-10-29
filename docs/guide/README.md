@@ -99,6 +99,7 @@ The footer is the test: no version number at all means the page is older than 0.
 - From 0.4.2 on, a yellow bar says *Esta pantalla es de la versión X, pero la app ya está en la Y* when the page is older than the server. Click **Recargar**.
 - Close every other terminal running the app. If one is still open, a new start now says *El puerto 3000 ya está en uso…*. `lsof -i :3000` shows what holds the port.
 - `docker ps`: an old container from `docker compose up` also serves on port 3000. Stop it with `docker compose down`.
+- *The app asks to create the first user, as if new*: before 0.16.2, `npm start` and `npm run demo:reset` used different data folders. Update to 0.16.2 or later and start it again: your users come back (see the README, *One data folder*).
 - *Could not locate the bindings file* (better-sqlite3): fixed by itself from 0.16.1 on, when you start the app with `npm start` or `npm run demo:reset`. On an older version, run `node scripts/ensure-native.mjs` after `git pull`, or update.
 - Open **http://localhost:3000** (the built app). **http://localhost:5173** is only for development.
 - Force a reload with **Cmd+Shift+R** (Mac) or **Ctrl+Shift+R**.

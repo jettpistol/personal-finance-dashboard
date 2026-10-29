@@ -49,12 +49,13 @@
 <a name="top"></a>
 <div class="page">
   <div class="banner"><h1>FINANZAS</h1> &nbsp;<small>:: patch notes ::</small></div>
-  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.16.1</b></div>
+  <div class="menubar"><a href="/">&laquo; Back to Finanzas</a> &nbsp;|&nbsp; Latest version: <b>0.16.2</b></div>
 
   <table class="layout">
     <tr>
       <td class="side">
         <h2>Index</h2>
+        <a class="idx" href="#v0.16.2"><b>0.16.2</b><span class="date">Oct 29, 2026</span></a>
         <a class="idx" href="#v0.16.1"><b>0.16.1</b><span class="date">Oct 29, 2026</span></a>
         <a class="idx" href="#v0.16.0"><b>0.16.0</b><span class="date">Oct 29, 2026</span></a>
         <a class="idx" href="#v0.15.1"><b>0.15.1</b><span class="date">Oct 28, 2026</span></a>
@@ -92,6 +93,17 @@
 
       <td class="main">
         <p class="lead">What changed in each version</p>
+
+        <a name="v0.16.2"></a>
+        <h2>0.16.2 <span class="date">&middot; Oct 29, 2026</span></h2>
+        <ul>
+          <li>One data folder for everything: <code>npm start</code> and the demo commands now both use <code>server/data</code>. Before, the demo commands used <code>server/data-demo</code>, so starting with <code>npm start</code> showed an empty app as if the users were gone.</li>
+          <li>On the first start, if <code>server/data</code> has no users and <code>server/data-demo</code> has some, they are copied over with everything else: profiles, movements, Mercado Pago connections, receipts and the encryption key. <code>server/data-demo</code> is kept as it was.</li>
+          <li><code>npm run data:recover</code> brings the <code>data-demo</code> users back if <code>server/data</code> already had other ones. The folder it replaces is kept under a dated name.</li>
+          <li><b>Perfil de datos</b>: deleting a profile keeps a full copy of it in the backups folder (<code>backups/guardados</code>). The window now says so.</li>
+          <li><code>npm run demo:reset</code> keeps a copy of <b>Prueba (demo)</b> before reloading it.</li>
+        </ul>
+        <p class="top"><a href="#top">&uarr; Back to top</a></p>
 
         <a name="v0.16.1"></a>
         <h2>0.16.1 <span class="date">&middot; Oct 29, 2026</span></h2>

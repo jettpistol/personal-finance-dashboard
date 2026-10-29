@@ -109,7 +109,8 @@ npm run demo:reset       # reloads only the Prueba (demo) profile, keeps logins 
 
 ## Never
 
-- Delete a whole data folder (`data/`, `data-demo/`) from a script or npm command: it holds logins, connections and the encryption key. Reset one profile instead (`resetProfile` in `lib/profiles.ts`).
+- Delete a whole data folder (`data/`, `data-demo/`) from a script or npm command: it holds logins, connections and the encryption key. Reset one profile instead (`resetProfile` in `lib/profiles.ts`, which keeps a copy in `backups/guardados/` first).
+- Give a command its own data folder. There is one, `server/data` (`lib/data-folder.ts`), for `start`, `dev` and the demo commands alike: the owner once lost sight of their users because `npm start` and `npm run demo:reset` used different folders. Users, profiles, Mercado Pago connections and financial data must never be deleted: anything that removes a profile's data keeps a full copy first, and folders are set aside (renamed), never removed.
 
 - Read, print or commit `.env`, `secret.key`, the Gmail app password, Mercado Pago tokens or other secrets. Never ask the owner to paste a token in chat. The API never returns the mail password.
 - Commit data folders (`data/`, `data-demo/`) or uploaded files.

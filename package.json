@@ -1,7 +1,7 @@
 {
   "name": "personal-finance-dashboard",
   "private": true,
-  "version": "0.16.1",
+  "version": "0.16.2",
   "workspaces": [
     "server",
     "web"
@@ -15,6 +15,7 @@
     "seed:demo": "npm run seed:demo --workspace server",
     "demo": "node scripts/ensure-native.mjs && npm run build && npm run demo --workspace server",
     "demo:reset": "node scripts/ensure-native.mjs && npm run build && npm run demo:reset --workspace server",
+    "data:recover": "node scripts/ensure-native.mjs && npm run data:recover --workspace server",
     "update": "git checkout -- package-lock.json && git pull --ff-only && npm ci && node scripts/ensure-native.mjs"
   },
   "overrides": {

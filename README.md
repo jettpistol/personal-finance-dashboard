@@ -46,7 +46,7 @@ On first visit you create your user. Then add your partner in **Ajustes → Hoga
 npm run demo
 ```
 
-This builds the app, loads demo data into `server/data-demo` (only the first time) and starts it on http://localhost:3000. Users `ivan` / `milagros`, password `demo-finanzas`.
+This builds the app, loads demo data into `server/data` (only the first time, and only if it has no users yet) and starts it on http://localhost:3000. Users `ivan` / `milagros`, password `demo-finanzas`.
 
 Demo exchange rates and CPI are synthetic. Use **Ajustes → Cotizaciones e inflación → Actualizar** to load real ones.
 
@@ -59,13 +59,15 @@ npm run update       # discards local lockfile changes, pulls, installs exactly 
 npm run demo:reset   # rebuilds and reloads the "Prueba (demo)" profile only
 ```
 
-`demo:reset` only empties and refills the **Prueba (demo)** profile. Logins, the other profiles (such as **Vacío**), the email setup, Mercado Pago connections and the encryption key (`secret.key`) are kept. Before 0.11.1 it deleted the whole `data-demo` folder. To really start over, stop the app and delete `server/data-demo` by hand.
+`demo:reset` only empties and refills the **Prueba (demo)** profile, after keeping a copy of it in `server/data/backups/guardados/`. Logins, the other profiles (such as **Vacío**), the email setup, Mercado Pago connections and the encryption key (`secret.key`) are kept. Keep your real data in another profile, not in **Prueba (demo)**.
+
+**One data folder.** `npm start`, `npm run demo` and `npm run demo:reset` all use `server/data` (from 0.16.2; before, the demo commands used `server/data-demo`). On the first start of 0.16.2, if `server/data` has no users and `server/data-demo` has some, the app copies `server/data-demo` into `server/data`; `server/data-demo` stays as it was, as a spare copy, and an empty `server/data` is kept as `server/data-vacia-<date>`. If both had users, the app uses `server/data` and says so; `npm run data:recover` (with the app closed) switches to the `data-demo` users, keeping the current folder as `server/data-anterior-<date>`. Nothing in the app or its scripts deletes a data folder.
 
 `npm run update` is the same as `git checkout -- package-lock.json && git pull --ff-only && npm ci`, plus a check of the database driver (`scripts/ensure-native.mjs`). Use `npm ci` rather than `npm install` to install: it never rewrites `package-lock.json`, so the next `git pull` can't be blocked by it.
 
 The database driver (better-sqlite3) has a compiled part that npm skips when install scripts are turned off (`ignore-scripts`, common on work laptops) or its download fails; the app would then stop with *Could not locate the bindings file*. `npm start`, `npm test`, `npm run demo:reset` and `npm run update` check it first and put it back: they download the ready-made copy, or compile it if that fails (on a Mac that needs `xcode-select --install`).
 
-The footer shows the version you're running (`Finanzas v0.16.1 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
+The footer shows the version you're running (`Finanzas v0.16.2 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
 
 ### Development
 

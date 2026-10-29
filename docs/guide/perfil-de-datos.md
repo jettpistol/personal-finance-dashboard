@@ -70,10 +70,10 @@ Any profile can be renamed, including the default one. Names can be up to 60 cha
 ### Delete a profile
 
 1. Click the bin next to it.
-2. The window **Borrar «name»** warns: *Se borran para siempre sus N cuentas y M movimientos. Los usuarios no se tocan.*
+2. The window **Borrar «name»** warns: *Se quitan sus N cuentas y M movimientos de la app; queda una copia en la carpeta de respaldos. Los usuarios no se tocan.*
 3. Click **Borrar perfil**.
 
-The profile's data is gone; there is no undo from the app (only an earlier backup file can bring it back, see below). The default profile can't be deleted, and there must always be at least one profile. If you delete the profile you are using, the app moves you to the default one.
+The profile leaves the app, but nothing is lost: a full copy of it is kept in the data folder, under `backups/guardados/` (for example `perfil-3-borrado-20261029-213146.sqlite`), and the backup rotation never removes those. There is no undo button; whoever runs the server can bring the copy back. The default profile can't be deleted, and there must always be at least one profile. If you delete the profile you are using, the app moves you to the default one.
 
 Any of you can create, rename and delete profiles; there is no owner per profile.
 

@@ -77,9 +77,27 @@ export function createProfile(name: string, opts: { isDefault?: boolean } = {}):
 }
 
 /** Empties a profile: its database file is recreated from scratch (same id, same name). */
+/**
+ * Before a profile's file is emptied or removed, a full copy goes to backups/guardados/ (never
+ * pruned by the backup rotation), so no household data is ever lost for good.
+ */
+function keepCopy(p: Profile, label: string): string | null {
+  const file = path.join(config.dataDir, p.file);
+  if (!fs.existsSync(file)) return null;
+  const dir = path.join(config.backupsDir, 'guardados');
+  fs.mkdirSync(dir, { recursive: true });
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-');
+  const target = path.join(dir, `${path.basename(p.file, '.sqlite')}-${label}-${stamp}.sqlite`);
+  const d = open.get(p.id) ?? openDb(file);
+  d.prepare('VACUUM INTO ?').run(target);
+  if (!open.has(p.id)) d.close();
+  return target;
+}
+
 export function resetProfile(id: number): Profile {
   const p = getProfile(id);
   if (!p) throw new HttpError(404, 'Perfil no encontrado');
+  keepCopy(p, 'antes-de-reiniciar');
   open.get(id)?.close();
   open.delete(id);
   for (const suffix of ['', '-wal', '-shm']) fs.rmSync(path.join(config.dataDir, p.file) + suffix, { force: true });
@@ -97,6 +115,7 @@ export function deleteProfile(id: number) {
   if (!p) throw new HttpError(404, 'Perfil no encontrado');
   if (listProfiles().length <= 1) throw new HttpError(400, 'Tiene que quedar al menos un perfil.');
   if (p.is_default) throw new HttpError(400, 'El perfil vacío por defecto no se puede borrar.');
+  keepCopy(p, 'borrado');
   open.get(id)?.close();
   open.delete(id);
   coreDb().prepare('DELETE FROM profiles WHERE id = ?').run(id);

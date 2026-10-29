@@ -1,8 +1,10 @@
 import fs from 'node:fs';
+import path from 'node:path';
+import Database from 'better-sqlite3';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { config } from '../src/config.js';
-import { initProfiles } from '../src/lib/profiles.js';
+import { initProfiles, resetProfile } from '../src/lib/profiles.js';
 import { buildApp } from '../src/app.js';
 
 let app: FastifyInstance;
@@ -47,5 +49,23 @@ describe('data profiles', () => {
     const def = list.profiles.find((p: { is_default: boolean }) => p.is_default);
     const r = await app.inject({ method: 'DELETE', url: `/api/profiles/${def.id}`, headers: { cookie: session } });
     expect(r.statusCode).toBe(400);
+  });
+
+  it('keeps a full copy of a profile before deleting or resetting it', async () => {
+    const created = (await post('/api/profiles', { name: 'A borrar' })).json();
+    const sel = await post('/api/profiles/select', { id: created.id });
+    const both = `${session}; ${sel.headers['set-cookie']!.toString().split(';')[0]}`;
+    await post('/api/accounts', { name: 'Caja', type: 'cash', currency: 'ARS', owner: 'me' }, both);
+    const del = await app.inject({ method: 'DELETE', url: `/api/profiles/${created.id}`, headers: { cookie: session } });
+    expect(del.statusCode).toBe(200);
+    const dir = path.join(config.backupsDir, 'guardados');
+    const kept = fs.readdirSync(dir).filter((f) => f.startsWith(`perfil-${created.id}-borrado-`));
+    expect(kept).toHaveLength(1);
+    const copy = new Database(path.join(dir, kept[0]), { readonly: true });
+    expect(copy.prepare('SELECT name FROM accounts').all()).toEqual([{ name: 'Caja' }]);
+    copy.close();
+    const other = (await post('/api/profiles', { name: 'A reiniciar' })).json();
+    resetProfile(other.id);
+    expect(fs.readdirSync(dir).some((f) => f.startsWith(`perfil-${other.id}-antes-de-reiniciar-`))).toBe(true);
   });
 });
