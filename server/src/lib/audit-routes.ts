@@ -1388,7 +1388,7 @@ export const AUDIT_ROUTES: Record<string, Descriptor | Skip | Manual> = {
       };
     },
   }),
-  // The hourly sync logs its own imports (lib/mp-sync.ts); a click that only asks for a report isn't worth a line.
+  // The automatic sync logs its own imports (lib/mp-sync.ts); a click that only asks for a report isn't worth a line.
   'POST /api/me/mercadopago/sync': D('Mercado Pago', {
     describe: (c) => (c.body?.start === true ? { action: 'sincronizar', entity: 'mercadopago', summary: 'Pidió a Mercado Pago los movimientos nuevos', privateTo: c.userId } : null),
   }),

@@ -283,7 +283,7 @@ function AccountCard({ a, onEdit }: { a: Account; onEdit: () => void }) {
 
 const LIVE = {
   connected: { label: 'Conectada', tip: 'Conectada a Mercado Pago. Los movimientos llegan solos después de la primera revisión.' },
-  live: { label: 'En vivo', tip: 'Se actualiza sola desde Mercado Pago cada hora.' },
+  live: { label: 'En vivo', tip: 'Se actualiza sola desde Mercado Pago cada 3 horas.' },
   error: { label: 'Sin actualizar', tip: 'Mercado Pago no respondió. Ver Ajustes → Mercado Pago.' },
 } as const;
 

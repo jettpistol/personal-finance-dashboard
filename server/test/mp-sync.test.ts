@@ -3,7 +3,7 @@ import http from 'node:http';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 
 // The Mercado Pago movements import against a local stand-in for api.mercadopago.com that saves
@@ -352,6 +352,22 @@ describe('what real accounts may do', () => {
     dbm.db().prepare('UPDATE mp_sync SET pending = ? WHERE user_id = ?').run(JSON.stringify({ ...p, requested_at: Date.now() - 20 * 60_000 }), id);
     processAll();
     expect((await sync.advanceSync(id)).status).toBe('review');
+  });
+});
+
+describe('how often it updates', () => {
+  it('asks Mercado Pago again by itself only after 3 hours', async () => {
+    const real = Date.now();
+    const asks = () => made.filter((m) => m.kind === 'release_report').length;
+    const before = asks();
+    const at = (h: number) => vi.spyOn(Date, 'now').mockReturnValue(real + h * 3600_000);
+    at(2);
+    await sync.advanceSync(ivanId);
+    expect(asks()).toBe(before);
+    at(3.1);
+    await sync.advanceSync(ivanId);
+    expect(asks()).toBe(before + 1);
+    vi.restoreAllMocks();
   });
 });
 

@@ -1,6 +1,6 @@
 # Connect Mercado Pago
 
-Each of you can connect your own personal Mercado Pago account in **Ajustes → Mercado Pago**. The app then brings your Mercado Pago movements into your Mercado Pago account in [Cuentas](cuentas.md): the first time everything since the start date, for you to review; after that, new movements every hour by themselves.
+Each of you can connect your own personal Mercado Pago account in **Ajustes → Mercado Pago**. The app then brings your Mercado Pago movements into your Mercado Pago account in [Cuentas](cuentas.md): the first time everything since the start date, for you to review; after that, new movements every 3 hours by themselves.
 
 ![Ajustes, Mercado Pago tab with a connected account and the list of data sources](img/mercado-pago.png)
 
@@ -97,7 +97,8 @@ The app reads two Mercado Pago reports: **dinero liberado** (every movement of y
 
 **After that**
 
-- Every hour the app asks Mercado Pago for what's new (the last two days, so nothing is missed) and saves it without asking, with your rules applied and duplicates skipped. A movement with exactly the amount of something in [Pendientes](pagos-pendientes.md) settles it, as when you type it.
+- Every 3 hours the app asks Mercado Pago for what's new (the last two days, so nothing is missed) and saves it without asking, with your rules applied and duplicates skipped. A movement with exactly the amount of something in [Pendientes](pagos-pendientes.md) settles it, as when you type it.
+- Mercado Pago emails you each time a report is ready (*El reporte … está lista*): about two emails every 3 hours. That's Mercado Pago's own notice; the app can't turn it off.
 - What needs a choice waits: **N para revisar** next to **Movimientos** (a withdrawal, which needs the account it went to). Rows you left out in a review aren't brought back.
 - **Al día · HH:mm** says when it last updated; the round arrow asks right away.
 - If something fails, the reason shows in red with **Reintentar**, and Cuentas shows **Sin actualizar**.
