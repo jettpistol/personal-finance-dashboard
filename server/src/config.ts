@@ -52,4 +52,15 @@ export const config = {
   maxReceiptBytes: 3 * 1024 * 1024,
   // Mercado Pago's API (overridable only so tests can point it at a local fake).
   mpApiUrl: env('MP_API_URL', 'https://api.mercadopago.com'),
+  // Gmail, read-only, to bring statements that banks send by email (lib/mail-statements.ts). The
+  // OAuth client is created once by whoever runs the app (docs/guide/resumenes-por-correo.md).
+  // The URLs are overridable only so tests can point them at a local fake.
+  google: {
+    clientId: env('GOOGLE_CLIENT_ID', ''),
+    clientSecret: env('GOOGLE_CLIENT_SECRET', ''),
+    authUrl: env('GOOGLE_AUTH_URL', 'https://accounts.google.com/o/oauth2/v2/auth'),
+    tokenUrl: env('GOOGLE_TOKEN_URL', 'https://oauth2.googleapis.com/token'),
+    revokeUrl: env('GOOGLE_REVOKE_URL', 'https://oauth2.googleapis.com/revoke'),
+    gmailUrl: env('GMAIL_API_URL', 'https://gmail.googleapis.com'),
+  },
 };

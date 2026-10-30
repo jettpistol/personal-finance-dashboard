@@ -18,7 +18,8 @@ Scope was decided with [`docs/feature-questionnaire.md`](docs/feature-questionna
 - **Installments (cuotas)**: one purchase becomes N monthly expenses; future months show as committed spending.
 - **Recurring bills**: generated as *pending* so you confirm the real amount.
 - **CSV / XLSX import** with **presets per bank** (column mapping, date format, decimal separator, split debit/credit columns, rows to skip, encoding), rule-based categorisation, duplicate detection, and undo.
-- **Statements (Resúmenes)**: upload a bank PDF or Excel file as the bank gives it; the app recognises the format by its content, checks that the numbers add up to the document's own totals, and sends the rows to the usual import review. Reads Banco Galicia's account extract (xlsx), account statement (PDF) and Visa and American Express statements (PDF); more banks and wallets will follow.
+- **Statements (Resúmenes)**: upload a bank PDF or Excel file as the bank gives it; the app recognises the format by its content, checks that the numbers add up to the document's own totals, and sends the rows to the usual import review. Reads Banco Galicia's account extract (xlsx), account statement (PDF) and Visa and American Express statements (PDF), and Naranja X's card statement (PDF, every card of the account in one); more banks and wallets will follow.
+- **Statements by email**: each person can connect their Gmail (read-only) in **Ajustes → Gmail**; every 6 hours the app looks for the statements banks email (Naranja X today), reads them and leaves them waiting in **Resúmenes** for one-click review and import.
 - **Rules**: "description contains X" sets the category, merchant, shared flag, tags, or turns the row into a transfer.
 - **Budgets** per category and month (household or personal) with in-app and **Telegram** alerts at 80% and 100%.
 - **Savings goals** linked to an account or with manual contributions, showing how much to save per month.
@@ -68,7 +69,7 @@ npm run demo:reset   # or: rebuilds and reloads the "Prueba (demo)" profile only
 
 The database driver (better-sqlite3) has a compiled part that npm skips when install scripts are turned off (`ignore-scripts`, common on work laptops) or its download fails; the app would then stop with *Could not locate the bindings file*. `npm start`, `npm test`, `npm run demo:reset` and `npm run update` check it first and put it back: they download the ready-made copy, or compile it if that fails (on a Mac that needs `xcode-select --install`).
 
-The footer shows the version you're running (`Finanzas v0.16.6 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
+The footer shows the version you're running (`Finanzas v0.17.0 · …`); it's bumped in the root `package.json` with every change, and each version is described in the **Patch notes** page linked from the footer (`web/public/patch-notes.html`).
 
 ### Development
 
@@ -95,7 +96,8 @@ All state lives in `./data`: the SQLite database, receipts and `backups/`. Copyi
 | `DATA_DIR` | `./data` | Database, receipts, backups |
 | `PORT` | `3000` | HTTP port |
 | `TELEGRAM_BOT_TOKEN` | – | Enables Telegram alerts and the monthly .docx (create a bot with @BotFather) |
-| `PUBLIC_URL` | – | Used for links in Telegram messages |
+| `PUBLIC_URL` | – | Used for links in Telegram messages, and as the Gmail return address when set |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | – | Google OAuth client for **Ajustes → Gmail** (statements by email). See [`docs/guide/resumenes-por-correo.md`](docs/guide/resumenes-por-correo.md) |
 | `SECURE_COOKIES` | `false` | Set `true` when served over HTTPS |
 | `TZ_APP` | `America/Argentina/Buenos_Aires` | Household timezone |
 | `BACKUP_KEEP_DAILY` / `BACKUP_KEEP_MONTHLY` | `14` / `12` | Backup rotation |

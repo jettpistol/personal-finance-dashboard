@@ -21,12 +21,19 @@ Two tabs:
 | Banco Galicia, **Caja de Ahorro en pesos**: monthly statement | PDF | ARS |
 | Banco Galicia, **Tarjeta de crédito Visa**: statement | PDF | ARS and USD |
 | Banco Galicia, **Tarjeta de crédito American Express**: statement | PDF | ARS and USD |
+| **Naranja X**, credit cards: account statement (every card of the account in one) | PDF | ARS and USD |
 
-The list in the app is always the current one; each format's **Detalles** says what it reads, how to get the file, which checks it runs and what to keep in mind. More formats will be added over time (for example Naranja X, Ualá and Binance).
+The list in the app is always the current one; each format's **Detalles** says what it reads, how to get the file, which checks it runs and what to keep in mind. More formats will be added over time (for example Ualá and Binance).
+
+Statements that arrive by email (Naranja X today) can also come by themselves: see [Get statements by email](resumenes-por-correo.md).
 
 A PDF must be the original the bank gives you, with selectable text. A photo or a scan can't be read.
 
 ## What you can do
+
+### Import a statement that arrived by email
+
+If you connected Gmail in **Ajustes → Gmail**, a **Recibidos por correo** box appears above the wizard with the statements waiting. **Revisar** opens one in the wizard, already uploaded and with the account it went to last time; from there it's the same two steps as below. Details: [Get statements by email](resumenes-por-correo.md).
 
 ### Import a statement
 
@@ -69,7 +76,8 @@ Open **Cómo funciona y formatos**. Click **Detalles** on a format to see what i
 - If you have both the Excel extract and the monthly PDF of the same account, import only one of them.
 - Import the account extract and the card statements. The payment of the card is recorded from the account, once.
 - Create rules for the merchants that stay uncategorised; the next statement comes out categorised. See [Reglas](reglas.md).
-- The uploaded file is kept in memory for 30 minutes and is not stored. After that you see *El archivo expiró. Volvé a subirlo.*
+- The uploaded file is kept in memory for 30 minutes and is not stored. After that you see *El archivo expiró. Volvé a subirlo.* Statements that arrived by email are kept until you discard them.
+- A Naranja X statement covers every card of the account; the card of each purchase is in its note (*Tarjeta NX Master*).
 - The marks (`*`, `K`, `F`) that Galicia prints next to some card purchases are not interpreted.
 
-See also: [Guide index](README.md) · [Importar](importar.md) · [Reglas](reglas.md) · [Cuentas](cuentas.md) · [Movimientos](movimientos.md)
+See also: [Guide index](README.md) · [Get statements by email](resumenes-por-correo.md) · [Importar](importar.md) · [Reglas](reglas.md) · [Cuentas](cuentas.md) · [Movimientos](movimientos.md)

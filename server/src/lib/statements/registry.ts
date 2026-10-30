@@ -4,6 +4,7 @@ import { readFirstSheet } from './xlsx-reader.js';
 import { parseGaliciaAccountText } from './galicia/account-pdf.js';
 import { parseGaliciaAccountXlsx } from './galicia/account-xlsx.js';
 import { parseGaliciaCardText } from './galicia/card-text.js';
+import { isNaranjaXStatement, parseNaranjaXCardText } from './naranjax/card-text.js';
 
 export type FileKind = 'pdf' | 'xlsx';
 
@@ -32,6 +33,11 @@ export interface FileContent {
 }
 
 export interface StatementReader extends ReaderInfo {
+  /**
+   * Gmail search for the emails that bring this format as an attachment, for formats the bank
+   * sends by email. The fetcher (lib/mail-statements.ts) only looks at what these queries find.
+   */
+  mailQuery?: string;
   detect(file: FileContent): boolean;
   read(file: FileContent): Statement;
 }
@@ -127,6 +133,37 @@ export const READERS: StatementReader[] = [
     detect: (f) => f.fileType === 'pdf' && /Tarjeta Cr[eé]dito\s+AMERICAN EXPRESS/i.test(head(f)),
     read: (f) => parseGaliciaCardText(f.text ?? ''),
   },
+  {
+    id: 'naranjax-card',
+    institution: 'Naranja X',
+    product: 'Tarjetas de crédito',
+    document: 'Resumen de cuenta en PDF',
+    fileType: 'pdf',
+    target: 'card',
+    currencies: ['ARS', 'USD'],
+    reads: [
+      'Un solo resumen para todas las tarjetas de la cuenta (físicas y virtual): cada compra indica con qué tarjeta se hizo.',
+      'Cada compra con fecha, comercio, monto y cuota «X de Y».',
+      'Intereses, mantenimiento, IVA y sellos como renglones aparte.',
+      'El pago del resumen anterior, fechas de cierre y vencimiento, total a pagar, pago mínimo, tasas y límites.',
+      'Cuotas futuras: lo que ya está comprometido para los próximos meses.',
+    ],
+    howToGet: 'Llega todos los meses por correo como «ResumenDeCuenta_<fecha>.pdf». Se puede traer solo conectando Gmail en Ajustes → Resúmenes por correo, o descargar desde la app de Naranja X y subirlo acá.',
+    checks: [
+      'Saldo anterior − pagos + consumos + otros cargos = total a pagar.',
+      'La suma de las compras de cada titular coincide con el subtotal impreso.',
+      'El total del detalle coincide con el total a pagar de la primera hoja.',
+    ],
+    limits: [
+      'Todas las tarjetas de la cuenta van a una misma cuenta de la app; la tarjeta queda en la nota de cada movimiento.',
+      'Los consumos en dólares solo se importan a una cuenta en dólares. Si el resumen no imprime un total en dólares, se avisa para revisarlos a mano.',
+      'La línea de pago del resumen anterior queda sin marcar: el pago ya figura en la cuenta desde la que se pagó.',
+      'Las compras en un pago («01») no llevan cuota; un plan distinto de «X/Y» se avisa y se importa como compra en un pago.',
+    ],
+    mailQuery: 'from:naranjax.com has:attachment filename:pdf',
+    detect: (f) => f.fileType === 'pdf' && isNaranjaXStatement(f.text ?? ''),
+    read: (f) => parseNaranjaXCardText(f.text ?? ''),
+  },
 ];
 
 const head = (f: FileContent) => (f.text ?? '').slice(0, 800);
@@ -140,7 +177,7 @@ function hasGaliciaHeader(data: Uint8Array): boolean {
 }
 
 export function readerInfo(r: StatementReader): ReaderInfo {
-  const { detect: _d, read: _r, ...info } = r;
+  const { detect: _d, read: _r, mailQuery: _m, ...info } = r;
   return info;
 }
 

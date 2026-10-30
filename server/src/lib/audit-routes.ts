@@ -1411,6 +1411,30 @@ export const AUDIT_ROUTES: Record<string, Descriptor | Skip | Manual> = {
     describe: (c) => ({ action: 'desconectar', entity: 'mercadopago', summary: 'Desconectó su cuenta de Mercado Pago', privateTo: c.userId }),
   }),
 
+  // ---- Resúmenes por correo (personal connection: only its owner sees these) ----
+  'POST /api/me/gmail/connect': { skip: 'Only returns the address of Google\'s consent page.' },
+  'DELETE /api/me/gmail': D('Ajustes', {
+    global: true,
+    describe: (c) => ({ action: 'desconectar', entity: 'gmail', summary: 'Desconectó su Gmail de los resúmenes por correo', privateTo: c.userId }),
+  }),
+  'PUT /api/me/gmail/sync': D('Importar', {
+    describe: (c) => ({ action: 'activar', entity: 'gmail', summary: `Activó la búsqueda de resúmenes en su correo desde el ${fdate(c.body?.since)}`, privateTo: c.userId }),
+  }),
+  'DELETE /api/me/gmail/sync': D('Importar', {
+    describe: (c) => ({ action: 'desactivar', entity: 'gmail', summary: 'Desactivó la búsqueda de resúmenes en su correo', privateTo: c.userId }),
+  }),
+  'POST /api/me/gmail/fetch': D('Importar', {
+    describe: (c) => {
+      const n = Number(c.res?.found?.recognised ?? 0);
+      return { action: 'buscar', entity: 'gmail', summary: `Buscó resúmenes en su correo: ${n ? `${n} nuevo${n === 1 ? '' : 's'}` : 'ninguno nuevo'}`, privateTo: c.userId };
+    },
+  }),
+  'POST /api/mail-statements/:id/open': { skip: 'Opens a received statement in the wizard; saves nothing.' },
+  'POST /api/mail-statements/:id/imported': { skip: 'Marks a received statement as imported; the import itself is logged by POST /api/imports/commit.' },
+  'POST /api/mail-statements/:id/dismiss': D('Importar', {
+    describe: (c) => ({ action: 'descartar', entity: 'mail_statement', entityId: Number(c.params.id) || null, summary: `Descartó el resumen recibido por correo ${q(clip(c.res?.file_name, 80))}`, privateTo: c.userId }),
+  }),
+
   // ---- Perfil de datos ----
   'POST /api/profiles': D('Perfil de datos', {
     global: true,

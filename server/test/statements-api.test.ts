@@ -57,7 +57,7 @@ beforeAll(async () => {
 describe('readers', () => {
   it('lists what can be read today', async () => {
     const r = await call('GET', '/api/statements/readers');
-    expect(r.body.map((x: { id: string }) => x.id)).toEqual(['galicia-account-xlsx', 'galicia-account-pdf', 'galicia-card-visa', 'galicia-card-amex']);
+    expect(r.body.map((x: { id: string }) => x.id)).toEqual(['galicia-account-xlsx', 'galicia-account-pdf', 'galicia-card-visa', 'galicia-card-amex', 'naranjax-card']);
     expect(r.body[0]).toMatchObject({ institution: 'Banco Galicia', fileType: 'xlsx', target: 'bank' });
     expect(r.body[0]).not.toHaveProperty('read');
   });

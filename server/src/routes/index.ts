@@ -12,6 +12,7 @@ import profileRoutes from './profiles.js';
 import loanRoutes from './loans.js';
 import pendingRoutes from './pending.js';
 import mercadoPagoRoutes from './mercadopago.js';
+import mailStatementRoutes from './mail-statements.js';
 import auditRoutes from './audit.js';
 import undoRoutes from './undo.js';
 import fs from 'node:fs';
@@ -41,6 +42,7 @@ export async function registerRoutes(app: FastifyInstance) {
   await app.register(loanRoutes);
   await app.register(pendingRoutes);
   await app.register(mercadoPagoRoutes);
+  await app.register(mailStatementRoutes);
   await app.register(auditRoutes);
   await app.register(undoRoutes);
   // `build`: the version the served web app was compiled from (scripts/build-stamp.mjs). When it

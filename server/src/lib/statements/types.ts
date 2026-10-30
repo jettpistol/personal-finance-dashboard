@@ -23,8 +23,9 @@ export type TransactionKind =
   | 'debt_transfer' // card statement moving a USD balance into ARS
   | 'other'
 
-export type Bank = 'galicia'
-export type CardIssuer = 'visa' | 'amex'
+export type Bank = 'galicia' | 'naranjax'
+/** 'naranjax': one Naranja X account statement, which covers every card of the account. */
+export type CardIssuer = 'visa' | 'amex' | 'naranjax'
 export type Product = 'account' | CardIssuer
 
 export interface SourceRef {
@@ -71,6 +72,8 @@ export interface Transaction {
   cardIssuer: CardIssuer | 'other' | null
   /** Card only: last 4 digits of the physical card that made the purchase. */
   cardLast4: string | null
+  /** Card only, when the statement names the card instead of its digits (Naranja X: "NX Master"). */
+  cardName?: string | null
   /** Rate printed by the bank, stored as information only; amounts are never converted. */
   fx: { side: 'buy' | 'sell'; rate: number } | null
   /** Original text, for debugging and for future re-parsing. */
@@ -130,7 +133,8 @@ export interface CardStatement {
   limits: { purchaseArsMinor: number | null; financingArsMinor: number | null }
   /** Percentages as printed: nominal annual and effective monthly rate. */
   rates: { tnaArs: number | null; tnaUsd: number | null; temArs: number | null; temUsd: number | null }
-  /** "Total Consumos" per physical card (the holder, plus additional cards if any). */
+  /** "Total Consumos" per physical card (the holder, plus additional cards if any). Naranja X
+   * totals per holder and prints no card digits, so last4 is empty there. */
   cardTotals: Array<{ last4: string; holder: string; arsMinor: number; usdMinor: number }>
   transactions: Transaction[]
   /** "Cuotas a vencer": installments already committed for the coming months. */

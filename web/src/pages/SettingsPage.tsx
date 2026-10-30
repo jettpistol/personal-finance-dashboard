@@ -39,6 +39,7 @@ import type { Category, Currency, FxRate, Settings } from '../lib/types';
 import { PageHeader } from '../components/Layout';
 import { MailSetupCard } from '../components/MailSetupCard';
 import { MercadoPagoSettings } from '../components/MercadoPagoSettings';
+import { GmailSettings } from '../components/GmailSettings';
 
 export function SettingsPage() {
   // In the URL, so the tab survives a reload (and the redraw after Monedas changes).
@@ -53,6 +54,7 @@ export function SettingsPage() {
           <Tabs.Tab value="profile">Perfil</Tabs.Tab>
           <Tabs.Tab value="notifications">Notificaciones</Tabs.Tab>
           <Tabs.Tab value="mercadopago">Mercado Pago</Tabs.Tab>
+          <Tabs.Tab value="gmail">Gmail</Tabs.Tab>
           <Tabs.Tab value="household">Hogar</Tabs.Tab>
           <Tabs.Tab value="categories">Categorías</Tabs.Tab>
           <Tabs.Tab value="currencies">Monedas</Tabs.Tab>
@@ -67,6 +69,9 @@ export function SettingsPage() {
         </Tabs.Panel>
         <Tabs.Panel value="mercadopago">
           <MercadoPagoSettings />
+        </Tabs.Panel>
+        <Tabs.Panel value="gmail">
+          <GmailSettings />
         </Tabs.Panel>
         <Tabs.Panel value="household">
           <HouseholdTab />

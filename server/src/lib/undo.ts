@@ -60,6 +60,13 @@ export const NOT_WRAPPED: Record<string, string> = {
   'POST /api/me/mercadopago/account': 'Personal connection setting.',
   'POST /api/me/mercadopago/sync': 'Talks to Mercado Pago (await); the movements it saves are wrapped with undoable() in lib/mp-sync.ts.',
   'DELETE /api/me/mercadopago': 'Encrypted token (core database).',
+  // Statements by email: each person's own Gmail; most of it talks to Google first.
+  'POST /api/me/gmail/connect': 'Keeps a short-lived state in memory; saves nothing.',
+  'DELETE /api/me/gmail': 'Encrypted token (core database); revokes it with Google (await).',
+  'PUT /api/me/gmail/sync': 'Personal setting, then looks in Gmail (await).',
+  'DELETE /api/me/gmail/sync': 'Personal connection setting.',
+  'POST /api/me/gmail/fetch': 'Looks in Gmail (await); what it finds only waits for review.',
+  'POST /api/mail-statements/:id/open': 'Keeps the file in memory for the wizard; saves nothing.',
   // Files and network: the writes come after an await.
   'POST /api/transactions/csv': 'Reads the upload first; the commit is wrapped with undoable() in lib/csv-movements.ts.',
   'POST /api/transactions/:id/receipt': 'Upload (await); replaces the file.',

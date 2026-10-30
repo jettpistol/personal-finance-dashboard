@@ -430,4 +430,43 @@ export const migrations: string[] = [
     balance_at TEXT
   );
   `,
+  // Statements that banks send by email, brought from Gmail (lib/mail-statements.ts).
+  // gmail_connections: one per person, in the core database like mp_connections; the refresh token
+  // is stored only encrypted. mail_sync: each person's fetching in this data profile.
+  // mail_statements: every attachment looked at, so none is read twice; the PDF (data, base64 so
+  // the undo journal can copy the row) is kept while it waits and after it is imported, and
+  // dropped when it is discarded.
+  `
+  CREATE TABLE gmail_connections (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    token_enc TEXT NOT NULL,
+    email TEXT,
+    connected_at TEXT NOT NULL,
+    last_error TEXT
+  );
+  CREATE TABLE mail_sync (
+    user_id INTEGER PRIMARY KEY,
+    since TEXT NOT NULL,
+    last_fetch_at TEXT,
+    last_error TEXT
+  );
+  CREATE TABLE mail_statements (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    message_id TEXT NOT NULL,
+    file_name TEXT NOT NULL,
+    received_at TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'imported', 'dismissed', 'unrecognised', 'failed')),
+    reader_id TEXT,
+    account_ref TEXT,
+    summary TEXT,
+    integrity_ok INTEGER,
+    error TEXT,
+    data TEXT,
+    account_id INTEGER,
+    batch_id INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (user_id, message_id, file_name)
+  );
+  `,
 ];

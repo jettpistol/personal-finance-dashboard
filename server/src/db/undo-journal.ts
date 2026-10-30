@@ -14,7 +14,7 @@ type DB = Database.Database;
  * rate limits and reminder bookkeeping. A new table is journaled by default: add it here when it
  * holds secrets or isn't household data.
  */
-export const JOURNAL_EXCLUDED = new Set(['users', 'sessions', 'login_attempts', 'mp_connections', 'audit_log', 'profiles', 'reminders_sent']);
+export const JOURNAL_EXCLUDED = new Set(['users', 'sessions', 'login_attempts', 'mp_connections', 'gmail_connections', 'audit_log', 'profiles', 'reminders_sent']);
 
 /**
  * Tables whose rows may change after the action without blocking an undo (e.g. a bell

@@ -1,10 +1,11 @@
-import { Fragment, useState } from 'react';
-import { Alert, Badge, Button, Card, Collapse, FileButton, Group, List, Stack, Stepper, Table, Tabs, Text } from '@mantine/core';
-import { IconAlertTriangle, IconCheck, IconFileText, IconUpload, IconX } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
+import { Fragment, useEffect, useState } from 'react';
+import { ActionIcon, Alert, Anchor, Badge, Button, Card, Collapse, FileButton, Group, List, Menu, Stack, Stepper, Table, Tabs, Text } from '@mantine/core';
+import { IconAlertTriangle, IconCheck, IconDots, IconFileText, IconMail, IconUpload, IconX } from '@tabler/icons-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { date, money } from '../lib/format';
-import { notifyError, useAccounts, useRefreshData } from '../lib/queries';
+import { notifyError, notifyOk, useAccounts, useRefreshData } from '../lib/queries';
 import type { ImportItem } from '../lib/types';
 import { PageHeader } from '../components/Layout';
 import { AccountSelect } from '../components/inputs';
@@ -28,7 +29,7 @@ type Summary =
   | { kind: 'account'; accountRef: string; periodFrom: string | null; periodTo: string | null; count: number; openingBalance: number; closingBalance: number }
   | {
       kind: 'card';
-      issuer: 'visa' | 'amex';
+      issuer: 'visa' | 'amex' | 'naranjax';
       accountRef: string;
       count: number;
       closeDate: string;
@@ -44,11 +45,26 @@ type Detected = { reader: ReaderInfo; summary: Summary; integrity: { ok: boolean
 type Previewed = Detected & { items: ImportItem[]; errors: { line: number; message: string }[]; total_rows: number };
 type Upload = { upload_id: string; file_name: string; size: number };
 type CommitResult = { batch_id: number; imported: number; failures: { description: string; error: string }[] };
+/** A statement that arrived by email (Ajustes → Gmail), waiting in Resúmenes. */
+type MailItem = {
+  id: number;
+  file_name: string;
+  received_at: string;
+  status: 'pending' | 'imported' | 'failed';
+  title: string;
+  summary: Summary | null;
+  integrity_ok: boolean | null;
+  error: string | null;
+};
+/** A received statement opened in the wizard: already uploaded, maybe with its usual account. */
+type Received = { mailId: number; upload: Upload; accountId: number | null };
+const MAIL_KEY = ['mail-statements'];
 
 const FILE_LABEL = { pdf: 'PDF', xlsx: 'Excel' } as const;
 
 export function StatementsPage() {
   const [tab, setTab] = useState<string | null>('import');
+  const [received, setReceived] = useState<Received | null>(null);
   return (
     <>
       <PageHeader title="Resúmenes" />
@@ -58,7 +74,10 @@ export function StatementsPage() {
           <Tabs.Tab value="formats">Cómo funciona y formatos</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="import">
-          <StatementWizard onSeeFormats={() => setTab('formats')} />
+          <Stack>
+            <MailInbox openId={received?.mailId ?? null} onOpen={setReceived} />
+            <StatementWizard onSeeFormats={() => setTab('formats')} received={received} onDone={() => setReceived(null)} />
+          </Stack>
         </Tabs.Panel>
         <Tabs.Panel value="formats">
           <HowItWorks />
@@ -68,8 +87,9 @@ export function StatementsPage() {
   );
 }
 
-function StatementWizard({ onSeeFormats }: { onSeeFormats: () => void }) {
+function StatementWizard({ onSeeFormats, received, onDone }: { onSeeFormats: () => void; received: Received | null; onDone: () => void }) {
   const refresh = useRefreshData();
+  const qc = useQueryClient();
   const accounts = useAccounts();
   const [step, setStep] = useState(0);
   const [upload, setUpload] = useState<Upload | null>(null);
@@ -85,25 +105,39 @@ function StatementWizard({ onSeeFormats }: { onSeeFormats: () => void }) {
 
   const account = accounts.data?.find((a) => a.id === accountId);
 
+  const detect = async (up: Upload) => {
+    setUpload(up);
+    try {
+      setDetected(await api.post<Detected>('/statements/detect', { upload_id: up.upload_id }));
+    } catch (e) {
+      setProblem((e as Error).message);
+    }
+  };
+
   const onFile = async (file: File | null) => {
     if (!file) return;
+    if (received) onDone();
     setUploading(true);
     setDetected(null);
     setProblem(null);
     try {
-      const up = await api.upload<Upload>('/imports/upload', file);
-      setUpload(up);
-      try {
-        setDetected(await api.post<Detected>('/statements/detect', { upload_id: up.upload_id }));
-      } catch (e) {
-        setProblem((e as Error).message);
-      }
+      await detect(await api.upload<Upload>('/imports/upload', file));
     } catch (e) {
       notifyError(e);
     } finally {
       setUploading(false);
     }
   };
+
+  // A statement from Recibidos por correo starts the wizard over, as if its file had just been chosen.
+  useEffect(() => {
+    if (!received) return;
+    restart();
+    setAccountId(received.accountId);
+    setUploading(true);
+    void detect(received.upload).finally(() => setUploading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [received?.mailId]);
 
   const loadPreview = async () => {
     if (!upload || !accountId) return;
@@ -128,8 +162,14 @@ function StatementWizard({ onSeeFormats }: { onSeeFormats: () => void }) {
     if (badTransfer) return notifyError(new Error(`Falta la cuenta de la transferencia "${badTransfer.description}".`));
     setCommitting(true);
     try {
-      setResult(await api.post<CommitResult>('/imports/commit', { file_name: upload.file_name, account_id: accountId, preset_id: null, rows }));
+      const r = await api.post<CommitResult>('/imports/commit', { file_name: upload.file_name, account_id: accountId, preset_id: null, rows });
+      setResult(r);
       setStep(2);
+      if (received) {
+        await api.post(`/mail-statements/${received.mailId}/imported`, { account_id: accountId, batch_id: r.batch_id }).catch(() => undefined);
+        qc.invalidateQueries({ queryKey: MAIL_KEY });
+        onDone();
+      }
       refresh();
     } catch (e) {
       notifyError(e);
@@ -254,6 +294,128 @@ function StatementWizard({ onSeeFormats }: { onSeeFormats: () => void }) {
   );
 }
 
+/**
+ * Statements that arrived by email (Ajustes → Gmail). Shown only to whoever turned the search on;
+ * pending ones first. «Revisar» opens one in the wizard below.
+ */
+function MailInbox({ openId, onOpen }: { openId: number | null; onOpen: (r: Received) => void }) {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: MAIL_KEY, queryFn: () => api.get<{ on: boolean; items: MailItem[] }>('/mail-statements') });
+  const [busy, setBusy] = useState<number | null>(null);
+  const [showDone, setShowDone] = useState(false);
+  const data = q.data;
+  if (!data || (!data.on && !data.items.length)) return null;
+
+  const pending = data.items.filter((i) => i.status !== 'imported');
+  const done = data.items.filter((i) => i.status === 'imported');
+
+  const open = async (item: MailItem) => {
+    setBusy(item.id);
+    try {
+      const r = await api.post<Upload & { account_id: number | null }>(`/mail-statements/${item.id}/open`);
+      onOpen({ mailId: item.id, upload: { upload_id: r.upload_id, file_name: r.file_name, size: r.size }, accountId: r.account_id });
+    } catch (e) {
+      notifyError(e);
+    } finally {
+      setBusy(null);
+    }
+  };
+  const dismiss = async (item: MailItem) => {
+    try {
+      await api.post(`/mail-statements/${item.id}/dismiss`);
+      qc.invalidateQueries({ queryKey: MAIL_KEY });
+      notifyOk(`Descartado ${item.file_name}.`);
+    } catch (e) {
+      notifyError(e);
+    }
+  };
+
+  const facts = (i: MailItem) => {
+    const s = i.summary;
+    if (!s) return i.error ?? '';
+    if (s.kind === 'account') return `${s.count} movimientos`;
+    return [`Vence ${date(s.dueDate, 'DD/MM/YY')}`, `${money(s.totalDue.ars, 'ARS')}${s.totalDue.usd ? ` y ${money(s.totalDue.usd, 'USD')}` : ''}`, `${s.count} movimientos`].join(' · ');
+  };
+
+  const row = (i: MailItem) => (
+    <Group key={i.id} justify="space-between" wrap="nowrap" gap="sm">
+      <div style={{ minWidth: 0 }}>
+        <Group gap={6} wrap="nowrap">
+          <Text size="sm" fw={600} truncate>
+            {i.title}
+          </Text>
+          {i.status === 'failed' && (
+            <Badge size="xs" color="ocre" variant="light">
+              No se pudo leer
+            </Badge>
+          )}
+          {i.status === 'pending' && i.integrity_ok === false && (
+            <Badge size="xs" color="red" variant="light">
+              No cuadra
+            </Badge>
+          )}
+          {i.status === 'imported' && (
+            <Badge size="xs" color="teal" variant="light">
+              Importado
+            </Badge>
+          )}
+        </Group>
+        <Text size="xs" c="dimmed" truncate>
+          {facts(i)}
+        </Text>
+      </div>
+      <Group gap={4} wrap="nowrap">
+        {i.status !== 'failed' && (
+          <Button size="xs" variant={i.status === 'pending' ? 'filled' : 'default'} loading={busy === i.id} disabled={openId === i.id} onClick={() => open(i)}>
+            {openId === i.id ? 'Abierto' : i.status === 'pending' ? 'Revisar' : 'Abrir'}
+          </Button>
+        )}
+        {i.status !== 'imported' && (
+          <Menu position="bottom-end">
+            <Menu.Target>
+              <ActionIcon variant="subtle" color="gray" aria-label="Más opciones">
+                <IconDots size={16} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item color="red" onClick={() => dismiss(i)}>
+                Descartar
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        )}
+      </Group>
+    </Group>
+  );
+
+  return (
+    <Card>
+      <Group justify="space-between" mb="xs">
+        <Group gap={6}>
+          <IconMail size={16} />
+          <Text fw={700}>Recibidos por correo</Text>
+        </Group>
+        <Anchor component={Link} to="/ajustes?tab=gmail" size="xs">
+          Gmail
+        </Anchor>
+      </Group>
+      <Stack gap="xs">
+        {pending.length ? pending.map(row) : <Text size="sm" c="dimmed">No hay resúmenes nuevos.</Text>}
+        {done.length > 0 && (
+          <>
+            <Anchor component="button" size="xs" ta="left" onClick={() => setShowDone((v) => !v)}>
+              {showDone ? 'Ocultar importados' : `Importados (${done.length})`}
+            </Anchor>
+            <Collapse in={showDone}>
+              <Stack gap="xs">{done.map(row)}</Stack>
+            </Collapse>
+          </>
+        )}
+      </Stack>
+    </Card>
+  );
+}
+
 /** What was recognised, in one line, and whether the numbers add up. */
 function Recognised({ d }: { d: Detected }) {
   const [showChecks, setShowChecks] = useState(false);
@@ -344,7 +506,7 @@ function HowItWorks() {
           ))}
         </List>
         <Text size="xs" c="dimmed" mt="sm">
-          Los archivos no se guardan: se leen en memoria y se descartan a los 30 minutos. En los PDF, las líneas de pago de una tarjeta quedan sin marcar porque el pago ya figura en la cuenta bancaria.
+          Los archivos subidos no se guardan: se leen en memoria y se descartan a los 30 minutos. Los que llegan por correo (Ajustes → Gmail) se guardan hasta que se descartan. En los PDF, las líneas de pago de una tarjeta quedan sin marcar porque el pago ya figura en la cuenta bancaria.
         </Text>
       </Card>
 
@@ -399,7 +561,7 @@ function HowItWorks() {
           </Table>
         </Table.ScrollContainer>
         <Text size="xs" c="dimmed" mt="sm">
-          Se irán sumando más formatos, por ejemplo Naranja X, Ualá y Binance.
+          Se irán sumando más formatos, por ejemplo Ualá y Binance.
         </Text>
       </Card>
     </Stack>

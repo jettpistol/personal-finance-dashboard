@@ -66,6 +66,7 @@ function describe(tx: Transaction): string {
 
 function notesOf(tx: Transaction): string | null {
   const parts: string[] = [];
+  if (tx.cardName) parts.push(`Tarjeta ${tx.cardName}`);
   if (tx.installment) parts.push(`Cuota ${tx.installment.number} de ${tx.installment.total}, compra del ${shortDate(tx.date)}`);
   if (tx.fx) parts.push(`Cotización ${tx.fx.rate.toLocaleString('es-AR')}`);
   return parts.length ? parts.join('. ') : null;

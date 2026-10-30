@@ -68,6 +68,8 @@ Standing instructions for any agent working in this repo. They come from the own
 - **Mercado Pago:** each person connects their own account in **Ajustes → Mercado Pago**, and it fills exactly one account in Cuentas per data profile (`mp_links`): created as "Mercado Pago" if there's none, otherwise the person must pick among their existing Mercado Pago accounts (a prompt with no way out). A second Mercado Pago account per person is refused. History starts on 1 October 2026 unless set.
   - Movements (`lib/mp-sync.ts`): the first import waits for a review (`ImportReview`); once saved, new ones go in by themselves every 3 hours (the owner's choice: Mercado Pago emails each report), and only what needs a choice (a withdrawal's destination) waits. A movement typed by hand with the same amount, at most a day apart, is completed, never doubled. Amounts are net; fees are recorded apart.
   - In Cuentas the person's own Mercado Pago account carries a green tag with a pulsing dot (**Conectada**, then **En vivo**); the partner never sees it. The owner's guidelines are in [`docs/mercadopago/`](docs/mercadopago/); the note at the top of the agent brief says how this repo deviates from it, and `03-reports-reference.md` holds the confirmed report facts (it overrides the brief). Mercado Pago's developer sites can't be reached from cloud sessions: ask the owner to paste pages instead of guessing fields.
+- **Statements by email** (`lib/mail-statements.ts`, `lib/gmail.ts`): each person connects their own Gmail, read-only (`gmail.readonly`), in **Ajustes → Gmail** (OAuth client from `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`; refresh token encrypted in `gmail_connections`, core DB). The search is turned on per data profile (`mail_sync`), runs every 6 hours, and only looks for the emails of readers that declare a `mailQuery` in `statements/registry.ts`. What it finds always waits in **Resúmenes → Recibidos por correo** and goes through the normal review; it is never imported on its own. Gmail calls go through `gmailGet()` (GET only, path allowlist).
+  - Naranja X sends one statement per account for all its cards (physical and virtual); they go to one account in the app and the card name goes in the note. The repo is public: statement fixtures are redacted copies with changed amounts (`server/test/statements/fixtures/naranjax.layout.txt`); never commit a real statement.
 - **Data profiles:** a new install opens on the empty **Vacío** profile; demo data lives in **Prueba (demo)**.
 - Changing the data profile or the account keeps you on the same page and refreshes it.
 
@@ -100,13 +102,13 @@ npm run demo:reset       # reloads only the Prueba (demo) profile, keeps logins 
 - The owner's Mac installs packages without install scripts, so better-sqlite3's compiled driver goes missing after `npm ci`. `scripts/ensure-native.mjs` puts it back and runs before `start`, `test`, `demo`, `demo:reset` and `update`: keep it in any new script that starts the server.
 - The app runs from a compiled copy (`web/dist`, `server/dist`). `npm run build` stamps it with the version and commit (`scripts/build-stamp.mjs`); `npm start` compiles again when the stamp doesn't match, and `npm run update` compiles. When you tell the owner how to update, always include compiling, or just `npm run update` then `npm start`.
 
-## Credentials that touch money (Mercado Pago and any future bank)
+## Credentials that touch money (Mercado Pago, Gmail and any future bank)
 
 - Store them only through `encryptSecret` / `decryptSecret` (`lib/secrets.ts`): AES-256-GCM, bound to the user, key in `SECRET_KEY` or `DATA_DIR/secret.key`, never in a database.
 - Never return them from the API, not even partly; never log them; validate them by hand (not with a schema that could echo the input). The browser keeps a typed token only in component state until it's saved.
 - Each person's connection is theirs only: routes act on `req.userId`, never on another user.
 - Mercado Pago reads go through `mpGet()` (GET only, path allowlist). The only writes the owner approved (2026-10-28) go through `mpWrite()`: save a report's settings (`POST`/`PUT /v1/account/{release,settlement}_report/config`) and ask for a report (`POST /v1/account/{release,settlement}_report`). Never add payment, refund, transfer or other money-moving endpoints; any other write (even report scheduling) needs the owner's explicit approval first.
-- Tests use a local fake (`MP_API_URL`); never call the real API with a real token from code or tests.
+- Tests use a local fake (`MP_API_URL`, and `GOOGLE_*_URL`/`GMAIL_API_URL` for Gmail); never call the real API with a real token from code or tests.
 
 ## Never
 

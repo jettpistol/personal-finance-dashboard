@@ -19,6 +19,7 @@ const CHECK_LABELS: Record<string, string> = {
   'card-totals-ARS': 'Suma de compras en pesos',
   'total-due-USD': 'Total a pagar en dólares',
   'card-totals-USD': 'Suma de compras en dólares',
+  'detail-total': 'Total del detalle',
 };
 
 type Parsed = { reader: ReaderInfo; statement: Statement };
