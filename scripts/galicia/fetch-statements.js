@@ -18,7 +18,10 @@ const { chromium } = require('playwright');
 const { getGaliciaCredentials } = require('./secrets');
 
 const LOGIN_URL = 'https://onlinebanking.bancogalicia.com.ar/login';
-const CARDS_URL = 'https://tarjetas.bancogalicia.com.ar/tarjetas/ini';
+// Tarjetas only accepts visitors handed over by Online Banking's own menu link
+// (an SSO post). Opening tarjetas.bancogalicia.com.ar directly ends the session.
+const TARJETAS_MENU_LINK = 'a[href="/navigation/menulink/390"]';
+const SESSION_ENDED = /\/error\/(sesionexpirada|errorout)/i;
 
 const SEL = {
   dni: '#DocumentNumber',
@@ -94,7 +97,7 @@ async function login(page, creds) {
   await page.locator(SEL.submit).click();
 
   try {
-    await page.waitForURL((u) => !u.pathname.toLowerCase().startsWith('/login'), { timeout: 45000 });
+    await page.waitForURL((u) => !u.pathname.toLowerCase().startsWith('/login'), { timeout: 45000, waitUntil: 'commit' });
   } catch {
     await snapshot(page, 'login-failed', true);
     const message = await page
@@ -103,8 +106,27 @@ async function login(page, creds) {
       .catch(() => []);
     throw new Error(`Login did not leave the login page. Page says: ${message.join(' | ').trim() || '(nothing visible)'}`);
   }
-  await page.waitForLoadState('networkidle', { timeout: 60000 }).catch(() => {});
+  await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+  assertSessionAlive(page, 'right after login');
   await snapshot(page, 'logged-in');
+}
+
+// Galicia allows one session per user: if another one is open (the app, another
+// browser, or an earlier run that didn't log out) the new one is ended at once.
+// Never retry in a loop on this; repeated logins can get the user flagged.
+function assertSessionAlive(page, when) {
+  if (SESSION_ENDED.test(page.url())) {
+    throw new Error(
+      `Galicia ended the session ${when}. Usually another Galicia session is open: ` +
+        'log out everywhere (web and app), wait 15 minutes and run once more.'
+    );
+  }
+}
+
+async function logout(page) {
+  const link = page.locator('#LogOut_a');
+  if (await link.count().catch(() => 0)) await link.first().click({ timeout: 10000 }).catch(() => {});
+  await page.waitForTimeout(3000);
 }
 
 // The carousel may render every card at once, so pick the "Resumen" button
@@ -211,7 +233,9 @@ async function main() {
     const creds = await getGaliciaCredentials();
     await login(page, creds);
 
-    await page.goto(CARDS_URL, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.locator(TARJETAS_MENU_LINK).first().click();
+    await page.waitForURL(/tarjetas\.bancogalicia\.com\.ar\/tarjetas|\/error\//i, { timeout: 60000, waitUntil: 'commit' });
+    assertSessionAlive(page, 'when opening Tarjetas');
     await page.getByText(/^\s*Resumen\s*$/).first().waitFor({ timeout: 60000 });
     await snapshot(page, 'tarjetas');
 
@@ -234,6 +258,7 @@ async function main() {
     console.error(`Debug screenshots and HTML: ${path.relative(process.cwd(), debugDir)}`);
     process.exitCode = 1;
   } finally {
+    if (!args.check) await logout(page).catch(() => {});
     await browser.close();
   }
 }
