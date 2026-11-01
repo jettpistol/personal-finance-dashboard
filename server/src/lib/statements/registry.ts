@@ -148,7 +148,7 @@ export const READERS: StatementReader[] = [
       'El pago del resumen anterior, fechas de cierre y vencimiento, total a pagar, pago mínimo, tasas y límites.',
       'Cuotas futuras: lo que ya está comprometido para los próximos meses.',
     ],
-    howToGet: 'Llega todos los meses por correo como «ResumenDeCuenta_<fecha>.pdf». Se puede traer solo conectando Gmail en Ajustes → Resúmenes por correo, o descargar desde la app de Naranja X y subirlo acá.',
+    howToGet: 'Llega todos los meses por correo como «ResumenDeCuenta_<fecha>.pdf». Se puede traer solo conectando Gmail en Ajustes → Gmail, o descargar desde la app de Naranja X y subirlo acá.',
     checks: [
       'Saldo anterior − pagos + consumos + otros cargos = total a pagar.',
       'La suma de las compras de cada titular coincide con el subtotal impreso.',
@@ -199,7 +199,7 @@ export async function readStatement(fileName: string, data: Uint8Array): Promise
   const reader = READERS.find((r) => r.detect(file));
   if (!reader) {
     throw new UnrecognisedFile(
-      `No se reconoce este ${file.fileType === 'pdf' ? 'PDF' : 'archivo de Excel'}. Los formatos disponibles son: ${READERS.map((r) => `${r.institution}, ${r.product} (${r.document})`).join('; ')}.`,
+      `No se reconoce este ${file.fileType === 'pdf' ? 'PDF' : 'archivo de Excel'}. Las plantillas disponibles son: ${READERS.map((r) => `${r.institution}, ${r.product} (${r.document})`).join('; ')}.`,
     );
   }
   return { reader: readerInfo(reader), statement: reader.read(file) };

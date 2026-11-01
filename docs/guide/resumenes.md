@@ -9,7 +9,7 @@ Load a bank or card statement exactly as the bank gives it (a PDF or an Excel fi
 Two tabs:
 
 - **Importar resumen**: the import wizard, in two steps: **Archivo** (upload, recognition and destination account) and **Revisar** (types, categories and duplicates).
-- **Cómo funciona y formatos**: how the import works and the list of statements the app can read today, each with a **Detalles** button.
+- **Plantillas**: the templates, that is, every statement the app can read today, each with **Ejemplo** (a sample of what the document looks like) and **Detalles**, and below them how the import works.
 
 **Resúmenes** does not need a preset. Where [Importar](importar.md) asks you to say which column is the date and which is the amount, here the app works that out by itself, because it only accepts formats it knows. For anything else, keep using [Importar](importar.md).
 
@@ -41,7 +41,7 @@ If you connected Gmail in **Ajustes → Gmail**, a **Recibidos por correo** box 
 
 1. Click **Elegir archivo** and pick the PDF or the Excel file. You do not say which bank or product it is.
 2. A green box says what was recognised, for example *Banco Galicia · Tarjeta de crédito Visa · Resumen en PDF*, with the closing and due dates, the total to pay and the number of movements. **Ver controles** lists the checks that were run.
-3. If the file is not recognised, a red box says so and lists the available formats. If its numbers do not add up, the box says which check failed and the file cannot be imported.
+3. If the file is not recognised, a red box says so and lists the available templates. If its numbers do not add up, the box says which check failed and the file cannot be imported.
 4. Choose the **Cuenta de destino**: the bank account for an extract, or the card's account for a card statement.
 5. Click **Vista previa**.
 
@@ -59,7 +59,14 @@ Click **Importar N movimientos**. The result can be undone from **Importar → H
 
 ### See what the app can read
 
-Open **Cómo funciona y formatos**. Click **Detalles** on a format to see what is read, how to get the file, the checks, and the limits.
+Open **Plantillas**. Each row is one template: the institution and document, the file type and the currencies.
+
+![Resúmenes, Plantillas tab with the five templates, each with Ejemplo and Detalles](img/plantillas.png)
+
+- **Ejemplo** shows what that document looks like. The samples use made-up names and amounts in the same layout as the original, so you can check that the file you have is the one the app expects.
+- **Detalles** says what is read, how to get the file, the checks, and the limits.
+
+New templates are added to the app itself, not uploaded: share an original document (for example an electricity bill) when asking for it, and it's studied and added in an update. Files that no template knows can still be loaded from CSV or Excel in [Importar](importar.md).
 
 ## How the numbers are worked out
 

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-import { ActionIcon, Alert, Anchor, Badge, Button, Card, Collapse, FileButton, Group, List, Menu, Stack, Stepper, Table, Tabs, Text } from '@mantine/core';
+import { ActionIcon, Alert, Anchor, Badge, Button, Card, Collapse, FileButton, Group, Image, List, Menu, Modal, ScrollArea, Stack, Stepper, Table, Tabs, Text } from '@mantine/core';
 import { IconAlertTriangle, IconCheck, IconDots, IconFileText, IconMail, IconUpload, IconX } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -62,6 +62,14 @@ const MAIL_KEY = ['mail-statements'];
 
 const FILE_LABEL = { pdf: 'PDF', xlsx: 'Excel' } as const;
 
+// One sample per template, made from its redacted test fixture (docs/templates, by reader id).
+const SAMPLES = Object.fromEntries(
+  Object.entries(import.meta.glob<string>('../../../docs/templates/samples/*.png', { query: '?url', import: 'default', eager: true })).map(([path, url]) => [
+    path.slice(path.lastIndexOf('/') + 1, -'.png'.length),
+    url,
+  ]),
+);
+
 export function StatementsPage() {
   const [tab, setTab] = useState<string | null>('import');
   const [received, setReceived] = useState<Received | null>(null);
@@ -71,7 +79,7 @@ export function StatementsPage() {
       <Tabs value={tab} onChange={setTab} keepMounted>
         <Tabs.List mb="md">
           <Tabs.Tab value="import">Importar resumen</Tabs.Tab>
-          <Tabs.Tab value="formats">Cómo funciona y formatos</Tabs.Tab>
+          <Tabs.Tab value="formats">Plantillas</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="import">
           <Stack>
@@ -214,7 +222,7 @@ function StatementWizard({ onSeeFormats, received, onDone }: { onSeeFormats: () 
             <Text size="xs" c="dimmed">
               PDF o Excel (.xlsx), tal como los entrega el banco. El formato se reconoce solo.{' '}
               <Text component="a" size="xs" c="blue" style={{ cursor: 'pointer' }} onClick={onSeeFormats}>
-                Ver formatos disponibles
+                Ver plantillas
               </Text>
             </Text>
 
@@ -489,39 +497,48 @@ const STEPS = [
 function HowItWorks() {
   const readers = useQuery({ queryKey: ['statement-readers'], queryFn: () => api.get<ReaderInfo[]>('/statements/readers') });
   const [open, setOpen] = useState<string | null>(null);
+  const [sample, setSample] = useState<ReaderInfo | null>(null);
+  const howItWorks = (
+    <Card>
+      <Text fw={700} mb="xs">
+        Cómo funciona
+      </Text>
+      <List type="ordered" spacing="xs" size="sm">
+        {STEPS.map(([title, text]) => (
+          <List.Item key={title}>
+            <Text span fw={600}>
+              {title}.
+            </Text>{' '}
+            {text}
+          </List.Item>
+        ))}
+      </List>
+      <Text size="xs" c="dimmed" mt="sm">
+        Los archivos subidos no se guardan: se leen en memoria y se descartan a los 30 minutos. Los que llegan por correo (Ajustes → Gmail) se guardan hasta que se descartan. En los PDF, las líneas de pago de una tarjeta quedan sin marcar porque el pago ya figura en la cuenta bancaria.
+      </Text>
+    </Card>
+  );
   return (
     <Stack>
+      <Modal opened={!!sample} onClose={() => setSample(null)} centered size="xl" title={sample ? `${sample.institution} · ${sample.product}` : ''} scrollAreaComponent={ScrollArea.Autosize}>
+        {sample && SAMPLES[sample.id] && <Image src={SAMPLES[sample.id]} alt={`Ejemplo: ${sample.institution}, ${sample.product}`} radius="sm" />}
+      </Modal>
       <Card>
         <Text fw={700} mb="xs">
-          Cómo funciona
+          Plantillas disponibles
         </Text>
-        <List type="ordered" spacing="xs" size="sm">
-          {STEPS.map(([title, text]) => (
-            <List.Item key={title}>
-              <Text span fw={600}>
-                {title}.
-              </Text>{' '}
-              {text}
-            </List.Item>
-          ))}
-        </List>
-        <Text size="xs" c="dimmed" mt="sm">
-          Los archivos subidos no se guardan: se leen en memoria y se descartan a los 30 minutos. Los que llegan por correo (Ajustes → Gmail) se guardan hasta que se descartan. En los PDF, las líneas de pago de una tarjeta quedan sin marcar porque el pago ya figura en la cuenta bancaria.
-        </Text>
-      </Card>
-
-      <Card>
-        <Text fw={700} mb="xs">
-          Formatos que se pueden leer
-        </Text>
-        <Table.ScrollContainer minWidth={560}>
+        <Table.ScrollContainer minWidth={0}>
           <Table verticalSpacing="xs" fz="sm">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Formato</Table.Th>
-                <Table.Th w={90}>Archivo</Table.Th>
-                <Table.Th w={110}>Moneda</Table.Th>
-                <Table.Th w={100} />
+                <Table.Th>Plantilla</Table.Th>
+                <Table.Th w={90} visibleFrom="sm">
+                  Archivo
+                </Table.Th>
+                <Table.Th w={110} visibleFrom="sm">
+                  Moneda
+                </Table.Th>
+                <Table.Th w={150} miw={90} />
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -536,16 +553,23 @@ function HowItWorks() {
                         {r.document}
                       </Text>
                     </Table.Td>
-                    <Table.Td>
+                    <Table.Td visibleFrom="sm">
                       <Badge variant="light" size="sm">
                         {FILE_LABEL[r.fileType]}
                       </Badge>
                     </Table.Td>
-                    <Table.Td>{r.currencies.join(' y ')}</Table.Td>
-                    <Table.Td ta="right">
-                      <Button size="compact-xs" variant="default" onClick={() => setOpen(open === r.id ? null : r.id)}>
-                        {open === r.id ? 'Ocultar' : 'Detalles'}
-                      </Button>
+                    <Table.Td visibleFrom="sm">{r.currencies.join(' y ')}</Table.Td>
+                    <Table.Td>
+                      <Group gap={6} justify="flex-end">
+                        {SAMPLES[r.id] && (
+                          <Button size="compact-xs" variant="subtle" onClick={() => setSample(r)}>
+                            Ejemplo
+                          </Button>
+                        )}
+                        <Button size="compact-xs" variant="default" onClick={() => setOpen(open === r.id ? null : r.id)}>
+                          {open === r.id ? 'Ocultar' : 'Detalles'}
+                        </Button>
+                      </Group>
                     </Table.Td>
                   </Table.Tr>
                   <Table.Tr>
@@ -561,9 +585,10 @@ function HowItWorks() {
           </Table>
         </Table.ScrollContainer>
         <Text size="xs" c="dimmed" mt="sm">
-          Se irán sumando más formatos, por ejemplo Ualá y Binance.
+          Los ejemplos usan datos ficticios con el mismo formato que el original. Para sumar una plantilla, se comparte un documento original en una sesión de desarrollo.
         </Text>
       </Card>
+      {howItWorks}
     </Stack>
   );
 }

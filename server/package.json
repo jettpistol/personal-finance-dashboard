@@ -11,7 +11,8 @@
     "seed:demo": "tsx src/seed-demo.ts",
     "demo": "tsx src/seed-demo.ts --demo --if-empty && node dist/index.js --demo",
     "demo:reset": "tsx src/seed-demo.ts --demo --reset && node dist/index.js --demo",
-    "data:recover": "tsx src/recover-data.ts"
+    "data:recover": "tsx src/recover-data.ts",
+    "template-samples": "tsx scripts/template-samples.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.3",
